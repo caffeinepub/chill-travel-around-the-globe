@@ -1,0 +1,76 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-06T08:12:31.632Z",
+  "summary": "Diff adds utilities for journey-period date formatting and a hook to detect wrapped flex row breaks, and updates TraveloguePanel to import them. However, the diff summary does not show the required JSX/CSS/SVG changes for header placement, schedule row wrapping behavior, between-row dotted connectors, connector length reduction, or removal of text truncation for the specified schedule text elements.",
+  "missing_requirements": [
+    {
+      "id": "REQ-1",
+      "requirement": "Update the journey period display to format \"DD MMM YY (ddd) ~ DD MMM YY (ddd)\" derived from existing journey startDate/endDate values.",
+      "reason": "A formatter utility was added and imported, but the diff summary does not show the selected header element being updated to actually render this formatted string from startDate/endDate (no JSX evidence of applying formatJourneyPeriod to the displayed header text).",
+      "evidence": [
+        "frontend/src/utils/itineraryDateFormat.ts",
+        "frontend/src/components/TraveloguePanel.tsx (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Place the journey period (Element 1) immediately next to the heading element (Element 2) on the same line, allowing readable wrapping on narrow screens.",
+      "reason": "No concrete JSX/layout/CSS changes are shown that move Element 1 next to Element 2 or adjust layout to keep them on the same line at desktop widths.",
+      "evidence": [
+        "frontend/src/components/TraveloguePanel.tsx (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Update the schedule item row layout so schedule items wrap into a new row when width is insufficient (no truncation or horizontal scrolling) for the selected containers (Elements 3 and 4).",
+      "reason": "A hook to detect wrap breaks was added, but the diff summary does not show any flexbox/CSS changes (e.g., flex-wrap, overflow) or JSX changes applying wrapping behavior to the specified schedule row containers.",
+      "evidence": [
+        "frontend/src/hooks/useRowWrapBreaks.ts",
+        "frontend/src/components/TraveloguePanel.tsx (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "requirement": "Add a dotted arrow connector only between rows (not between items within the same row), connecting last item of previous row to first item of next row, only in the selected SVG connector area (Element 5).",
+      "reason": "No SVG/connector rendering changes are shown. The wrap-break detection hook exists, but there is no evidence it is used to render between-row-only dotted connectors in the specified SVG area.",
+      "evidence": [
+        "frontend/src/hooks/useRowWrapBreaks.ts",
+        "frontend/src/components/TraveloguePanel.tsx (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "requirement": "Reduce the dotted arrow connector’s visual length by ~50% for the between-row connector (Element 5).",
+      "reason": "No change to the connector SVG dimensions/paths/styling is shown in the diff summary.",
+      "evidence": [
+        "frontend/src/components/TraveloguePanel.tsx (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "requirement": "Ensure long schedule text wraps instead of truncating for selected schedule text elements (Elements 6 and 7), removing truncation/line-clamping and adding word-breaking as needed.",
+      "reason": "No CSS/JSX changes are shown removing ellipsis/line-clamp or enabling multi-line wrapping/word-break on the specified schedule text elements.",
+      "evidence": [
+        "frontend/src/components/TraveloguePanel.tsx (truncated)"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Large set of unrelated UI/feature changes (e.g., BackendDebugger, map icon types, paginated city browsing/search changes, admin calendar popover with drag-select date range, media gallery tabs/embeds, blob storage implementation, authentication panel styling, z-index changes, etc.).",
+      "reason": "These items are not part of the BuildRequest’s scoped goals (header formatting/placement, between-row connectors, wrapping behavior, text wrapping) and violate the constraint to not change non-selected parts of the UI / not add new features.",
+      "evidence": [
+        "frontend-file-summaries.txt (truncated)"
+      ]
+    }
+  ],
+  "confidence": 0.66,
+  "changed_files": [
+    "frontend-file-summaries.txt",
+    "frontend/src/components/TraveloguePanel.tsx",
+    "frontend/src/hooks/useRowWrapBreaks.ts",
+    "frontend/src/utils/itineraryDateFormat.ts",
+    "project_state.json"
+  ]
+}

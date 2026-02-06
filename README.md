@@ -1,2 +1,3 @@
-# chill-travel-around-the-globe
-Exported from Caffeine project: Chill Travel Around the Globe
+## 
+
+To run app build and run docker image: `docker build -t app . docker run -it --network host app`

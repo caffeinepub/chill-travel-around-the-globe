@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "Layout revisions for an itinerary/schedule view: update journey period display formatting/placement, improve between-row connector arrows, and adjust row/content and text wrapping to avoid truncation/overflow.",
+  "architectural_notes": [],
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "feature-update-the-journey-period-display-selected-element-1-xpath-html-1-body-1-div-5-div-1-div-7-div-1-div-1-h1-1-to-use-the-format-18-feb-26-wed-20-feb-26-fri-day-short-month-2-digit-year-short-weekday-for-both-start-and-end-derived-from-the-existing-journey-startdate-enddate-values",
+      "title": "Update the journey period display (selected Element 1: XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[1]/div[1]/h1[1]) to use the format \"18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)\" (day + short month + 2-digit year + short weekday for both start and end), derived from the existing journey startDate/endDate values.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-change-the-header-layout-so-the-journey-period-element-1-is-placed-immediately-next-to-the-selected-heading-element-element-2-xpath-html-1-body-1-div-5-div-1-div-7-div-1-p-1-on-the-same-line-while-preserving-the-existing-doodle-retro-styling-and-not-modifying-non-selected-header-elements-beyond-what-is-necessary-to-achieve-this-placement",
+      "title": "Change the header layout so the journey period (Element 1) is placed immediately next to the selected heading element (Element 2: XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[1]/p[1]) on the same line, while preserving the existing doodle/retro styling and not modifying non-selected header elements beyond what is necessary to achieve this placement.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-schedule-item-row-layout-so-that-if-the-current-window-width-cannot-show-the-full-schedule-content-for-that-row-the-schedule-items-flow-wrap-into-a-new-row-no-horizontal-truncation-and-no-horizontal-scrolling-for-the-selected-schedule-row-container-element-4-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-2-div-1-div-2-div-1-and-related-row-content-container-element-3-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-1-div-2-div-1",
+      "title": "Update the schedule item row layout so that if the current window width cannot show the full schedule content for that row, the schedule items flow/wrap into a new row (no horizontal truncation and no horizontal scrolling for the selected schedule row container: Element 4 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[2]/div[1]/div[2]/div[1] and related row content container Element 3 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[1]/div[2]/div[1]).",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-dotted-arrow-connector-only-between-rows-not-between-items-within-the-same-row-to-visually-connect-the-last-schedule-item-of-the-previous-row-to-the-first-schedule-item-of-the-next-row-either-a-wrapped-continuation-row-of-the-same-day-or-the-next-day-s-first-row-apply-this-only-in-the-selected-connector-arrow-area-element-5-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-div-2-svg-1",
+      "title": "Add a dotted arrow connector only between rows (not between items within the same row), to visually connect the last schedule item of the previous row to the first schedule item of the next row (either a wrapped continuation row of the same day, or the next day’s first row). Apply this only in the selected connector/arrow area (Element 5 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[2]/svg[1]).",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-reduce-the-dotted-arrow-connector-s-visual-length-by-50-for-the-between-row-connector-element-5",
+      "title": "Reduce the dotted arrow connector’s visual length by 50% for the between-row connector (Element 5).",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-long-schedule-text-wraps-instead-of-truncating-for-the-selected-schedule-text-elements-element-6-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-div-1-div-3-p-1-and-element-7-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-div-1-div-3-p-2-remove-truncation-line-clamping-behavior-and-allow-multi-line-wrapping-with-word-breaking-where-needed",
+      "title": "Ensure long schedule text wraps instead of truncating for the selected schedule text elements (Element 6 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[3]/p[1] and Element 7 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[3]/p[2]). Remove truncation/line-clamping behavior and allow multi-line wrapping with word-breaking where needed.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Update journey period (Element 1) format to \"18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)\" and place it right next to heading (Element 2).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Add dotted arrow connector only between rows, linking last scheduled item of previous row to first item of next row; reduce arrow length by half.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "If current window cannot show full schedule content of a row, move overflowing content to the next row (row wrapping).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Wrap long location/activity text (e.g., Elements 6 and 7) so inputs are fully shown and not truncated.",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "Revise itinerary header date format/placement and improve schedule row wrapping + between-row dotted connectors",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

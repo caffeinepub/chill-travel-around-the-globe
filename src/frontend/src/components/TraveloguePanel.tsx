@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { BookOpen, Calendar, MapPin, ChevronDown, ChevronRight, Eye, MoreHorizontal, Filter, Plane, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useGetAllJourneys, useGetJourneyScheduleWithDays, useUpdateScheduleItem, useDeleteScheduleItem, useAddScheduleItem, useGetWebsiteLayoutPreferences } from '@/hooks/useQueries';
 import { Journey, ScheduleItem } from '@/backend';
 import { toast } from 'sonner';
+import { formatJourneyPeriod } from '@/utils/itineraryDateFormat';
+import { useRowWrapBreaks } from '@/hooks/useRowWrapBreaks';
 
 interface TraveloguePanelProps {
   onFlightAnimation?: (fromCity: string, toCity: string, fromCoords: { lat: number; lon: number }, toCoords: { lat: number; lon: number }) => void;
@@ -711,7 +713,7 @@ function JourneyCard({
   );
 }
 
-// Cute illustrated travel diary/scrapbook poster view - WITHOUT "Travel Memories" footer
+// Cute illustrated travel diary/scrapbook poster view - Compact layout with wrapping and between-row connectors
 function ScrapbookItineraryView({
   journey,
   formatDate,
@@ -770,155 +772,66 @@ function ScrapbookItineraryView({
       `
     }}>
       {/* Decorative border elements */}
-      <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-[#ffd4a3]/30 to-transparent pointer-events-none" />
-      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#ffd4a3]/30 to-transparent pointer-events-none" />
+      <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-[#ffd4a3]/30 to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#ffd4a3]/30 to-transparent pointer-events-none" />
       
       {/* Decorative corner flowers */}
-      <div className="absolute top-4 left-4 text-4xl opacity-60 pointer-events-none">🌸</div>
-      <div className="absolute top-4 right-4 text-4xl opacity-60 pointer-events-none">🌺</div>
-      <div className="absolute bottom-4 left-4 text-4xl opacity-60 pointer-events-none">🌼</div>
-      <div className="absolute bottom-4 right-4 text-4xl opacity-60 pointer-events-none">🌻</div>
+      <div className="absolute top-3 left-3 text-3xl opacity-60 pointer-events-none">🌸</div>
+      <div className="absolute top-3 right-3 text-3xl opacity-60 pointer-events-none">🌺</div>
+      <div className="absolute bottom-3 left-3 text-3xl opacity-60 pointer-events-none">🌼</div>
+      <div className="absolute bottom-3 right-3 text-3xl opacity-60 pointer-events-none">🌻</div>
 
-      <div className="max-w-5xl mx-auto p-12 relative">
-        {/* Large illustrated title */}
-        <div className="text-center mb-12 relative">
+      <div className="max-w-5xl mx-auto p-8 relative">
+        {/* Compact header with city and duration on one line, plus journey period */}
+        <div className="text-center mb-8 relative">
           <div className="inline-block relative">
-            <h1 className="text-6xl font-bold mb-3 relative z-10" style={{
-              fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive",
-              color: '#d97706',
-              textShadow: '3px 3px 0px rgba(251, 191, 36, 0.3), -1px -1px 0px rgba(251, 191, 36, 0.2)'
-            }}>
-              {journey.city}
-            </h1>
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <h1 className="text-4xl font-bold relative z-10" style={{
+                fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive",
+                color: '#d97706',
+                textShadow: '2px 2px 0px rgba(251, 191, 36, 0.3), -1px -1px 0px rgba(251, 191, 36, 0.2)'
+              }}>
+                {journey.city}
+              </h1>
+              <span className="text-2xl text-amber-700 font-bold" style={{
+                fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive"
+              }}>
+                {totalDays}D{totalNights}N
+              </span>
+            </div>
             {/* Decorative underline */}
-            <div className="absolute -bottom-2 left-0 right-0 h-2 bg-gradient-to-r from-transparent via-amber-300 to-transparent opacity-50 rounded-full" />
+            <div className="absolute -bottom-1 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-amber-300 to-transparent opacity-50 rounded-full" />
           </div>
-          <p className="text-2xl mt-4" style={{
-            fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive",
-            color: '#92400e'
-          }}>
-            {totalDays} Days / {totalNights} Nights
-          </p>
-          <p className="text-lg mt-2 text-amber-700">
-            {formatDate(journey.startDate)} - {formatDate(journey.endDate)}
+          <p className="text-base mt-2 text-amber-700">
+            {formatJourneyPeriod(journey.startDate, journey.endDate)}
           </p>
           
           {/* Decorative travel stamps */}
-          <div className="absolute -top-4 -right-8 text-5xl opacity-40 rotate-12">✈️</div>
-          <div className="absolute -top-2 -left-8 text-4xl opacity-40 -rotate-12">🗺️</div>
+          <div className="absolute -top-3 -right-6 text-4xl opacity-40 rotate-12">✈️</div>
+          <div className="absolute -top-2 -left-6 text-3xl opacity-40 -rotate-12">🗺️</div>
         </div>
 
         {/* Day storylines */}
         {sortedScheduleWithDays.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">📔</div>
-            <p className="text-2xl text-amber-800" style={{
+          <div className="text-center py-12">
+            <div className="text-5xl mb-3">📔</div>
+            <p className="text-xl text-amber-800" style={{
               fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive"
             }}>
               No activities scheduled yet
             </p>
           </div>
         ) : (
-          <div className="space-y-10">
+          <div className="space-y-6">
             {sortedScheduleWithDays.map(([dayLabel, items], dayIndex) => (
-              <div key={dayLabel} className="relative">
-                {/* Day header with cute badge */}
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="relative">
-                    <div className="bg-gradient-to-br from-amber-200 to-orange-200 rounded-full px-6 py-3 shadow-lg border-4 border-white" style={{
-                      boxShadow: '0 4px 6px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.6)'
-                    }}>
-                      <span className="text-xl font-bold text-amber-900" style={{
-                        fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive"
-                      }}>
-                        {dayLabel}
-                      </span>
-                    </div>
-                    {/* Decorative pin */}
-                    <div className="absolute -top-2 -right-2 text-2xl">📌</div>
-                  </div>
-                  <div className="flex-1 h-1 bg-gradient-to-r from-amber-300 via-orange-200 to-transparent rounded-full" />
-                </div>
-
-                {/* Horizontal storyline row */}
-                <div className="relative bg-white/60 backdrop-blur-sm rounded-3xl p-6 shadow-xl border-4 border-amber-100" style={{
-                  boxShadow: '0 8px 16px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.8)'
-                }}>
-                  {/* Activity sequence */}
-                  <div className="flex items-center gap-4 overflow-x-auto pb-2">
-                    {items.map((item, index) => (
-                      <React.Fragment key={`${Number(item.date)}-${item.time}-${index}`}>
-                        {/* Activity icon with details */}
-                        <div className="flex-shrink-0 text-center">
-                          {/* Doodle-style icon */}
-                          <div className="relative mb-3">
-                            <div className="w-20 h-20 bg-gradient-to-br from-pink-100 to-purple-100 rounded-full flex items-center justify-center text-4xl border-4 border-white shadow-lg" style={{
-                              boxShadow: '0 4px 8px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.6)'
-                            }}>
-                              {getActivityIcon(item.activity)}
-                            </div>
-                            {/* Small decorative star */}
-                            {index === 0 && <div className="absolute -top-1 -right-1 text-xl">⭐</div>}
-                          </div>
-                          
-                          {/* Time pill */}
-                          <div className="bg-gradient-to-r from-blue-100 to-cyan-100 rounded-full px-3 py-1 mb-2 border-2 border-white shadow-sm">
-                            <span className="text-xs font-bold text-blue-800" style={{
-                              fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive"
-                            }}>
-                              {formatTime(item.time)}
-                            </span>
-                          </div>
-                          
-                          {/* Activity text */}
-                          <div className="max-w-[140px]">
-                            <p className="text-sm font-semibold text-amber-900 mb-1 line-clamp-2" style={{
-                              fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive"
-                            }}>
-                              {item.activity}
-                            </p>
-                            {item.location && (
-                              <p className="text-xs text-amber-700 line-clamp-1">
-                                📍 {item.location}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Dotted curved arrow connector */}
-                        {index < items.length - 1 && (
-                          <div className="flex-shrink-0 flex items-center">
-                            <svg width="60" height="40" viewBox="0 0 60 40" className="text-amber-400">
-                              <path
-                                d="M 5 20 Q 30 5, 55 20"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="3"
-                                strokeDasharray="4 4"
-                                strokeLinecap="round"
-                              />
-                              <path
-                                d="M 55 20 L 50 17 M 55 20 L 50 23"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="3"
-                                strokeLinecap="round"
-                              />
-                            </svg>
-                          </div>
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Decorative wave or leaf on alternating sides */}
-                {dayIndex % 2 === 0 ? (
-                  <div className="absolute -right-6 top-1/2 -translate-y-1/2 text-4xl opacity-40">🍃</div>
-                ) : (
-                  <div className="absolute -left-6 top-1/2 -translate-y-1/2 text-4xl opacity-40">🌊</div>
-                )}
-              </div>
+              <DayScheduleRow
+                key={dayLabel}
+                dayLabel={dayLabel}
+                items={items}
+                dayIndex={dayIndex}
+                formatTime={formatTime}
+                getActivityIcon={getActivityIcon}
+              />
             ))}
           </div>
         )}
@@ -927,7 +840,157 @@ function ScrapbookItineraryView({
   );
 }
 
-// Retro vintage postcard themed itinerary view - WITHOUT "Vintage Memories" footer
+// Day schedule row component with wrapping and between-row connectors
+function DayScheduleRow({
+  dayLabel,
+  items,
+  dayIndex,
+  formatTime,
+  getActivityIcon
+}: {
+  dayLabel: string;
+  items: ScheduleItem[];
+  dayIndex: number;
+  formatTime: (timeString: string) => string;
+  getActivityIcon: (activity: string) => string;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { rowBreakIndices, itemRefs } = useRowWrapBreaks(items.length, containerRef);
+
+  return (
+    <div className="relative">
+      {/* Horizontal layout: Day label on left, schedule items on right */}
+      <div className="flex items-start gap-3">
+        {/* Compact day badge - 50% smaller */}
+        <div className="flex-shrink-0 relative">
+          <div className="bg-gradient-to-br from-amber-200 to-orange-200 rounded-full px-3 py-1.5 shadow-md border-2 border-white" style={{
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.6)'
+          }}>
+            <span className="text-sm font-bold text-amber-900" style={{
+              fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive"
+            }}>
+              {dayLabel}
+            </span>
+          </div>
+          {/* Decorative pin */}
+          <div className="absolute -top-1 -right-1 text-lg">📌</div>
+        </div>
+
+        {/* Schedule items in wrapping row - 50% smaller */}
+        <div className="flex-1 relative bg-white/60 backdrop-blur-sm rounded-2xl p-3 shadow-lg border-2 border-amber-100" style={{
+          boxShadow: '0 4px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.8)'
+        }}>
+          {/* Activity sequence with wrapping */}
+          <div ref={containerRef} className="flex flex-wrap items-start gap-3">
+            {items.map((item, index) => (
+              <React.Fragment key={`${Number(item.date)}-${item.time}-${index}`}>
+                {/* Activity icon with details - 50% smaller */}
+                <div 
+                  ref={(el) => { itemRefs.current[index] = el; }}
+                  className="flex-shrink-0 text-center"
+                >
+                  {/* Doodle-style icon */}
+                  <div className="relative mb-2">
+                    <div className="w-10 h-10 bg-gradient-to-br from-pink-100 to-purple-100 rounded-full flex items-center justify-center text-xl border-2 border-white shadow-md" style={{
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.6)'
+                    }}>
+                      {getActivityIcon(item.activity)}
+                    </div>
+                    {/* Small decorative star */}
+                    {index === 0 && <div className="absolute -top-0.5 -right-0.5 text-sm">⭐</div>}
+                  </div>
+                  
+                  {/* Time pill */}
+                  <div className="bg-gradient-to-r from-blue-100 to-cyan-100 rounded-full px-2 py-0.5 mb-1 border border-white shadow-sm">
+                    <span className="text-[10px] font-bold text-blue-800 whitespace-nowrap" style={{
+                      fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive"
+                    }}>
+                      {formatTime(item.time)}
+                    </span>
+                  </div>
+                  
+                  {/* Activity text with wrapping */}
+                  <div className="max-w-[70px]">
+                    <p className="text-[10px] font-semibold text-amber-900 mb-0.5 break-words whitespace-normal" style={{
+                      fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive",
+                      overflowWrap: 'break-word',
+                      wordBreak: 'break-word'
+                    }}>
+                      {item.activity}
+                    </p>
+                    {item.location && (
+                      <p className="text-[9px] text-amber-700 break-words whitespace-normal" style={{
+                        overflowWrap: 'break-word',
+                        wordBreak: 'break-word'
+                      }}>
+                        📍 {item.location}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Between-row connector (only at row breaks) - 50% smaller */}
+                {rowBreakIndices.includes(index) && (
+                  <div className="w-full flex justify-center my-1">
+                    <svg width="15" height="10" viewBox="0 0 15 10" className="text-amber-400">
+                      <path
+                        d="M 7.5 0 L 7.5 10"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeDasharray="2 2"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M 7.5 10 L 6 8.5 M 7.5 10 L 9 8.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </div>
+                )}
+
+                {/* Dotted curved arrow connector between items on same row - smaller */}
+                {index < items.length - 1 && !rowBreakIndices.includes(index) && (
+                  <div className="flex-shrink-0 flex items-center">
+                    <svg width="15" height="10" viewBox="0 0 15 10" className="text-amber-400">
+                      <path
+                        d="M 1.25 5 Q 7.5 1.25, 13.75 5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeDasharray="2 2"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M 13.75 5 L 12.5 4.25 M 13.75 5 L 12.5 5.75"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </div>
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Decorative wave or leaf on alternating sides */}
+      {dayIndex % 2 === 0 ? (
+        <div className="absolute -right-4 top-1/2 -translate-y-1/2 text-3xl opacity-40">🍃</div>
+      ) : (
+        <div className="absolute -left-4 top-1/2 -translate-y-1/2 text-3xl opacity-40">🌊</div>
+      )}
+    </div>
+  );
+}
+
+// Retro vintage postcard themed itinerary view - Compact layout with wrapping and between-row connectors
 function RetroPostcardItineraryView({
   journey,
   formatDate,
@@ -986,13 +1049,13 @@ function RetroPostcardItineraryView({
     }}>
       {/* Stamp edge border effect */}
       <div className="absolute inset-0 pointer-events-none" style={{
-        boxShadow: 'inset 0 0 0 12px #f5e6d3, inset 0 0 0 14px #c9a876, inset 0 0 0 16px #f5e6d3',
+        boxShadow: 'inset 0 0 0 10px #f5e6d3, inset 0 0 0 12px #c9a876, inset 0 0 0 14px #f5e6d3',
         background: `
           repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(139, 92, 46, 0.15) 8px, rgba(139, 92, 46, 0.15) 10px),
           repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(139, 92, 46, 0.15) 8px, rgba(139, 92, 46, 0.15) 10px)
         `,
         backgroundPosition: '0 0, 0 0',
-        backgroundSize: '100% 16px, 16px 100%',
+        backgroundSize: '100% 14px, 14px 100%',
         backgroundRepeat: 'repeat-x, repeat-y'
       }} />
 
@@ -1002,42 +1065,43 @@ function RetroPostcardItineraryView({
         mixBlendMode: 'multiply'
       }} />
 
-      <div className="max-w-5xl mx-auto p-12 relative">
-        {/* Vintage postcard title with stamp edges */}
-        <div className="text-center mb-12 relative">
+      <div className="max-w-5xl mx-auto p-8 relative">
+        {/* Compact vintage postcard title with city and duration on one line, plus journey period */}
+        <div className="text-center mb-8 relative">
           <div className="inline-block relative">
-            <h1 className="text-6xl font-bold mb-3 relative z-10" style={{
-              fontFamily: "'Courier New', 'Courier', monospace",
-              color: '#8b5a2b',
-              textShadow: '2px 2px 0px rgba(139, 90, 43, 0.2)',
-              letterSpacing: '0.05em'
-            }}>
-              {journey.city}
-            </h1>
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <h1 className="text-4xl font-bold relative z-10" style={{
+                fontFamily: "'Courier New', 'Courier', monospace",
+                color: '#8b5a2b',
+                textShadow: '1.5px 1.5px 0px rgba(139, 90, 43, 0.2)',
+                letterSpacing: '0.05em'
+              }}>
+                {journey.city}
+              </h1>
+              <span className="text-2xl font-bold" style={{ 
+                fontFamily: "'Courier New', 'Courier', monospace",
+                color: '#6b4423' 
+              }}>
+                {totalDays}D{totalNights}N
+              </span>
+            </div>
             {/* Vintage underline */}
-            <div className="absolute -bottom-2 left-0 right-0 h-1 bg-[#8b5a2b] opacity-30" />
+            <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#8b5a2b] opacity-30" />
           </div>
-          <p className="text-2xl mt-4" style={{
-            fontFamily: "'Courier New', 'Courier', monospace",
-            color: '#6b4423',
-            letterSpacing: '0.03em'
-          }}>
-            {totalDays} Days / {totalNights} Nights
-          </p>
-          <p className="text-lg mt-2" style={{ color: '#8b5a2b' }}>
-            {formatDate(journey.startDate)} - {formatDate(journey.endDate)}
+          <p className="text-base mt-2" style={{ color: '#8b5a2b' }}>
+            {formatJourneyPeriod(journey.startDate, journey.endDate)}
           </p>
           
           {/* Vintage postal stamps */}
-          <div className="absolute -top-4 -right-8 text-5xl opacity-50 rotate-12">📮</div>
-          <div className="absolute -top-2 -left-8 text-4xl opacity-50 -rotate-12">✉️</div>
+          <div className="absolute -top-3 -right-6 text-4xl opacity-50 rotate-12">📮</div>
+          <div className="absolute -top-2 -left-6 text-3xl opacity-50 -rotate-12">✉️</div>
         </div>
 
         {/* Day storylines with vintage postcard aesthetic */}
         {sortedScheduleWithDays.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">📬</div>
-            <p className="text-2xl" style={{
+          <div className="text-center py-12">
+            <div className="text-5xl mb-3">📬</div>
+            <p className="text-xl" style={{
               fontFamily: "'Courier New', 'Courier', monospace",
               color: '#8b5a2b'
             }}>
@@ -1045,109 +1109,16 @@ function RetroPostcardItineraryView({
             </p>
           </div>
         ) : (
-          <div className="space-y-10">
+          <div className="space-y-6">
             {sortedScheduleWithDays.map(([dayLabel, items], dayIndex) => (
-              <div key={dayLabel} className="relative">
-                {/* Day header with vintage stamp */}
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="relative">
-                    <div className="bg-gradient-to-br from-[#d4a574] to-[#b8956a] rounded px-6 py-3 shadow-lg border-2 border-[#8b5a2b]" style={{
-                      boxShadow: '0 4px 6px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3)'
-                    }}>
-                      <span className="text-xl font-bold" style={{
-                        fontFamily: "'Courier New', 'Courier', monospace",
-                        color: '#4a2f1a'
-                      }}>
-                        {dayLabel}
-                      </span>
-                    </div>
-                    {/* Vintage postmark */}
-                    <div className="absolute -top-2 -right-2 text-2xl opacity-70">📌</div>
-                  </div>
-                  <div className="flex-1 h-0.5 bg-[#8b5a2b] opacity-30" />
-                </div>
-
-                {/* Horizontal storyline row with vintage postcard styling */}
-                <div className="relative bg-[#ede0cc]/80 backdrop-blur-sm rounded p-6 shadow-xl border-2 border-[#c9a876]" style={{
-                  boxShadow: '0 8px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.4)'
-                }}>
-                  {/* Activity sequence */}
-                  <div className="flex items-center gap-4 overflow-x-auto pb-2">
-                    {items.map((item, index) => (
-                      <React.Fragment key={`${Number(item.date)}-${item.time}-${index}`}>
-                        {/* Activity icon with vintage styling */}
-                        <div className="flex-shrink-0 text-center">
-                          {/* Vintage stamp-style icon */}
-                          <div className="relative mb-3">
-                            <div className="w-20 h-20 bg-gradient-to-br from-[#e8d4b8] to-[#d4a574] rounded flex items-center justify-center text-4xl border-2 border-[#8b5a2b] shadow-lg" style={{
-                              boxShadow: '0 4px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3)'
-                            }}>
-                              {getActivityIcon(item.activity)}
-                            </div>
-                            {/* Vintage postmark circle */}
-                            {index === 0 && <div className="absolute -top-1 -right-1 text-xl opacity-70">⭐</div>}
-                          </div>
-                          
-                          {/* Time stamp */}
-                          <div className="bg-gradient-to-r from-[#c9a876] to-[#b8956a] rounded px-3 py-1 mb-2 border border-[#8b5a2b] shadow-sm">
-                            <span className="text-xs font-bold" style={{
-                              fontFamily: "'Courier New', 'Courier', monospace",
-                              color: '#4a2f1a'
-                            }}>
-                              {formatTime(item.time)}
-                            </span>
-                          </div>
-                          
-                          {/* Activity text with vintage typography */}
-                          <div className="max-w-[140px]">
-                            <p className="text-sm font-semibold mb-1 line-clamp-2" style={{
-                              fontFamily: "'Courier New', 'Courier', monospace",
-                              color: '#6b4423'
-                            }}>
-                              {item.activity}
-                            </p>
-                            {item.location && (
-                              <p className="text-xs line-clamp-1" style={{ color: '#8b5a2b' }}>
-                                📍 {item.location}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Dotted curved arrow connector (same as scrapbook) */}
-                        {index < items.length - 1 && (
-                          <div className="flex-shrink-0 flex items-center">
-                            <svg width="60" height="40" viewBox="0 0 60 40" className="text-[#8b5a2b] opacity-50">
-                              <path
-                                d="M 5 20 Q 30 5, 55 20"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="3"
-                                strokeDasharray="4 4"
-                                strokeLinecap="round"
-                              />
-                              <path
-                                d="M 55 20 L 50 17 M 55 20 L 50 23"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="3"
-                                strokeLinecap="round"
-                              />
-                            </svg>
-                          </div>
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Vintage decorative elements on alternating sides */}
-                {dayIndex % 2 === 0 ? (
-                  <div className="absolute -right-6 top-1/2 -translate-y-1/2 text-4xl opacity-30">📜</div>
-                ) : (
-                  <div className="absolute -left-6 top-1/2 -translate-y-1/2 text-4xl opacity-30">🗺️</div>
-                )}
-              </div>
+              <RetroDayScheduleRow
+                key={dayLabel}
+                dayLabel={dayLabel}
+                items={items}
+                dayIndex={dayIndex}
+                formatTime={formatTime}
+                getActivityIcon={getActivityIcon}
+              />
             ))}
           </div>
         )}
@@ -1156,3 +1127,156 @@ function RetroPostcardItineraryView({
   );
 }
 
+// Retro day schedule row component with wrapping and between-row connectors
+function RetroDayScheduleRow({
+  dayLabel,
+  items,
+  dayIndex,
+  formatTime,
+  getActivityIcon
+}: {
+  dayLabel: string;
+  items: ScheduleItem[];
+  dayIndex: number;
+  formatTime: (timeString: string) => string;
+  getActivityIcon: (activity: string) => string;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { rowBreakIndices, itemRefs } = useRowWrapBreaks(items.length, containerRef);
+
+  return (
+    <div className="relative">
+      {/* Horizontal layout: Day label on left, schedule items on right */}
+      <div className="flex items-start gap-3">
+        {/* Compact day stamp - 50% smaller */}
+        <div className="flex-shrink-0 relative">
+          <div className="bg-gradient-to-br from-[#d4a574] to-[#b8956a] rounded px-3 py-1.5 shadow-md border border-[#8b5a2b]" style={{
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3)'
+          }}>
+            <span className="text-sm font-bold" style={{
+              fontFamily: "'Courier New', 'Courier', monospace",
+              color: '#4a2f1a'
+            }}>
+              {dayLabel}
+            </span>
+          </div>
+          {/* Vintage postmark */}
+          <div className="absolute -top-1 -right-1 text-lg opacity-70">📌</div>
+        </div>
+
+        {/* Schedule items in wrapping row - 50% smaller */}
+        <div className="flex-1 relative bg-[#ede0cc]/80 backdrop-blur-sm rounded p-3 shadow-lg border border-[#c9a876]" style={{
+          boxShadow: '0 4px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.4)'
+        }}>
+          {/* Activity sequence with wrapping */}
+          <div ref={containerRef} className="flex flex-wrap items-start gap-3">
+            {items.map((item, index) => (
+              <React.Fragment key={`${Number(item.date)}-${item.time}-${index}`}>
+                {/* Activity icon with vintage styling - 50% smaller */}
+                <div 
+                  ref={(el) => { itemRefs.current[index] = el; }}
+                  className="flex-shrink-0 text-center"
+                >
+                  {/* Vintage stamp-style icon */}
+                  <div className="relative mb-2">
+                    <div className="w-10 h-10 bg-gradient-to-br from-[#e8d4b8] to-[#d4a574] rounded flex items-center justify-center text-xl border border-[#8b5a2b] shadow-md" style={{
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3)'
+                    }}>
+                      {getActivityIcon(item.activity)}
+                    </div>
+                    {/* Vintage postmark circle */}
+                    {index === 0 && <div className="absolute -top-0.5 -right-0.5 text-sm opacity-70">⭐</div>}
+                  </div>
+                  
+                  {/* Time stamp */}
+                  <div className="bg-gradient-to-r from-[#c9a876] to-[#b8956a] rounded px-2 py-0.5 mb-1 border border-[#8b5a2b] shadow-sm">
+                    <span className="text-[10px] font-bold whitespace-nowrap" style={{
+                      fontFamily: "'Courier New', 'Courier', monospace",
+                      color: '#4a2f1a'
+                    }}>
+                      {formatTime(item.time)}
+                    </span>
+                  </div>
+                  
+                  {/* Activity text with vintage typography and wrapping */}
+                  <div className="max-w-[70px]">
+                    <p className="text-[10px] font-semibold mb-0.5 break-words whitespace-normal" style={{
+                      fontFamily: "'Courier New', 'Courier', monospace",
+                      color: '#6b4423',
+                      overflowWrap: 'break-word',
+                      wordBreak: 'break-word'
+                    }}>
+                      {item.activity}
+                    </p>
+                    {item.location && (
+                      <p className="text-[9px] break-words whitespace-normal" style={{ 
+                        color: '#8b5a2b',
+                        overflowWrap: 'break-word',
+                        wordBreak: 'break-word'
+                      }}>
+                        📍 {item.location}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Between-row connector (only at row breaks) - 50% smaller */}
+                {rowBreakIndices.includes(index) && (
+                  <div className="w-full flex justify-center my-1">
+                    <svg width="15" height="10" viewBox="0 0 15 10" className="text-[#8b5a2b] opacity-50">
+                      <path
+                        d="M 7.5 0 L 7.5 10"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeDasharray="2 2"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M 7.5 10 L 6 8.5 M 7.5 10 L 9 8.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </div>
+                )}
+
+                {/* Dotted curved arrow connector between items on same row - smaller */}
+                {index < items.length - 1 && !rowBreakIndices.includes(index) && (
+                  <div className="flex-shrink-0 flex items-center">
+                    <svg width="15" height="10" viewBox="0 0 15 10" className="text-[#8b5a2b] opacity-50">
+                      <path
+                        d="M 1.25 5 Q 7.5 1.25, 13.75 5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeDasharray="2 2"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M 13.75 5 L 12.5 4.25 M 13.75 5 L 12.5 5.75"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </div>
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Vintage decorative elements on alternating sides */}
+      {dayIndex % 2 === 0 ? (
+        <div className="absolute -right-4 top-1/2 -translate-y-1/2 text-3xl opacity-30">📜</div>
+      ) : (
+        <div className="absolute -left-4 top-1/2 -translate-y-1/2 text-3xl opacity-30">🗺️</div>
+      )}
+    </div>
+  );
+}

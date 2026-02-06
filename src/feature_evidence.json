@@ -1,0 +1,127 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-update-the-journey-period-display-selected-element-1-xpath-html-1-body-1-div-5-div-1-div-7-div-1-div-1-h1-1-to-use-the-format-18-feb-26-wed-20-feb-26-fri-day-short-month-2-digit-year-short-weekday-for-both-start-and-end-derived-from-the-existing-journey-startdate-enddate-values",
+      "featureTitle": "Update the journey period display (selected Element 1: XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[1]/div[1]/h1[1]) to use the format \"18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)\" (day + short month + 2-digit year + short weekday for both start and end), derived from the existing journey startDate/endDate values.",
+      "files": [
+        "frontend/src/components/TraveloguePanel.tsx",
+        "frontend/src/utils/itineraryDateFormat.ts"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@1.1.2",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-change-the-header-layout-so-the-journey-period-element-1-is-placed-immediately-next-to-the-selected-heading-element-element-2-xpath-html-1-body-1-div-5-div-1-div-7-div-1-p-1-on-the-same-line-while-preserving-the-existing-doodle-retro-styling-and-not-modifying-non-selected-header-elements-beyond-what-is-necessary-to-achieve-this-placement",
+      "featureTitle": "Change the header layout so the journey period (Element 1) is placed immediately next to the selected heading element (Element 2: XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[1]/p[1]) on the same line, while preserving the existing doodle/retro styling and not modifying non-selected header elements beyond what is necessary to achieve this placement.",
+      "files": [
+        "frontend/src/components/TraveloguePanel.tsx"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@1.1.2",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-schedule-item-row-layout-so-that-if-the-current-window-width-cannot-show-the-full-schedule-content-for-that-row-the-schedule-items-flow-wrap-into-a-new-row-no-horizontal-truncation-and-no-horizontal-scrolling-for-the-selected-schedule-row-container-element-4-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-2-div-1-div-2-div-1-and-related-row-content-container-element-3-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-1-div-2-div-1",
+      "featureTitle": "Update the schedule item row layout so that if the current window width cannot show the full schedule content for that row, the schedule items flow/wrap into a new row (no horizontal truncation and no horizontal scrolling for the selected schedule row container: Element 4 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[2]/div[1]/div[2]/div[1] and related row content container Element 3 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[1]/div[2]/div[1]).",
+      "files": [
+        "frontend/src/components/TraveloguePanel.tsx"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@1.1.2",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-dotted-arrow-connector-only-between-rows-not-between-items-within-the-same-row-to-visually-connect-the-last-schedule-item-of-the-previous-row-to-the-first-schedule-item-of-the-next-row-either-a-wrapped-continuation-row-of-the-same-day-or-the-next-day-s-first-row-apply-this-only-in-the-selected-connector-arrow-area-element-5-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-div-2-svg-1",
+      "featureTitle": "Add a dotted arrow connector only between rows (not between items within the same row), to visually connect the last schedule item of the previous row to the first schedule item of the next row (either a wrapped continuation row of the same day, or the next day’s first row). Apply this only in the selected connector/arrow area (Element 5 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[2]/svg[1]).",
+      "files": [
+        "frontend/src/components/TraveloguePanel.tsx",
+        "frontend/src/hooks/useRowWrapBreaks.ts"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@1.1.2",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-reduce-the-dotted-arrow-connector-s-visual-length-by-50-for-the-between-row-connector-element-5",
+      "featureTitle": "Reduce the dotted arrow connector’s visual length by 50% for the between-row connector (Element 5).",
+      "files": [
+        "frontend/src/components/TraveloguePanel.tsx"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@1.1.2",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-ensure-long-schedule-text-wraps-instead-of-truncating-for-the-selected-schedule-text-elements-element-6-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-div-1-div-3-p-1-and-element-7-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-div-1-div-3-p-2-remove-truncation-line-clamping-behavior-and-allow-multi-line-wrapping-with-word-breaking-where-needed",
+      "featureTitle": "Ensure long schedule text wraps instead of truncating for the selected schedule text elements (Element 6 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[3]/p[1] and Element 7 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[3]/p[2]). Remove truncation/line-clamping behavior and allow multi-line wrapping with word-breaking where needed.",
+      "files": [
+        "frontend/src/components/TraveloguePanel.tsx"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@1.1.2",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-6"
+      ],
+      "confidence": "high"
+    }
+  ]
+}
