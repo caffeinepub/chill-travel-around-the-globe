@@ -2,8 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-only-the-two-selected-day-label-elements-in-the-doodle-scrapbookitineraryview-and-retro-retropostcarditineraryview-itinerary-views-so-that-each-day-label-renders-three-lines-1-the-existing-day-n-label-2-the-corresponding-calendar-date-formatted-like-11-feb-day-number-short-month-in-english-and-3-the-corresponding-weekday-formatted-like-wed-english-short-weekday-use-the-day-s-actual-date-from-the-itinerary-day-grouping-that-the-ui-is-rendering-do-not-change-the-surrounding-ui-layout-structure-beyond-modifying-the-content-within-these-two-existing-elements-selected-elements-to-edit-doodle-day-label-span-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-1-div-1-div-1-span-1-retro-day-label-span-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-2-div-1-div-1-div-1-span-1",
-      "featureTitle": "Update ONLY the two selected Day label elements in the Doodle (ScrapbookItineraryView) and Retro (RetroPostcardItineraryView) itinerary views so that each Day label renders three lines: (1) the existing “Day N” label, (2) the corresponding calendar date formatted like “11 Feb” (day number + short month in English), and (3) the corresponding weekday formatted like “Wed” (English short weekday). Use the day’s actual date from the itinerary/day grouping that the UI is rendering. Do not change the surrounding UI layout/structure beyond modifying the content within these two existing elements.\n\nSelected elements to edit:\n- Doodle Day label span XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/span[1]\n- Retro Day label span XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[2]/div[1]/div[1]/div[1]/span[1]",
+      "featureId": "feature-remove-the-star-logo-icon-from-the-selected-element-1-button-xpath-html-1-body-1-div-3-div-2-div-1-div-2-div-1-div-1-div-1-div-1-div-1-div-2-div-2-button-1-without-removing-or-changing-the-button-s-click-behavior",
+      "featureTitle": "Remove the star logo/icon from the selected Element 1 button (XPath: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[2]/button[1]) without removing or changing the button’s click behavior.",
       "files": [
         "frontend/src/components/TraveloguePanel.tsx"
       ],
@@ -17,7 +17,48 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-4"
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-ensure-the-selected-element-2-button-s-text-wraps-onto-multiple-lines-when-long-and-that-the-full-text-content-is-visible-no-truncation-ellipsis-xpath-html-1-body-1-div-3-div-2-div-1-div-2-div-1-div-1-div-1-div-1-div-1-div-2-div-2-button-2",
+      "featureTitle": "Ensure the selected Element 2 button’s text wraps onto multiple lines when long, and that the full text content is visible (no truncation/ellipsis) (XPath: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[2]/button[2]).",
+      "files": [
+        "frontend/src/components/TraveloguePanel.tsx"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@1.1.2",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-third-itinerary-theme-option-named-plain-alongside-the-existing-doodle-and-retro-themes-selectable-via-the-existing-theme-controls-represented-by-the-selected-element-1-and-element-2-buttons-xpaths-above-when-plain-is-selected-apply-a-minimal-neutral-plain-itinerary-visual-style-to-only-the-selected-itinerary-content-elements-element-3-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-div-1-div-1-div-1-element-4-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-div-1-div-1-div-2-element-5-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-div-1-div-3-p-2",
+      "featureTitle": "Add a third itinerary theme option named \"Plain\" alongside the existing Doodle and Retro themes, selectable via the existing theme controls represented by the selected Element 1 and Element 2 buttons (XPaths above). When Plain is selected, apply a minimal, neutral, \"plain itinerary\" visual style to ONLY the selected itinerary content elements (Element 3 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1], Element 4 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[2], Element 5 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[3]/p[2]).",
+      "files": [
+        "frontend/src/components/TraveloguePanel.tsx",
+        "frontend/src/index.css"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@1.1.2",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
       ],
       "confidence": "high"
     }

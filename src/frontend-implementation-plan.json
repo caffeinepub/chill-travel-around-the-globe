@@ -1,23 +1,56 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Selected itinerary Day labels: add date + weekday lines (Doodle + Retro)",
+  "title": "Add third Plain itinerary theme and adjust selected theme controls (remove star icon, wrap long text)",
   "requirements": [
     {
-      "id": "REQ-4",
-      "summary": "Update only the selected Day label spans in ScrapbookItineraryView (Doodle) and RetroPostcardItineraryView (Retro) to render three lines: “Day N”, “DD Mon”, and “Ddd” based on the actual date for that rendered day section.",
+      "id": "REQ-1",
+      "summary": "Remove the star logo/icon from the selected Element 1 theme button while preserving its click behavior and layout.",
       "acceptanceCriteria": [
-        "In the Doodle itinerary view, the selected Day label element displays three lines in this order: “Day N”, then the correct date (e.g., “11 Feb”), then the correct weekday (e.g., “Wed”), all in English.",
-        "In the Retro itinerary view, the selected Day label element displays the same three-line format with the correct date and weekday for that day.",
-        "The date and weekday correspond to the actual day represented by that Day section (derived from the schedule/day grouping being rendered).",
-        "No other elements besides the two specified XPaths are changed.",
-        "No changes are made that alter the overall layout outside the selected span elements (e.g., no new parent containers, no reflow of other components)."
+        "The Element 1 button renders with no star logo/icon visible (no empty spacing where the icon used to be).",
+        "The Element 1 button remains clickable and performs the same action as before."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Within ScrapbookItineraryView and RetroPostcardItineraryView, change ONLY the two existing Day label <span> elements matching the provided XPaths to render 3 lines (using line breaks inside the same span): (1) existing “Day N”, (2) date formatted in English as “DD Mon” (e.g., “11 Feb”), and (3) weekday formatted in English as “Ddd” (e.g., “Wed”). Derive the date from the actual day section being rendered (e.g., from that day’s grouping key or the first ScheduleItem date in the group) and format with Intl.DateTimeFormat/toLocaleDateString in English. Do not add new parent containers or modify any surrounding layout/structure; do not modify any other elements."
+          "description": "Locate the JSX that renders the theme control button corresponding to Element 1 (Doodle/illustrated theme control in the itinerary theme-control area). Remove the star icon element (and any icon wrapper/gap styling) from that button only, ensuring the onClick handler and selection logic remain unchanged and the button content has no leftover spacing reserved for the icon."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Make the selected Element 2 theme button label wrap to multiple lines with no truncation/ellipsis.",
+      "acceptanceCriteria": [
+        "When the Element 2 button label is long, it wraps to the next line(s) within the button instead of truncating.",
+        "All characters of the Element 2 button label are visible (no ellipsis) at typical dialog widths."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/TraveloguePanel.tsx",
+          "operation": "modify",
+          "description": "Update the JSX/className for the theme control button corresponding to Element 2 so its label can wrap (e.g., remove any truncate/ellipsis/whitespace-nowrap/line-clamp styling and ensure multiline wrapping with normal whitespace and word breaking). Limit the change to the Element 2 button rendering so other buttons/text in the app are unaffected."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Add a third itinerary theme option labeled \"Plain\" and apply a minimal, neutral style to only the specified itinerary content elements when selected.",
+      "acceptanceCriteria": [
+        "A third theme option labeled \"Plain\" is available alongside the existing Doodle and Retro options within the same theme-control area as Element 1 and Element 2.",
+        "Selecting \"Plain\" updates the styling of the selected itinerary elements (Elements 3–5) to a minimal, neutral appearance (e.g., no doodle/illustration effects; subdued borders/shadows; neutral background and text).",
+        "Switching between Doodle, Retro, and Plain updates styling accordingly, without changing any non-selected elements outside the specified XPaths."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/TraveloguePanel.tsx",
+          "operation": "modify",
+          "description": "Extend the existing itinerary theme controls (the same control group that currently exposes Doodle and Retro via Element 1 and Element 2) to include a third selectable option labeled \"Plain\" (English text). Implement/extend local UI state for the selected theme (UI-only unless an existing mechanism already persists it), wire the new \"Plain\" button into the same selection mechanism, and apply theme-specific classNames ONLY to the three specified itinerary content elements (Elements 3–5) so that only those elements change appearance when switching themes."
+        },
+        {
+          "path": "frontend/src/index.css",
+          "operation": "modify",
+          "description": "Add narrowly-scoped CSS rules/classes to support the \"Plain\" itinerary styling (minimal/neutral) and any theme-specific overrides needed for Elements 3–5. Ensure the selectors/classes are applied only by the three itinerary elements updated in frontend/src/components/TraveloguePanel.tsx, so no global restyling occurs outside the specified XPaths."
         }
       ]
     }

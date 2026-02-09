@@ -1,40 +1,71 @@
 {
   "kind": "build_request",
-  "title": "Enhance selected itinerary Day labels to show date and weekday (Doodle + Retro, selected elements only)",
+  "title": "Add third Plain itinerary theme and adjust selected theme controls (remove star icon, wrap long text)",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-4",
-      "text": "Update ONLY the two selected Day label elements in the Doodle (ScrapbookItineraryView) and Retro (RetroPostcardItineraryView) itinerary views so that each Day label renders three lines: (1) the existing “Day N” label, (2) the corresponding calendar date formatted like “11 Feb” (day number + short month in English), and (3) the corresponding weekday formatted like “Wed” (English short weekday). Use the day’s actual date from the itinerary/day grouping that the UI is rendering. Do not change the surrounding UI layout/structure beyond modifying the content within these two existing elements.\n\nSelected elements to edit:\n- Doodle Day label span XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/span[1]\n- Retro Day label span XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[2]/div[1]/div[1]/div[1]/span[1]",
+      "id": "REQ-1",
+      "text": "Remove the star logo/icon from the selected Element 1 button (XPath: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[2]/button[1]) without removing or changing the button’s click behavior.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1",
-          "msg-2"
+          "msg-1"
         ],
         "quotes": [
-          "Enhance the Day presentation of the selected itinerary such that the corresponding Date and the corresponding weekdays are added below. Just change the selected elements inside Doodle and Retro. Do not change the UI layout.",
-          "For example:\nDay 1\n11 Feb\nWed"
+          "1) remove the star logo of element 1"
         ]
       },
       "acceptanceCriteria": [
-        "In the Doodle itinerary view, the selected Day label element displays three lines in this order: “Day N”, then the correct date (e.g., “11 Feb”), then the correct weekday (e.g., “Wed”), all in English.",
-        "In the Retro itinerary view, the selected Day label element displays the same three-line format with the correct date and weekday for that day.",
-        "The date and weekday correspond to the actual day represented by that Day section (derived from the schedule/day grouping being rendered).",
-        "No other elements besides the two specified XPaths are changed.",
-        "No changes are made that alter the overall layout outside the selected span elements (e.g., no new parent containers, no reflow of other components)."
+        "The Element 1 button renders with no star logo/icon visible (no empty spacing where the icon used to be).",
+        "The Element 1 button remains clickable and performs the same action as before."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Ensure the selected Element 2 button’s text wraps onto multiple lines when long, and that the full text content is visible (no truncation/ellipsis) (XPath: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[2]/button[2]).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "2)  wrap the text of element 2 if it is long and show all of content"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When the Element 2 button label is long, it wraps to the next line(s) within the button instead of truncating.",
+        "All characters of the Element 2 button label are visible (no ellipsis) at typical dialog widths."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Add a third itinerary theme option named \"Plain\" alongside the existing Doodle and Retro themes, selectable via the existing theme controls represented by the selected Element 1 and Element 2 buttons (XPaths above). When Plain is selected, apply a minimal, neutral, \"plain itinerary\" visual style to ONLY the selected itinerary content elements (Element 3 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1], Element 4 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[2], Element 5 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[3]/p[2]).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Other than Doodle and Retro Theme, add another plain theme for user who prefer plain itinerary theme",
+          "yes, add as a third option alongside with Doodle and RETRO"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A third theme option labeled \"Plain\" is available alongside the existing Doodle and Retro options within the same theme-control area as Element 1 and Element 2.",
+        "Selecting \"Plain\" updates the styling of the selected itinerary elements (Elements 3–5) to a minimal, neutral appearance (e.g., no doodle/illustration effects; subdued borders/shadows; neutral background and text).",
+        "Switching between Doodle, Retro, and Plain updates styling accordingly, without changing any non-selected elements outside the specified XPaths."
       ]
     }
   ],
   "constraints": [
-    "Apply changes ONLY to the two selected elements identified by the provided XPaths (Doodle and Retro Day label spans).",
-    "Do not change the UI layout; only adjust the content rendering within the selected elements.",
-    "All user-facing text must be in English."
+    "Apply changes ONLY to the 5 selected elements identified by the provided XPath expressions (and code that directly renders/styles those exact elements).",
+    "Do not edit files in frontend immutablePaths (e.g., frontend/src/main.tsx, frontend/src/hooks/useActor.ts, frontend/src/hooks/useInternetIdentity.ts, and frontend/src/components/ui/*).",
+    "Use English for any user-facing text (e.g., the new theme label must be \"Plain\")."
   ],
   "nonGoals": [
-    "Do not change any other itinerary styling, spacing, card layout, schedule row layout, arrows, or header formatting beyond the two selected Day label elements.",
-    "Do not add new itinerary features (filters, sorting, editing, export, etc.).",
-    "Do not change backend data structures or add backend endpoints."
+    "Do not introduce new authentication methods or third-party identity providers.",
+    "Do not add new backend data models or persistence for themes unless already required by existing UI (theme selection can remain UI-only if that is how Doodle/Retro currently work).",
+    "Do not restyle the entire app globally; only adjust styling related to the selected elements and their theme representations."
   ],
   "imageRequirements": {
     "required": [],

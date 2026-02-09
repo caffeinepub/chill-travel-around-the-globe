@@ -1,24 +1,48 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T02:36:33.666Z",
+  "generatedAt": "2026-02-09T03:12:04.949Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 1,
-    "implemented": 1,
+    "total": 3,
+    "implemented": 3,
     "items": [
       {
-        "id": "REQ-4",
-        "summary": "Update ONLY the two selected Day label elements in the Doodle (ScrapbookItineraryView) and Retro (RetroPostcardItineraryView) itinerary views so that each Day label renders three lines: (1) the existing “Day N” label, (2) the corresponding calendar date formatted like “11 Feb” (day number + short month in English), and (3) the corresponding weekday formatted like “Wed” (English short weekday). Use the day’s actual date from the itinerary/day grouping that the UI is rendering. Do not change the surrounding UI layout/structure beyond modifying the content within these two existing elements.\n\nSelected elements to edit:\n- Doodle Day label span XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/span[1]\n- Retro Day label span XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[2]/div[1]/div[1]/div[1]/span[1]",
+        "id": "REQ-1",
+        "summary": "Remove the star logo/icon from the selected Element 1 button (XPath: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[2]/button[1]) without removing or changing the button’s click behavior.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/TraveloguePanel.tsx"
         ],
         "matchedFiles": [
           "frontend/src/components/TraveloguePanel.tsx"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Ensure the selected Element 2 button’s text wraps onto multiple lines when long, and that the full text content is visible (no truncation/ellipsis) (XPath: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[2]/button[2]).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/TraveloguePanel.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/TraveloguePanel.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Add a third itinerary theme option named \"Plain\" alongside the existing Doodle and Retro themes, selectable via the existing theme controls represented by the selected Element 1 and Element 2 buttons (XPaths above). When Plain is selected, apply a minimal, neutral, \"plain itinerary\" visual style to ONLY the selected itinerary content elements (Element 3 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1], Element 4 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[2], Element 5 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[3]/p[2]).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/TraveloguePanel.tsx",
+          "frontend/src/index.css"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/TraveloguePanel.tsx",
+          "frontend/src/index.css"
         ]
       }
     ]
@@ -30,6 +54,7 @@
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/components/TraveloguePanel.tsx",
+    "frontend/src/index.css",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

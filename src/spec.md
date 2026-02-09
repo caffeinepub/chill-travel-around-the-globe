@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Enhance the selected “Day N” labels in Doodle and Retro itinerary views to also show the corresponding date and weekday beneath the day number.
+**Goal:** Add a third “Plain” itinerary theme option and refine the existing theme selection buttons by removing an unwanted icon and ensuring long labels fully wrap.
 
 **Planned changes:**
-- Update the selected Day label span in **ScrapbookItineraryView (Doodle)** to render three lines: “Day N”, the day’s date formatted as “DD Mon” (e.g., “11 Feb”), and the weekday formatted as “Wed”, using the actual date for that rendered day group.
-- Update the selected Day label span in **RetroPostcardItineraryView (Retro)** to render the same three-line content (Day, date, weekday) for the corresponding rendered day group.
-- Keep all surrounding structure/layout unchanged, modifying only the text content within the two specified span elements.
+- Remove the star icon/logo from the selected Element 1 theme button while keeping the button’s click behavior unchanged and without leaving empty icon spacing.
+- Update the selected Element 2 theme button label styling so long text wraps to multiple lines and displays fully (no truncation/ellipsis).
+- Add a third theme option labeled “Plain” alongside the existing Doodle and Retro options in the same theme-control area, and when selected apply a minimal, neutral “plain itinerary” style only to the specified itinerary content elements (Elements 3–5).
 
-**User-visible outcome:** In both Doodle and Retro itinerary views, the Day label for each day section shows “Day N” plus the correct date and weekday on separate lines (e.g., “Day 1 / 11 Feb / Wed”), without any other UI changes.
+**User-visible outcome:** Users can choose among Doodle, Retro, and the new Plain theme; the first theme button no longer shows a star icon, and the second theme button cleanly wraps long text so the full label is visible.

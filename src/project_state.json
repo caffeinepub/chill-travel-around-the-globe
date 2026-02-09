@@ -1,16 +1,34 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Enhance selected itinerary Day presentation in Doodle and Retro to show corresponding Date and Weekday beneath the Day label without changing overall UI layout.",
+  "summary": "Itinerary UI project with theme options; currently supports Doodle and Retro, and plans to add a third Plain theme option. UI tweaks requested for selected elements include removing a star logo and enabling full text wrapping.",
   "architectural_notes": [],
-  "known_issues": [],
+  "known_issues": [
+    "Deployment/build process intermittently fails with generic 'Deployment error' / 'Oops, something went wrong with our AI' messages."
+  ],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-update-only-the-two-selected-day-label-elements-in-the-doodle-scrapbookitineraryview-and-retro-retropostcarditineraryview-itinerary-views-so-that-each-day-label-renders-three-lines-1-the-existing-day-n-label-2-the-corresponding-calendar-date-formatted-like-11-feb-day-number-short-month-in-english-and-3-the-corresponding-weekday-formatted-like-wed-english-short-weekday-use-the-day-s-actual-date-from-the-itinerary-day-grouping-that-the-ui-is-rendering-do-not-change-the-surrounding-ui-layout-structure-beyond-modifying-the-content-within-these-two-existing-elements-selected-elements-to-edit-doodle-day-label-span-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-1-div-1-div-1-span-1-retro-day-label-span-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-2-div-1-div-1-div-1-span-1",
-      "title": "Update ONLY the two selected Day label elements in the Doodle (ScrapbookItineraryView) and Retro (RetroPostcardItineraryView) itinerary views so that each Day label renders three lines: (1) the existing “Day N” label, (2) the corresponding calendar date formatted like “11 Feb” (day number + short month in English), and (3) the corresponding weekday formatted like “Wed” (English short weekday). Use the day’s actual date from the itinerary/day grouping that the UI is rendering. Do not change the surrounding UI layout/structure beyond modifying the content within these two existing elements.\n\nSelected elements to edit:\n- Doodle Day label span XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/span[1]\n- Retro Day label span XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[2]/div[1]/div[1]/div[1]/span[1]",
+      "id": "feature-remove-the-star-logo-icon-from-the-selected-element-1-button-xpath-html-1-body-1-div-3-div-2-div-1-div-2-div-1-div-1-div-1-div-1-div-1-div-2-div-2-button-1-without-removing-or-changing-the-button-s-click-behavior",
+      "title": "Remove the star logo/icon from the selected Element 1 button (XPath: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[2]/button[1]) without removing or changing the button’s click behavior.",
       "reqIds": [
-        "REQ-4"
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-selected-element-2-button-s-text-wraps-onto-multiple-lines-when-long-and-that-the-full-text-content-is-visible-no-truncation-ellipsis-xpath-html-1-body-1-div-3-div-2-div-1-div-2-div-1-div-1-div-1-div-1-div-1-div-2-div-2-button-2",
+      "title": "Ensure the selected Element 2 button’s text wraps onto multiple lines when long, and that the full text content is visible (no truncation/ellipsis) (XPath: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[2]/button[2]).",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-third-itinerary-theme-option-named-plain-alongside-the-existing-doodle-and-retro-themes-selectable-via-the-existing-theme-controls-represented-by-the-selected-element-1-and-element-2-buttons-xpaths-above-when-plain-is-selected-apply-a-minimal-neutral-plain-itinerary-visual-style-to-only-the-selected-itinerary-content-elements-element-3-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-div-1-div-1-div-1-element-4-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-div-1-div-1-div-2-element-5-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-div-1-div-3-p-2",
+      "title": "Add a third itinerary theme option named \"Plain\" alongside the existing Doodle and Retro themes, selectable via the existing theme controls represented by the selected Element 1 and Element 2 buttons (XPaths above). When Plain is selected, apply a minimal, neutral, \"plain itinerary\" visual style to ONLY the selected itinerary content elements (Element 3 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1], Element 4 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[2], Element 5 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[3]/p[2]).",
+      "reqIds": [
+        "REQ-3"
       ],
       "version": 1
     }
@@ -18,12 +36,24 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Update selected Day elements in Doodle and Retro to display corresponding Date and Weekday on new lines beneath the Day label (no UI layout changes).",
+      "summary": "Remove the star logo from Element 1",
       "reqIds": [],
-      "status": "in_progress"
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Enable text wrapping for Element 2 so long text displays fully",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Add a third 'Plain' itinerary theme option alongside Doodle and Retro, selectable via the existing theme controls",
+      "reqIds": [],
+      "status": "pending"
     }
   ],
-  "projectName": "Enhance selected itinerary Day labels to show date and weekday (Doodle + Retro, selected elements only)",
+  "projectName": "Add third Plain itinerary theme and adjust selected theme controls (remove star icon, wrap long text)",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }
