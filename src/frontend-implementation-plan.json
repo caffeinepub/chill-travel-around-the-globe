@@ -1,109 +1,53 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Revise itinerary header period formatting/placement and improve wrapped schedule rows with between-row connectors",
+  "title": "Selected itinerary UI tweaks: date range format, wrapping schedule row, shorter connector arrow",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Format the itinerary header journey period text as \"DD MMM YY (ddd) ~ DD MMM YY (ddd)\" derived from journey startDate/endDate.",
+      "summary": "Change the selected itinerary header journey period text to the specified \"DD Mon YY (Ddd) ~ DD Mon YY (Ddd)\" format.",
       "acceptanceCriteria": [
-        "The journey period text renders in the exact pattern \"DD MMM YY (ddd) ~ DD MMM YY (ddd)\" (e.g., \"18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)\").",
-        "The displayed range uses the journey startDate and endDate currently used for the itinerary header (no hard-coded dates).",
-        "User-facing text remains in English."
+        "The journey period displays as \"DD Mon YY (Ddd) ~ DD Mon YY (Ddd)\" (example: \"18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)\").",
+        "Weekday is abbreviated (e.g., Mon/Tue/Wed), month is abbreviated (Jan/Feb/Mar...), and year is 2 digits.",
+        "The separator between start and end is a tilde with spaces: \" ~ \" (not a hyphen)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/itineraryDateFormat.ts",
-          "operation": "create",
-          "description": "Add a small, English-only date formatting utility that converts the existing journey startDate/endDate values into the exact \"DD MMM YY (ddd)\" parts and joins them into the requested range string."
-        },
-        {
           "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Update the selected itinerary header period element (Element 1 per provided XPath) to render the new formatted journey period string using the existing journey.startDate/journey.endDate (via the new utility), without hard-coded dates."
+          "description": "Within ScrapbookItineraryView, update only the selected header paragraph that renders the journey period so it formats start/end dates as \"DD Mon YY (Ddd) ~ DD Mon YY (Ddd)\" (English locale), using a dedicated formatter (e.g., Intl.DateTimeFormat + formatToParts) to guarantee ordering and abbreviations without affecting other date renderings elsewhere."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Place the journey period text immediately next to the selected heading text on the same line while preserving existing doodle/retro styling and avoiding unrelated header changes.",
+      "summary": "Make the selected scrapbook schedule row container wrap overflow items onto new lines instead of requiring horizontal scrolling.",
       "acceptanceCriteria": [
-        "Element 1 and Element 2 appear on the same horizontal line (no line break between them at typical desktop widths).",
-        "On narrow screens, the layout remains readable (wrapping is allowed, but Element 1 should be visually associated with Element 2).",
-        "No unrelated header content or styling outside the selected header elements is changed."
+        "When reducing viewport width, schedule items that do not fit on the first line wrap onto subsequent line(s) within the same day row container.",
+        "All schedule items remain visible without horizontal scrolling.",
+        "The day label remains on the left and schedule content remains to the right (same row structure as before, only wrapping behavior changes)."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Adjust only the selected itinerary header layout so Element 1 (journey period) and Element 2 (heading) render side-by-side on the same line (desktop) with responsive wrap behavior on narrow screens, preserving the existing doodle/retro look and leaving other header elements unchanged."
+          "description": "In ScrapbookItineraryView only, adjust the selected schedule items row container (the flex row currently using horizontal overflow) to wrap (e.g., enable flex-wrap) and remove horizontal scrolling behavior, while keeping the left day badge and right schedule container layout unchanged."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Make the selected schedule row container wrap/flow schedule items to new lines instead of truncating or horizontally scrolling when space is insufficient.",
+      "summary": "Shorten the selected dotted curved connector arrow SVG by ~50% while preserving its styling and arrowhead.",
       "acceptanceCriteria": [
-        "When the schedule item sequence exceeds the available width, items wrap to the next line instead of being clipped or requiring horizontal scrolling.",
-        "The order of schedule items remains chronological when wrapped.",
-        "The wrapped layout remains visually consistent with the existing doodle/retro theme."
+        "The visual width of the connector arrow is ~50% shorter than before.",
+        "The arrow remains a dotted curved line with an arrowhead and matches the existing styling (stroke, dash pattern, linecap).",
+        "No other non-selected icons/arrows outside the selected SVG element are modified."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Update the selected schedule row containers (Elements 3 and 4 per provided XPaths) to use wrapping layout (e.g., flex-wrap) and remove horizontal scrolling/truncation behavior, ensuring items remain in chronological order when wrapped and keeping existing doodle/retro styling intact."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Render dotted arrow connectors only between adjacent rows (including wrap-induced rows), connecting the end of the previous row to the start of the next row, and not between items on the same row.",
-      "acceptanceCriteria": [
-        "No dotted arrow connectors are shown between items that remain on the same row.",
-        "A dotted arrow connector is rendered between each pair of adjacent rows of schedule items (including wrap-induced rows).",
-        "The connector visually indicates direction from the end of the previous row toward the start of the next row."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useRowWrapBreaks.ts",
-          "operation": "create",
-          "description": "Create a small hook that measures rendered schedule item positions (e.g., via refs + resize observer/window resize) to determine where visual row breaks occur after wrapping, returning a stable list of indices where between-row connectors should render."
-        },
-        {
-          "path": "frontend/src/components/TraveloguePanel.tsx",
-          "operation": "modify",
-          "description": "In the selected itinerary schedule UI, remove the existing between-item dotted connectors and instead use the row-break info (from the new hook) to render a dotted arrow connector SVG only between rows (Element 5 per provided XPath), indicating direction from the last item of the previous row toward the first item of the next row."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Reduce the between-row dotted arrow connector length by ~50% while keeping the same dotted stroke style and readability.",
-      "acceptanceCriteria": [
-        "Compared to the current arrow connector SVG sizing, the between-row arrow is approximately half the prior length/width while maintaining the same stroke style (dotted) and readability."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/TraveloguePanel.tsx",
-          "operation": "modify",
-          "description": "Update the selected between-row connector SVG (Element 5 per provided XPath) sizing so its visual length/width is approximately 50% of the current connector while preserving strokeDasharray/dotted styling and overall legibility."
-        }
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "summary": "Ensure long schedule activity/location text wraps fully (no ellipses/line-clamping) with word-breaking to prevent overflow in the selected schedule text elements.",
-      "acceptanceCriteria": [
-        "Activity/location text in the selected elements is not truncated with ellipses and is fully readable via wrapping.",
-        "Very long words/strings do not overflow their container (word-break/overflow-wrap is applied as needed).",
-        "Wrapping works consistently across common viewport sizes (desktop and mobile)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/TraveloguePanel.tsx",
-          "operation": "modify",
-          "description": "For the selected schedule text elements (Elements 6 and 7 per provided XPaths), remove any line-clamp/ellipsis truncation and apply wrapping + word-breaking (e.g., whitespace-normal + break-words/overflow-wrap) so long activity/location strings remain fully readable across viewports."
+          "description": "In ScrapbookItineraryView only, update the selected connector arrow <svg> (between schedule items) to render approximately 50% shorter (e.g., reduce rendered width and/or adjust its path coordinates proportionally) while keeping the same dotted curved path, stroke settings, and arrowhead; do not modify the similar arrow SVG used in other (non-selected) itinerary variants."
         }
       ]
     }

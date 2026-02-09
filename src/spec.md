@@ -1,14 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Improve the itinerary header’s journey period formatting/placement and make the schedule layout wrap cleanly with between-row dotted connectors.
+**Goal:** Refine the itinerary header date range formatting and improve schedule row readability on narrow screens while shortening a specific connector arrow.
 
 **Planned changes:**
-- Update the journey period text in the itinerary header to render as `DD MMM YY (ddd) ~ DD MMM YY (ddd)` using the existing `startDate`/`endDate` values (no hard-coded dates).
-- Adjust the header layout so the journey period displays immediately next to the selected heading element on the same line (wrapping allowed on narrow screens while keeping the association).
-- Update the selected schedule row containers so schedule items wrap onto additional lines/rows when they exceed available width (no truncation and no horizontal scrolling), preserving chronological order and the doodle/retro styling.
-- Change the selected connector/arrow area so dotted arrow connectors render only between rows (including wrap-induced rows), connecting the end of the previous row to the start of the next row.
-- Reduce the between-row dotted arrow connector length by approximately 50% while maintaining the same dotted stroke style.
-- Remove truncation/line-clamping from the selected schedule text elements and allow multi-line wrapping with appropriate word-breaking to prevent overflow.
+- Update the selected journey period header text to the format `DD Mon YY (Ddd) ~ DD Mon YY (Ddd)` (e.g., `18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)`), using ` ~ ` as the separator.
+- Adjust the selected schedule row container so schedule items wrap onto additional line(s) when the viewport is too narrow, avoiding horizontal scrolling while keeping the day label on the left and content on the right.
+- Reduce the length of the selected dotted curved connector arrow SVG by ~50% while preserving its existing style and arrowhead.
 
-**User-visible outcome:** The header shows a properly formatted date range next to the heading, and the schedule remains fully readable on different screen sizes with wrapped rows and shorter dotted connectors between rows only.
+**User-visible outcome:** The itinerary date range displays in the requested compact format, schedule items wrap cleanly on smaller windows without horizontal scrolling, and the specified connector arrow appears noticeably shorter.

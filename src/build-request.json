@@ -1,127 +1,87 @@
 {
   "kind": "build_request",
-  "title": "Revise itinerary header date format/placement and improve schedule row wrapping + between-row dotted connectors",
+  "title": "Adjust itinerary date range format, wrap schedule row overflow, and shorten connector arrows (selected elements only)",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Update the journey period display (selected Element 1: XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[1]/div[1]/h1[1]) to use the format \"18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)\" (day + short month + 2-digit year + short weekday for both start and end), derived from the existing journey startDate/endDate values.",
+      "text": "Update the journey period text rendered in the selected header paragraph element (XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[1]/p[1]) to use the format \"18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)\" (day number, short month name, 2-digit year, weekday abbreviation in parentheses; separator must be \" ~ \").",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-user-1"
         ],
         "quotes": [
-          "1) to element 1 only"
+          "Revise the journey period format to like \"18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)\"",
+          "Element 1 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[1]/p[1]"
         ]
       },
       "acceptanceCriteria": [
-        "The journey period text renders in the exact pattern \"DD MMM YY (ddd) ~ DD MMM YY (ddd)\" (e.g., \"18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)\").",
-        "The displayed range uses the journey startDate and endDate currently used for the itinerary header (no hard-coded dates).",
-        "User-facing text remains in English."
+        "The journey period displays as \"DD Mon YY (Ddd) ~ DD Mon YY (Ddd)\" (example: \"18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)\").",
+        "Weekday is abbreviated (e.g., Mon/Tue/Wed), month is abbreviated (Jan/Feb/Mar...), and year is 2 digits.",
+        "The separator between start and end is a tilde with spaces: \" ~ \" (not a hyphen)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Change the header layout so the journey period (Element 1) is placed immediately next to the selected heading element (Element 2: XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[1]/p[1]) on the same line, while preserving the existing doodle/retro styling and not modifying non-selected header elements beyond what is necessary to achieve this placement.",
+      "text": "In the selected schedule row container element (XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]), change the schedule items layout so that when the window is too narrow to show the full row content, the overflow content wraps onto the next line(s) (no horizontal scrolling required to see all schedule items).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-user-1"
         ],
         "quotes": [
-          "and put it right next to the heading element 2"
+          "if the current window cannot show the full schedule content of that row, move the content to the next row",
+          "Element 2 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]"
         ]
       },
       "acceptanceCriteria": [
-        "Element 1 and Element 2 appear on the same horizontal line (no line break between them at typical desktop widths).",
-        "On narrow screens, the layout remains readable (wrapping is allowed, but Element 1 should be visually associated with Element 2).",
-        "No unrelated header content or styling outside the selected header elements is changed."
+        "When reducing viewport width, schedule items that do not fit on the first line wrap onto subsequent line(s) within the same day row container.",
+        "All schedule items remain visible without horizontal scrolling.",
+        "The day label remains on the left and schedule content remains to the right (same row structure as before, only wrapping behavior changes)."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Update the schedule item row layout so that if the current window width cannot show the full schedule content for that row, the schedule items flow/wrap into a new row (no horizontal truncation and no horizontal scrolling for the selected schedule row container: Element 4 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[2]/div[1]/div[2]/div[1] and related row content container Element 3 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[1]/div[2]/div[1]).",
+      "text": "Reduce the connector arrow length by approximately 50% for the selected arrow SVG element (XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[2]/svg[1]) while preserving its existing dotted curved style and arrowhead.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-user-1"
         ],
         "quotes": [
-          "3) if the current window cannot show the full schedule content of that row, move the content to the next row"
+          "Reduce the arrow length by 1/2",
+          "Element 3 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[2]/svg[1]"
         ]
       },
       "acceptanceCriteria": [
-        "When the schedule item sequence exceeds the available width, items wrap to the next line instead of being clipped or requiring horizontal scrolling.",
-        "The order of schedule items remains chronological when wrapped.",
-        "The wrapped layout remains visually consistent with the existing doodle/retro theme."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Add a dotted arrow connector only between rows (not between items within the same row), to visually connect the last schedule item of the previous row to the first schedule item of the next row (either a wrapped continuation row of the same day, or the next day’s first row). Apply this only in the selected connector/arrow area (Element 5 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[2]/svg[1]).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "2) only applies between rows"
-        ]
-      },
-      "acceptanceCriteria": [
-        "No dotted arrow connectors are shown between items that remain on the same row.",
-        "A dotted arrow connector is rendered between each pair of adjacent rows of schedule items (including wrap-induced rows).",
-        "The connector visually indicates direction from the end of the previous row toward the start of the next row."
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Reduce the dotted arrow connector’s visual length by 50% for the between-row connector (Element 5).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "4) Reduce the arrow length by 1/2"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Compared to the current arrow connector SVG sizing, the between-row arrow is approximately half the prior length/width while maintaining the same stroke style (dotted) and readability."
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "text": "Ensure long schedule text wraps instead of truncating for the selected schedule text elements (Element 6 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[3]/p[1] and Element 7 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[3]/p[2]). Remove truncation/line-clamping behavior and allow multi-line wrapping with word-breaking where needed.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "what i want to do is to wrap the text if they are long"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Activity/location text in the selected elements is not truncated with ellipses and is fully readable via wrapping.",
-        "Very long words/strings do not overflow their container (word-break/overflow-wrap is applied as needed).",
-        "Wrapping works consistently across common viewport sizes (desktop and mobile)."
+        "The visual width of the connector arrow is ~50% shorter than before.",
+        "The arrow remains a dotted curved line with an arrowhead and matches the existing styling (stroke, dash pattern, linecap).",
+        "No other non-selected icons/arrows outside the selected SVG element are modified."
       ]
     }
   ],
   "constraints": [
-    "Apply the requested changes ONLY to the elements represented by the provided selected XPaths.",
-    "Maintain the existing doodle/retro visual styling; do not redesign the theme.",
-    "Frontend-only change; no backend schema or Motoko logic changes are required."
+    "Apply changes ONLY to the three selected elements identified by the provided XPaths; do not modify other UI outside those selected elements.",
+    "Use English for any user-facing text.",
+    "Do not edit any files under frontend/src/components/ui or other frontend immutablePaths listed in SYSTEM_CONTEXT."
   ],
   "nonGoals": [
-    "Do not add new itinerary features beyond header formatting/placement, between-row connectors, wrapping behavior, and text wrapping.",
-    "Do not introduce new authentication, storage, or third-party integrations.",
-    "Do not change non-selected parts of the Travelogue UI (e.g., admin panels, map/globe behavior)."
+    "Do not change backend data models or persistence.",
+    "Do not redesign the overall theme; only implement the specified layout/formatting changes."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

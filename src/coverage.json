@@ -1,31 +1,29 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-06T08:12:31.636Z",
+  "generatedAt": "2026-02-06T08:28:23.410Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 6,
-    "implemented": 6,
+    "total": 3,
+    "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Update the journey period display (selected Element 1: XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[1]/div[1]/h1[1]) to use the format \"18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)\" (day + short month + 2-digit year + short weekday for both start and end), derived from the existing journey startDate/endDate values.",
+        "summary": "Update the journey period text rendered in the selected header paragraph element (XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[1]/p[1]) to use the format \"18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)\" (day number, short month name, 2-digit year, weekday abbreviation in parentheses; separator must be \" ~ \").",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/itineraryDateFormat.ts",
           "frontend/src/components/TraveloguePanel.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/utils/itineraryDateFormat.ts",
           "frontend/src/components/TraveloguePanel.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Change the header layout so the journey period (Element 1) is placed immediately next to the selected heading element (Element 2: XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[1]/p[1]) on the same line, while preserving the existing doodle/retro styling and not modifying non-selected header elements beyond what is necessary to achieve this placement.",
+        "summary": "In the selected schedule row container element (XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]), change the schedule items layout so that when the window is too narrow to show the full row content, the overflow content wraps onto the next line(s) (no horizontal scrolling required to see all schedule items).",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/TraveloguePanel.tsx"
@@ -36,42 +34,7 @@
       },
       {
         "id": "REQ-3",
-        "summary": "Update the schedule item row layout so that if the current window width cannot show the full schedule content for that row, the schedule items flow/wrap into a new row (no horizontal truncation and no horizontal scrolling for the selected schedule row container: Element 4 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[2]/div[1]/div[2]/div[1] and related row content container Element 3 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[1]/div[2]/div[1]).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Add a dotted arrow connector only between rows (not between items within the same row), to visually connect the last schedule item of the previous row to the first schedule item of the next row (either a wrapped continuation row of the same day, or the next day’s first row). Apply this only in the selected connector/arrow area (Element 5 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[2]/svg[1]).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useRowWrapBreaks.ts",
-          "frontend/src/components/TraveloguePanel.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useRowWrapBreaks.ts",
-          "frontend/src/components/TraveloguePanel.tsx"
-        ]
-      },
-      {
-        "id": "REQ-5",
-        "summary": "Reduce the dotted arrow connector’s visual length by 50% for the between-row connector (Element 5).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx"
-        ]
-      },
-      {
-        "id": "REQ-6",
-        "summary": "Ensure long schedule text wraps instead of truncating for the selected schedule text elements (Element 6 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[3]/p[1] and Element 7 XPath /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[3]/p[2]). Remove truncation/line-clamping behavior and allow multi-line wrapping with word-breaking where needed.",
+        "summary": "Reduce the connector arrow length by approximately 50% for the selected arrow SVG element (XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[2]/svg[1]) while preserving its existing dotted curved style and arrowhead.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/TraveloguePanel.tsx"
@@ -88,8 +51,6 @@
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/components/TraveloguePanel.tsx",
-    "frontend/src/hooks/useRowWrapBreaks.ts",
-    "frontend/src/utils/itineraryDateFormat.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
