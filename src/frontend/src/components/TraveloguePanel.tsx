@@ -94,6 +94,25 @@ export default function TraveloguePanel({ onFlightAnimation }: TraveloguePanelPr
     return `${formatParts(startDate)} ~ ${formatParts(endDate)}`;
   };
 
+  // Helper function to format date as "DD Mon" (e.g., "11 Feb")
+  const formatDayDate = (timestamp: bigint) => {
+    const date = new Date(Number(timestamp) / 1000000);
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      day: '2-digit',
+      month: 'short'
+    });
+    const parts = formatter.formatToParts(date);
+    const day = parts.find(p => p.type === 'day')?.value || '';
+    const month = parts.find(p => p.type === 'month')?.value || '';
+    return `${day} ${month}`;
+  };
+
+  // Helper function to format weekday as "Ddd" (e.g., "Wed")
+  const formatWeekday = (timestamp: bigint) => {
+    const date = new Date(Number(timestamp) / 1000000);
+    return date.toLocaleDateString('en-US', { weekday: 'short' });
+  };
+
   // Geocode a city to get coordinates
   const geocodeCity = async (cityName: string): Promise<{ lat: number; lon: number } | null> => {
     try {
@@ -423,6 +442,8 @@ export default function TraveloguePanel({ onFlightAnimation }: TraveloguePanelPr
               formatDateRange={formatDateRange}
               formatScheduleDate={formatScheduleDate}
               formatTime={formatTime}
+              formatDayDate={formatDayDate}
+              formatWeekday={formatWeekday}
             />
           )}
         </DialogContent>
@@ -438,75 +459,68 @@ export default function TraveloguePanel({ onFlightAnimation }: TraveloguePanelPr
               formatDateRange={formatDateRange}
               formatScheduleDate={formatScheduleDate}
               formatTime={formatTime}
+              formatDayDate={formatDayDate}
+              formatWeekday={formatWeekday}
             />
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Edit Date/Time Popup */}
+      {/* Edit Schedule Item Popup */}
       <Dialog open={editPopupOpen} onOpenChange={setEditPopupOpen}>
-        <DialogContent className="sm:max-w-md z-[3300]">
+        <DialogContent className="max-w-md z-[3300]">
           <DialogHeader>
             <DialogTitle>Edit Schedule Item</DialogTitle>
           </DialogHeader>
-          
           <form onSubmit={handleEditSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="editDate">Date</Label>
+              <Label htmlFor="edit-date">Date</Label>
               <Input
-                id="editDate"
+                id="edit-date"
                 type="date"
                 value={editForm.date}
-                onChange={(e) => setEditForm(prev => ({ ...prev, date: e.target.value }))}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="editTime">Time</Label>
-              <Input
-                id="editTime"
-                type="time"
-                value={editForm.time}
-                onChange={(e) => setEditForm(prev => ({ ...prev, time: e.target.value }))}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="editLocation">Location *</Label>
-              <Input
-                id="editLocation"
-                type="text"
-                placeholder="e.g., Central Park, Tokyo Station, Hotel Lobby"
-                value={editForm.location}
-                onChange={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
+                onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
                 required
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                Location is required and will be displayed on the map with an airplane icon
-              </p>
             </div>
-            
             <div>
-              <Label htmlFor="editActivity">Activity</Label>
+              <Label htmlFor="edit-time">Time</Label>
               <Input
-                id="editActivity"
-                type="text"
-                placeholder="e.g., Visit museum, Lunch at restaurant, Flight departure"
-                value={editForm.activity}
-                onChange={(e) => setEditForm(prev => ({ ...prev, activity: e.target.value }))}
+                id="edit-time"
+                type="time"
+                value={editForm.time}
+                onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
+                required
               />
             </div>
-            
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setEditPopupOpen(false)}
-              >
+            <div>
+              <Label htmlFor="edit-location">Location</Label>
+              <Input
+                id="edit-location"
+                type="text"
+                value={editForm.location}
+                onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                placeholder="Enter location"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-activity">Activity</Label>
+              <Input
+                id="edit-activity"
+                type="text"
+                value={editForm.activity}
+                onChange={(e) => setEditForm({ ...editForm, activity: e.target.value })}
+                placeholder="Enter activity"
+                required
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setEditPopupOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit">
-                Save Changes
+              <Button type="submit" disabled={updateScheduleItem.isPending || deleteScheduleItem.isPending || addScheduleItem.isPending}>
+                {(updateScheduleItem.isPending || deleteScheduleItem.isPending || addScheduleItem.isPending) ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           </form>
@@ -516,22 +530,8 @@ export default function TraveloguePanel({ onFlightAnimation }: TraveloguePanelPr
   );
 }
 
-// Separate component for each journey to handle its own schedule data
-function JourneyCard({ 
-  journey, 
-  isExpanded, 
-  onToggle, 
-  onViewFullItinerary,
-  onViewRetroItinerary,
-  onFlyingClick,
-  isFlying,
-  formatDate, 
-  formatScheduleDate, 
-  formatTime,
-  onSixDotClick,
-  badgeColor = 'primary',
-  defaultSearchPlace
-}: {
+// Journey Card Component
+interface JourneyCardProps {
   journey: Journey;
   isExpanded: boolean;
   onToggle: () => void;
@@ -543,189 +543,115 @@ function JourneyCard({
   formatScheduleDate: (timestamp: bigint) => string;
   formatTime: (timeString: string) => string;
   onSixDotClick: (item: ScheduleItem, journey: Journey) => void;
-  badgeColor?: 'primary' | 'green' | 'orange' | 'blue';
+  badgeColor: 'orange' | 'green' | 'blue';
   defaultSearchPlace: string;
-}) {
-  // Get schedule items with day labels for this specific journey
+}
+
+function JourneyCard({ 
+  journey, 
+  isExpanded, 
+  onToggle, 
+  onViewFullItinerary, 
+  onViewRetroItinerary,
+  onFlyingClick,
+  isFlying,
+  formatDate, 
+  formatScheduleDate, 
+  formatTime, 
+  onSixDotClick,
+  badgeColor,
+  defaultSearchPlace
+}: JourneyCardProps) {
   const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.city);
 
-  // Sort items within each day by time in chronological order
-  const sortedScheduleWithDays = scheduleWithDays.map(([dayLabel, items]) => {
-    const sortedItems = [...items].sort((a, b) => {
-      // Convert time strings to comparable format (24-hour)
-      const timeA = a.time;
-      const timeB = b.time;
-      return timeA.localeCompare(timeB);
-    });
-    return [dayLabel, sortedItems] as [string, ScheduleItem[]];
-  });
-
-  // Calculate total items across all days
-  const totalItems = sortedScheduleWithDays.reduce((sum, [_, items]) => sum + items.length, 0);
-
-  const getBadgeColorClass = () => {
-    switch (badgeColor) {
-      case 'green':
-        return 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400';
-      case 'orange':
-        return 'bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400';
-      case 'blue':
-        return 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400';
-      default:
-        return 'bg-primary/10 text-primary';
-    }
-  };
+  const badgeColorClass = {
+    orange: 'bg-orange-500 hover:bg-orange-600',
+    green: 'bg-green-500 hover:bg-green-600',
+    blue: 'bg-blue-500 hover:bg-blue-600'
+  }[badgeColor];
 
   return (
-    <Card className="overflow-hidden">
-      <Collapsible open={isExpanded} onOpenChange={onToggle}>
-        <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${getBadgeColorClass()}`}>
-                  <MapPin className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <CardTitle className="text-lg">{journey.city}</CardTitle>
-                    {totalItems > 0 && (
-                      <Badge variant="outline">
-                        {totalItems} items
-                      </Badge>
-                    )}
-                    <Button
-                      size="sm"
-                      variant={isFlying ? "destructive" : "outline"}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onFlyingClick();
-                      }}
-                      className="flex items-center gap-1"
-                      title={isFlying ? `Stop flying to ${journey.city}` : `Fly from ${defaultSearchPlace} to ${journey.city} on 3D globe`}
-                    >
-                      {isFlying ? (
-                        <>
-                          <X className="h-3 w-3" />
-                          Stop Flying
-                        </>
-                      ) : (
-                        <>
-                          <Plane className="h-3 w-3" />
-                          Flying
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {formatDate(journey.startDate)} - {formatDate(journey.endDate)}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onViewFullItinerary();
-                      }}
-                      className="flex items-center gap-1"
-                    >
-                      <Eye className="h-3 w-3" />
-                      Doodle
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onViewRetroItinerary();
-                      }}
-                      className="flex items-center gap-1"
-                    >
-                      <Eye className="h-3 w-3" />
-                      Retro
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {isExpanded ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
-              </div>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggle}
+              className="p-0 h-auto hover:bg-transparent"
+            >
+              {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+            </Button>
+            <div>
+              <CardTitle className="text-lg">{journey.city}</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {formatDate(journey.startDate)} - {formatDate(journey.endDate)}
+              </p>
             </div>
-          </CardHeader>
-        </CollapsibleTrigger>
-        
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge className={`${badgeColorClass} text-white`}>
+              {scheduleWithDays.length} {scheduleWithDays.length === 1 ? 'Day' : 'Days'}
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onFlyingClick}
+              className={isFlying ? 'bg-blue-100 border-blue-300' : ''}
+              title={isFlying ? `Stop flying from ${defaultSearchPlace}` : `Fly from ${defaultSearchPlace}`}
+            >
+              <Plane className={`h-4 w-4 ${isFlying ? 'text-blue-600' : ''}`} />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onViewFullItinerary}
+              title="View Scrapbook Itinerary"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onViewRetroItinerary}
+              title="View Retro Postcard Itinerary"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <Collapsible open={isExpanded}>
         <CollapsibleContent>
-          <CardContent className="pt-0">
-            {totalItems === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No itinerary items for this journey</p>
-                <p className="text-sm">Add schedule items in Trip Management to see them here!</p>
-              </div>
+          <CardContent>
+            {scheduleWithDays.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No schedule items yet</p>
             ) : (
-              <div className="space-y-6">
-                {sortedScheduleWithDays.map(([dayLabel, items]) => (
-                  <div key={dayLabel} className="space-y-3">
-                    <div className="flex items-center gap-2 pb-2 border-b">
-                      <Badge variant="secondary" className="font-medium">
-                        {dayLabel}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        {items.length > 0 && formatScheduleDate(items[0].date)}
-                      </span>
-                    </div>
-                    
-                    {/* Timeline for this day */}
-                    <div className="relative pl-6">
-                      {/* Vertical line */}
-                      <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-border"></div>
-                      
-                      <div className="space-y-4">
-                        {items.map((item, index) => (
-                          <div 
-                            key={`${Number(item.date)}-${item.time}-${index}`} 
-                            className="relative flex items-start gap-3 p-3 bg-muted/30 rounded-lg"
-                          >
-                            {/* Timeline dot */}
-                            <div className="absolute -left-6 top-4 w-3 h-3 bg-primary rounded-full border-2 border-background"></div>
-                            
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-fit">
-                                <span className="font-medium">
-                                  {formatTime(item.time)}
-                                </span>
-                              </div>
-                              
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm">{item.activity}</p>
-                                {item.location && (
-                                  <div className="flex items-center gap-1 mt-1">
-                                    <MapPin className="h-3 w-3 text-muted-foreground" />
-                                    <span className="text-xs text-muted-foreground">
-                                      {item.location}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            
-                            {/* Six-dot handle moved to the right */}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => onSixDotClick(item, journey)}
-                              className="text-muted-foreground hover:text-foreground flex-shrink-0"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
+              <div className="space-y-4">
+                {scheduleWithDays.map(([dayLabel, items]) => (
+                  <div key={dayLabel} className="space-y-2">
+                    <h4 className="font-semibold text-sm">{dayLabel}</h4>
+                    <div className="space-y-2 pl-4">
+                      {items.map((item, idx) => (
+                        <div key={idx} className="flex items-start gap-2 text-sm">
+                          <span className="text-muted-foreground min-w-[80px]">
+                            {formatTime(item.time)}
+                          </span>
+                          <div className="flex-1">
+                            <p className="font-medium">{item.location}</p>
+                            <p className="text-muted-foreground">{item.activity}</p>
                           </div>
-                        ))}
-                      </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onSixDotClick(item, journey)}
+                            className="p-1 h-auto"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}
@@ -738,437 +664,176 @@ function JourneyCard({
   );
 }
 
-// Cute illustrated travel diary/scrapbook poster view - Compact layout
-function ScrapbookItineraryView({
-  journey,
-  formatDate,
-  formatDateRange,
-  formatScheduleDate,
-  formatTime
-}: {
+// Scrapbook Itinerary View Component
+interface ScrapbookItineraryViewProps {
   journey: Journey;
   formatDate: (timestamp: bigint) => string;
   formatDateRange: (startTimestamp: bigint, endTimestamp: bigint) => string;
   formatScheduleDate: (timestamp: bigint) => string;
   formatTime: (timeString: string) => string;
-}) {
+  formatDayDate: (timestamp: bigint) => string;
+  formatWeekday: (timestamp: bigint) => string;
+}
+
+function ScrapbookItineraryView({ 
+  journey, 
+  formatDate, 
+  formatDateRange, 
+  formatScheduleDate, 
+  formatTime,
+  formatDayDate,
+  formatWeekday
+}: ScrapbookItineraryViewProps) {
   const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.city);
 
-  // Sort items within each day by time in chronological order
-  const sortedScheduleWithDays = scheduleWithDays.map(([dayLabel, items]) => {
-    const sortedItems = [...items].sort((a, b) => {
-      const timeA = a.time;
-      const timeB = b.time;
-      return timeA.localeCompare(timeB);
-    });
-    return [dayLabel, sortedItems] as [string, ScheduleItem[]];
-  });
-
-  const getDaysDifference = (startDate: bigint, endDate: bigint) => {
-    const start = new Date(Number(startDate) / 1000000);
-    const end = new Date(Number(endDate) / 1000000);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  const totalDays = getDaysDifference(journey.startDate, journey.endDate);
-  const totalNights = totalDays > 0 ? totalDays - 1 : 0;
-
-  // Activity type to icon mapping
-  const getActivityIcon = (activity: string): string => {
-    const lowerActivity = activity.toLowerCase();
-    if (lowerActivity.includes('flight') || lowerActivity.includes('plane') || lowerActivity.includes('airport')) return '✈️';
-    if (lowerActivity.includes('train') || lowerActivity.includes('railway')) return '🚂';
-    if (lowerActivity.includes('food') || lowerActivity.includes('lunch') || lowerActivity.includes('dinner') || lowerActivity.includes('breakfast') || lowerActivity.includes('restaurant') || lowerActivity.includes('eat')) return '🍽️';
-    if (lowerActivity.includes('hotel') || lowerActivity.includes('check-in') || lowerActivity.includes('accommodation')) return '🏨';
-    if (lowerActivity.includes('car') || lowerActivity.includes('drive') || lowerActivity.includes('taxi')) return '🚗';
-    if (lowerActivity.includes('museum') || lowerActivity.includes('gallery') || lowerActivity.includes('landmark') || lowerActivity.includes('visit') || lowerActivity.includes('tour')) return '🏛️';
-    if (lowerActivity.includes('shopping') || lowerActivity.includes('shop') || lowerActivity.includes('market')) return '🛍️';
-    if (lowerActivity.includes('beach') || lowerActivity.includes('swim')) return '🏖️';
-    if (lowerActivity.includes('hike') || lowerActivity.includes('mountain') || lowerActivity.includes('trek')) return '⛰️';
-    if (lowerActivity.includes('coffee') || lowerActivity.includes('cafe')) return '☕';
-    return '📍';
-  };
-
   return (
-    <div className="h-[90vh] overflow-y-auto bg-[#fef9f3] relative" style={{
-      backgroundImage: `
-        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(139, 92, 46, 0.03) 2px, rgba(139, 92, 46, 0.03) 4px),
-        repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(139, 92, 46, 0.03) 2px, rgba(139, 92, 46, 0.03) 4px)
-      `
-    }}>
-      {/* Decorative border elements */}
-      <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-[#ffd4a3]/30 to-transparent pointer-events-none" />
-      <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#ffd4a3]/30 to-transparent pointer-events-none" />
-      
-      {/* Decorative corner flowers */}
-      <div className="absolute top-3 left-3 text-3xl opacity-60 pointer-events-none">🌸</div>
-      <div className="absolute top-3 right-3 text-3xl opacity-60 pointer-events-none">🌺</div>
-      <div className="absolute bottom-3 left-3 text-3xl opacity-60 pointer-events-none">🌼</div>
-      <div className="absolute bottom-3 right-3 text-3xl opacity-60 pointer-events-none">🌻</div>
+    <div className="h-[90vh] overflow-y-auto p-8 bg-[#fef9f3]">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-bold text-[#8b4513] mb-2" style={{ fontFamily: 'cursive' }}>
+          {journey.city} Adventure
+        </h1>
+        <p className="text-lg text-[#a0522d]">
+          {formatDateRange(journey.startDate, journey.endDate)}
+        </p>
+      </div>
 
-      <div className="max-w-5xl mx-auto p-8 relative">
-        {/* Compact header with city and duration on one line */}
-        <div className="text-center mb-8 relative">
-          <div className="inline-block relative">
-            <h1 className="text-4xl font-bold mb-2 relative z-10" style={{
-              fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive",
-              color: '#d97706',
-              textShadow: '2px 2px 0px rgba(251, 191, 36, 0.3), -1px -1px 0px rgba(251, 191, 36, 0.2)'
-            }}>
-              {journey.city} <span className="text-2xl text-amber-700">{totalDays}D{totalNights}N</span>
-            </h1>
-            {/* Decorative underline */}
-            <div className="absolute -bottom-1 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-amber-300 to-transparent opacity-50 rounded-full" />
-          </div>
-          <p className="text-base mt-2 text-amber-700">
-            {formatDateRange(journey.startDate, journey.endDate)}
-          </p>
+      {/* Schedule by Days */}
+      <div className="space-y-8">
+        {scheduleWithDays.map(([dayLabel, items], dayIndex) => {
+          // Get the date from the first item in this day
+          const firstItemDate = items.length > 0 ? items[0].date : journey.startDate;
           
-          {/* Decorative travel stamps */}
-          <div className="absolute -top-3 -right-6 text-4xl opacity-40 rotate-12">✈️</div>
-          <div className="absolute -top-2 -left-6 text-3xl opacity-40 -rotate-12">🗺️</div>
-        </div>
-
-        {/* Day storylines */}
-        {sortedScheduleWithDays.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-5xl mb-3">📔</div>
-            <p className="text-xl text-amber-800" style={{
-              fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive"
-            }}>
-              No activities scheduled yet
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {sortedScheduleWithDays.map(([dayLabel, items], dayIndex) => (
-              <div key={dayLabel} className="relative">
-                {/* Horizontal layout: Day label on left, schedule items on right */}
-                <div className="flex items-start gap-3">
-                  {/* Compact day badge - 50% smaller */}
-                  <div className="flex-shrink-0 relative">
-                    <div className="bg-gradient-to-br from-amber-200 to-orange-200 rounded-full px-3 py-1.5 shadow-md border-2 border-white" style={{
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.6)'
-                    }}>
-                      <span className="text-sm font-bold text-amber-900" style={{
-                        fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive"
-                      }}>
-                        {dayLabel}
-                      </span>
-                    </div>
-                    {/* Decorative pin */}
-                    <div className="absolute -top-1 -right-1 text-lg">📌</div>
-                  </div>
-
-                  {/* Schedule items in wrapping row - 50% smaller */}
-                  <div className="flex-1 relative bg-white/60 backdrop-blur-sm rounded-2xl p-3 shadow-lg border-2 border-amber-100" style={{
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.8)'
-                  }}>
-                    {/* Activity sequence with wrapping */}
-                    <div className="flex flex-wrap items-center gap-3">
-                      {items.map((item, index) => (
-                        <React.Fragment key={`${Number(item.date)}-${item.time}-${index}`}>
-                          {/* Activity icon with details - 50% smaller */}
-                          <div className="flex-shrink-0 text-center">
-                            {/* Doodle-style icon */}
-                            <div className="relative mb-2">
-                              <div className="w-10 h-10 bg-gradient-to-br from-pink-100 to-purple-100 rounded-full flex items-center justify-center text-xl border-2 border-white shadow-md" style={{
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.6)'
-                              }}>
-                                {getActivityIcon(item.activity)}
-                              </div>
-                              {/* Small decorative star */}
-                              {index === 0 && <div className="absolute -top-0.5 -right-0.5 text-sm">⭐</div>}
-                            </div>
-                            
-                            {/* Time pill */}
-                            <div className="bg-gradient-to-r from-blue-100 to-cyan-100 rounded-full px-2 py-0.5 mb-1 border border-white shadow-sm">
-                              <span className="text-[10px] font-bold text-blue-800" style={{
-                                fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive"
-                              }}>
-                                {formatTime(item.time)}
-                              </span>
-                            </div>
-                            
-                            {/* Activity text */}
-                            <div className="max-w-[70px]">
-                              <p className="text-[10px] font-semibold text-amber-900 mb-0.5 line-clamp-2" style={{
-                                fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive"
-                              }}>
-                                {item.activity}
-                              </p>
-                              {item.location && (
-                                <p className="text-[9px] text-amber-700 line-clamp-1">
-                                  📍 {item.location}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Dotted curved arrow connector - 50% smaller */}
-                          {index < items.length - 1 && (
-                            <div className="flex-shrink-0 flex items-center">
-                              <svg width="15" height="20" viewBox="0 0 15 20" className="text-amber-400">
-                                <path
-                                  d="M 1.25 10 Q 7.5 2.5, 13.75 10"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeDasharray="2 2"
-                                  strokeLinecap="round"
-                                />
-                                <path
-                                  d="M 13.75 10 L 12 8.5 M 13.75 10 L 12 11.5"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                />
-                              </svg>
-                            </div>
-                          )}
-                        </React.Fragment>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Decorative wave or leaf on alternating sides */}
-                {dayIndex % 2 === 0 ? (
-                  <div className="absolute -right-4 top-1/2 -translate-y-1/2 text-3xl opacity-40">🍃</div>
-                ) : (
-                  <div className="absolute -left-4 top-1/2 -translate-y-1/2 text-3xl opacity-40">🌊</div>
-                )}
+          return (
+            <div key={dayIndex} className="relative">
+              {/* Day Header with Scrapbook Style */}
+              <div className="flex items-start gap-4 mb-4">
+                <span className="inline-block bg-[#ffd700] text-[#8b4513] px-4 py-2 rounded-lg shadow-md transform -rotate-2 font-bold text-center leading-tight">
+                  {dayLabel}
+                  <br />
+                  {formatDayDate(firstItemDate)}
+                  <br />
+                  {formatWeekday(firstItemDate)}
+                </span>
+                <div className="flex-1 border-b-2 border-dashed border-[#d2691e] mt-4"></div>
               </div>
-            ))}
-          </div>
-        )}
+
+              {/* Schedule Items */}
+              <div className="space-y-3 pl-8">
+                {items.map((item, itemIndex) => (
+                  <div key={itemIndex} className="relative">
+                    <div className="flex flex-wrap items-start gap-3 bg-white/60 p-3 rounded-lg shadow-sm border-2 border-[#daa520]">
+                      <span className="text-sm font-semibold text-[#8b4513] min-w-[80px]">
+                        {formatTime(item.time)}
+                      </span>
+                      <div className="flex-1 min-w-[200px]">
+                        <p className="font-bold text-[#8b4513]">{item.location}</p>
+                        <p className="text-sm text-[#a0522d]">{item.activity}</p>
+                      </div>
+                    </div>
+                    {itemIndex < items.length - 1 && (
+                      <div className="ml-12 my-1">
+                        <svg width="20" height="20" viewBox="0 0 20 20" className="text-[#d2691e]">
+                          <path d="M10 0 L10 20 M5 15 L10 20 L15 15" stroke="currentColor" strokeWidth="2" fill="none" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-// Retro vintage postcard themed itinerary view - Compact layout
-function RetroPostcardItineraryView({
-  journey,
-  formatDate,
-  formatDateRange,
-  formatScheduleDate,
-  formatTime
-}: {
+// Retro Postcard Itinerary View Component
+interface RetroPostcardItineraryViewProps {
   journey: Journey;
   formatDate: (timestamp: bigint) => string;
   formatDateRange: (startTimestamp: bigint, endTimestamp: bigint) => string;
   formatScheduleDate: (timestamp: bigint) => string;
   formatTime: (timeString: string) => string;
-}) {
+  formatDayDate: (timestamp: bigint) => string;
+  formatWeekday: (timestamp: bigint) => string;
+}
+
+function RetroPostcardItineraryView({ 
+  journey, 
+  formatDate, 
+  formatDateRange, 
+  formatScheduleDate, 
+  formatTime,
+  formatDayDate,
+  formatWeekday
+}: RetroPostcardItineraryViewProps) {
   const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.city);
 
-  // Sort items within each day by time in chronological order
-  const sortedScheduleWithDays = scheduleWithDays.map(([dayLabel, items]) => {
-    const sortedItems = [...items].sort((a, b) => {
-      const timeA = a.time;
-      const timeB = b.time;
-      return timeA.localeCompare(timeB);
-    });
-    return [dayLabel, sortedItems] as [string, ScheduleItem[]];
-  });
-
-  const getDaysDifference = (startDate: bigint, endDate: bigint) => {
-    const start = new Date(Number(startDate) / 1000000);
-    const end = new Date(Number(endDate) / 1000000);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  const totalDays = getDaysDifference(journey.startDate, journey.endDate);
-  const totalNights = totalDays > 0 ? totalDays - 1 : 0;
-
-  // Activity type to icon mapping (same as scrapbook)
-  const getActivityIcon = (activity: string): string => {
-    const lowerActivity = activity.toLowerCase();
-    if (lowerActivity.includes('flight') || lowerActivity.includes('plane') || lowerActivity.includes('airport')) return '✈️';
-    if (lowerActivity.includes('train') || lowerActivity.includes('railway')) return '🚂';
-    if (lowerActivity.includes('food') || lowerActivity.includes('lunch') || lowerActivity.includes('dinner') || lowerActivity.includes('breakfast') || lowerActivity.includes('restaurant') || lowerActivity.includes('eat')) return '🍽️';
-    if (lowerActivity.includes('hotel') || lowerActivity.includes('check-in') || lowerActivity.includes('accommodation')) return '🏨';
-    if (lowerActivity.includes('car') || lowerActivity.includes('drive') || lowerActivity.includes('taxi')) return '🚗';
-    if (lowerActivity.includes('museum') || lowerActivity.includes('gallery') || lowerActivity.includes('landmark') || lowerActivity.includes('visit') || lowerActivity.includes('tour')) return '🏛️';
-    if (lowerActivity.includes('shopping') || lowerActivity.includes('shop') || lowerActivity.includes('market')) return '🛍️';
-    if (lowerActivity.includes('beach') || lowerActivity.includes('swim')) return '🏖️';
-    if (lowerActivity.includes('hike') || lowerActivity.includes('mountain') || lowerActivity.includes('trek')) return '⛰️';
-    if (lowerActivity.includes('coffee') || lowerActivity.includes('cafe')) return '☕';
-    return '📍';
-  };
-
   return (
-    <div className="h-[90vh] overflow-y-auto bg-[#f5e6d3] relative" style={{
-      backgroundImage: `
-        url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4a574' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")
-      `
-    }}>
-      {/* Stamp edge border effect */}
-      <div className="absolute inset-0 pointer-events-none" style={{
-        boxShadow: 'inset 0 0 0 10px #f5e6d3, inset 0 0 0 12px #c9a876, inset 0 0 0 14px #f5e6d3',
-        background: `
-          repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(139, 92, 46, 0.15) 8px, rgba(139, 92, 46, 0.15) 10px),
-          repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(139, 92, 46, 0.15) 8px, rgba(139, 92, 46, 0.15) 10px)
-        `,
-        backgroundPosition: '0 0, 0 0',
-        backgroundSize: '100% 14px, 14px 100%',
-        backgroundRepeat: 'repeat-x, repeat-y'
-      }} />
+    <div className="h-[90vh] overflow-y-auto p-8 bg-[#f5e6d3]">
+      {/* Header with Vintage Postcard Style */}
+      <div className="text-center mb-8 border-4 border-[#8b4513] p-6 bg-[#fff8dc] shadow-lg">
+        <h1 className="text-5xl font-bold text-[#8b4513] mb-2" style={{ fontFamily: 'serif', letterSpacing: '2px' }}>
+          GREETINGS FROM
+        </h1>
+        <h2 className="text-4xl font-bold text-[#cd853f] mb-3" style={{ fontFamily: 'serif' }}>
+          {journey.city}
+        </h2>
+        <p className="text-lg text-[#a0522d] italic">
+          {formatDateRange(journey.startDate, journey.endDate)}
+        </p>
+      </div>
 
-      {/* Film grain texture overlay */}
-      <div className="absolute inset-0 pointer-events-none opacity-20" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-        mixBlendMode: 'multiply'
-      }} />
-
-      <div className="max-w-5xl mx-auto p-8 relative">
-        {/* Compact vintage postcard title with city and duration on one line */}
-        <div className="text-center mb-8 relative">
-          <div className="inline-block relative">
-            <h1 className="text-4xl font-bold mb-2 relative z-10" style={{
-              fontFamily: "'Courier New', 'Courier', monospace",
-              color: '#8b5a2b',
-              textShadow: '1.5px 1.5px 0px rgba(139, 90, 43, 0.2)',
-              letterSpacing: '0.05em'
-            }}>
-              {journey.city} <span className="text-2xl" style={{ color: '#6b4423' }}>{totalDays}D{totalNights}N</span>
-            </h1>
-            {/* Vintage underline */}
-            <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#8b5a2b] opacity-30" />
-          </div>
-          <p className="text-base mt-2" style={{ color: '#8b5a2b' }}>
-            {formatDateRange(journey.startDate, journey.endDate)}
-          </p>
+      {/* Schedule by Days */}
+      <div className="space-y-8">
+        {scheduleWithDays.map(([dayLabel, items], dayIndex) => {
+          // Get the date from the first item in this day
+          const firstItemDate = items.length > 0 ? items[0].date : journey.startDate;
           
-          {/* Vintage postal stamps */}
-          <div className="absolute -top-3 -right-6 text-4xl opacity-50 rotate-12">📮</div>
-          <div className="absolute -top-2 -left-6 text-3xl opacity-50 -rotate-12">✉️</div>
-        </div>
-
-        {/* Day storylines with vintage postcard aesthetic */}
-        {sortedScheduleWithDays.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-5xl mb-3">📬</div>
-            <p className="text-xl" style={{
-              fontFamily: "'Courier New', 'Courier', monospace",
-              color: '#8b5a2b'
-            }}>
-              No activities scheduled yet
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {sortedScheduleWithDays.map(([dayLabel, items], dayIndex) => (
-              <div key={dayLabel} className="relative">
-                {/* Horizontal layout: Day label on left, schedule items on right */}
-                <div className="flex items-start gap-3">
-                  {/* Compact day stamp - 50% smaller */}
-                  <div className="flex-shrink-0 relative">
-                    <div className="bg-gradient-to-br from-[#d4a574] to-[#b8956a] rounded px-3 py-1.5 shadow-md border border-[#8b5a2b]" style={{
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3)'
-                    }}>
-                      <span className="text-sm font-bold" style={{
-                        fontFamily: "'Courier New', 'Courier', monospace",
-                        color: '#4a2f1a'
-                      }}>
-                        {dayLabel}
-                      </span>
-                    </div>
-                    {/* Vintage postmark */}
-                    <div className="absolute -top-1 -right-1 text-lg opacity-70">📌</div>
-                  </div>
-
-                  {/* Schedule items in wrapping row - 50% smaller */}
-                  <div className="flex-1 relative bg-[#ede0cc]/80 backdrop-blur-sm rounded p-3 shadow-lg border border-[#c9a876]" style={{
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.4)'
-                  }}>
-                    {/* Activity sequence with wrapping */}
-                    <div className="flex flex-wrap items-center gap-3">
-                      {items.map((item, index) => (
-                        <React.Fragment key={`${Number(item.date)}-${item.time}-${index}`}>
-                          {/* Activity icon with vintage styling - 50% smaller */}
-                          <div className="flex-shrink-0 text-center">
-                            {/* Vintage stamp-style icon */}
-                            <div className="relative mb-2">
-                              <div className="w-10 h-10 bg-gradient-to-br from-[#e8d4b8] to-[#d4a574] rounded flex items-center justify-center text-xl border border-[#8b5a2b] shadow-md" style={{
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3)'
-                              }}>
-                                {getActivityIcon(item.activity)}
-                              </div>
-                              {/* Vintage postmark circle */}
-                              {index === 0 && <div className="absolute -top-0.5 -right-0.5 text-sm opacity-70">⭐</div>}
-                            </div>
-                            
-                            {/* Time stamp */}
-                            <div className="bg-gradient-to-r from-[#c9a876] to-[#b8956a] rounded px-2 py-0.5 mb-1 border border-[#8b5a2b] shadow-sm">
-                              <span className="text-[10px] font-bold" style={{
-                                fontFamily: "'Courier New', 'Courier', monospace",
-                                color: '#4a2f1a'
-                              }}>
-                                {formatTime(item.time)}
-                              </span>
-                            </div>
-                            
-                            {/* Activity text with vintage typography */}
-                            <div className="max-w-[70px]">
-                              <p className="text-[10px] font-semibold mb-0.5 line-clamp-2" style={{
-                                fontFamily: "'Courier New', 'Courier', monospace",
-                                color: '#6b4423'
-                              }}>
-                                {item.activity}
-                              </p>
-                              {item.location && (
-                                <p className="text-[9px] line-clamp-1" style={{ color: '#8b5a2b' }}>
-                                  📍 {item.location}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Dotted curved arrow connector - 50% smaller */}
-                          {index < items.length - 1 && (
-                            <div className="flex-shrink-0 flex items-center">
-                              <svg width="15" height="20" viewBox="0 0 15 20" className="text-[#8b5a2b] opacity-50">
-                                <path
-                                  d="M 1.25 10 Q 7.5 2.5, 13.75 10"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeDasharray="2 2"
-                                  strokeLinecap="round"
-                                />
-                                <path
-                                  d="M 13.75 10 L 12 8.5 M 13.75 10 L 12 11.5"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                />
-                              </svg>
-                            </div>
-                          )}
-                        </React.Fragment>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Vintage decorative elements on alternating sides */}
-                {dayIndex % 2 === 0 ? (
-                  <div className="absolute -right-4 top-1/2 -translate-y-1/2 text-3xl opacity-30">📜</div>
-                ) : (
-                  <div className="absolute -left-4 top-1/2 -translate-y-1/2 text-3xl opacity-30">🗺️</div>
-                )}
+          return (
+            <div key={dayIndex} className="bg-[#fff8dc] border-4 border-[#8b4513] p-6 shadow-lg">
+              {/* Day Header with Vintage Stamp Style */}
+              <div className="flex items-center gap-4 mb-4">
+                <span className="inline-block bg-[#cd853f] text-white px-4 py-3 border-4 border-[#8b4513] font-bold text-center leading-tight" style={{ fontFamily: 'serif' }}>
+                  {dayLabel}
+                  <br />
+                  {formatDayDate(firstItemDate)}
+                  <br />
+                  {formatWeekday(firstItemDate)}
+                </span>
+                <div className="flex-1 border-t-4 border-dotted border-[#8b4513]"></div>
               </div>
-            ))}
-          </div>
-        )}
+
+              {/* Schedule Items */}
+              <div className="space-y-3">
+                {items.map((item, itemIndex) => (
+                  <div key={itemIndex}>
+                    <div className="flex flex-wrap items-start gap-3 bg-white/80 p-4 border-2 border-[#cd853f]">
+                      <span className="text-sm font-bold text-[#8b4513] min-w-[80px]" style={{ fontFamily: 'serif' }}>
+                        {formatTime(item.time)}
+                      </span>
+                      <div className="flex-1 min-w-[200px]">
+                        <p className="font-bold text-[#8b4513] text-lg" style={{ fontFamily: 'serif' }}>
+                          {item.location}
+                        </p>
+                        <p className="text-sm text-[#a0522d] italic">{item.activity}</p>
+                      </div>
+                    </div>
+                    {itemIndex < items.length - 1 && (
+                      <div className="ml-12 my-1">
+                        <svg width="20" height="20" viewBox="0 0 20 20" className="text-[#8b4513]">
+                          <path d="M10 0 L10 20 M5 15 L10 20 L15 15" stroke="currentColor" strokeWidth="2" fill="none" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

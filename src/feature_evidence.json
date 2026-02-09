@@ -2,8 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-journey-period-text-rendered-in-the-selected-header-paragraph-element-xpath-html-1-body-1-div-5-div-1-div-7-div-1-p-1-to-use-the-format-18-feb-26-wed-20-feb-26-fri-day-number-short-month-name-2-digit-year-weekday-abbreviation-in-parentheses-separator-must-be",
-      "featureTitle": "Update the journey period text rendered in the selected header paragraph element (XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[1]/p[1]) to use the format \"18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)\" (day number, short month name, 2-digit year, weekday abbreviation in parentheses; separator must be \" ~ \").",
+      "featureId": "feature-update-only-the-two-selected-day-label-elements-in-the-doodle-scrapbookitineraryview-and-retro-retropostcarditineraryview-itinerary-views-so-that-each-day-label-renders-three-lines-1-the-existing-day-n-label-2-the-corresponding-calendar-date-formatted-like-11-feb-day-number-short-month-in-english-and-3-the-corresponding-weekday-formatted-like-wed-english-short-weekday-use-the-day-s-actual-date-from-the-itinerary-day-grouping-that-the-ui-is-rendering-do-not-change-the-surrounding-ui-layout-structure-beyond-modifying-the-content-within-these-two-existing-elements-selected-elements-to-edit-doodle-day-label-span-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-1-div-1-div-1-span-1-retro-day-label-span-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-2-div-1-div-1-div-1-span-1",
+      "featureTitle": "Update ONLY the two selected Day label elements in the Doodle (ScrapbookItineraryView) and Retro (RetroPostcardItineraryView) itinerary views so that each Day label renders three lines: (1) the existing “Day N” label, (2) the corresponding calendar date formatted like “11 Feb” (day number + short month in English), and (3) the corresponding weekday formatted like “Wed” (English short weekday). Use the day’s actual date from the itinerary/day grouping that the UI is rendering. Do not change the surrounding UI layout/structure beyond modifying the content within these two existing elements.\n\nSelected elements to edit:\n- Doodle Day label span XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/span[1]\n- Retro Day label span XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[2]/div[1]/div[1]/div[1]/span[1]",
       "files": [
         "frontend/src/components/TraveloguePanel.tsx"
       ],
@@ -17,47 +17,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-in-the-selected-schedule-row-container-element-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-change-the-schedule-items-layout-so-that-when-the-window-is-too-narrow-to-show-the-full-row-content-the-overflow-content-wraps-onto-the-next-line-s-no-horizontal-scrolling-required-to-see-all-schedule-items",
-      "featureTitle": "In the selected schedule row container element (XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]), change the schedule items layout so that when the window is too narrow to show the full row content, the overflow content wraps onto the next line(s) (no horizontal scrolling required to see all schedule items).",
-      "files": [
-        "frontend/src/components/TraveloguePanel.tsx"
-      ],
-      "components": [
-        "authorization@1.0.1",
-        "blob-storage@1.1.2",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-reduce-the-connector-arrow-length-by-approximately-50-for-the-selected-arrow-svg-element-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-div-2-svg-1-while-preserving-its-existing-dotted-curved-style-and-arrowhead",
-      "featureTitle": "Reduce the connector arrow length by approximately 50% for the selected arrow SVG element (XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[2]/svg[1]) while preserving its existing dotted curved style and arrowhead.",
-      "files": [
-        "frontend/src/components/TraveloguePanel.tsx"
-      ],
-      "components": [
-        "authorization@1.0.1",
-        "blob-storage@1.1.2",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
+        "REQ-4"
       ],
       "confidence": "high"
     }

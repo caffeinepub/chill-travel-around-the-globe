@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Refine the itinerary header date range formatting and improve schedule row readability on narrow screens while shortening a specific connector arrow.
+**Goal:** Enhance the selected “Day N” labels in Doodle and Retro itinerary views to also show the corresponding date and weekday beneath the day number.
 
 **Planned changes:**
-- Update the selected journey period header text to the format `DD Mon YY (Ddd) ~ DD Mon YY (Ddd)` (e.g., `18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)`), using ` ~ ` as the separator.
-- Adjust the selected schedule row container so schedule items wrap onto additional line(s) when the viewport is too narrow, avoiding horizontal scrolling while keeping the day label on the left and content on the right.
-- Reduce the length of the selected dotted curved connector arrow SVG by ~50% while preserving its existing style and arrowhead.
+- Update the selected Day label span in **ScrapbookItineraryView (Doodle)** to render three lines: “Day N”, the day’s date formatted as “DD Mon” (e.g., “11 Feb”), and the weekday formatted as “Wed”, using the actual date for that rendered day group.
+- Update the selected Day label span in **RetroPostcardItineraryView (Retro)** to render the same three-line content (Day, date, weekday) for the corresponding rendered day group.
+- Keep all surrounding structure/layout unchanged, modifying only the text content within the two specified span elements.
 
-**User-visible outcome:** The itinerary date range displays in the requested compact format, schedule items wrap cleanly on smaller windows without horizontal scrolling, and the specified connector arrow appears noticeably shorter.
+**User-visible outcome:** In both Doodle and Retro itinerary views, the Day label for each day section shows “Day N” plus the correct date and weekday on separate lines (e.g., “Day 1 / 11 Feb / Wed”), without any other UI changes.

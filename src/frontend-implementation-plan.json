@@ -1,53 +1,23 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Selected itinerary UI tweaks: date range format, wrapping schedule row, shorter connector arrow",
+  "title": "Selected itinerary Day labels: add date + weekday lines (Doodle + Retro)",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Change the selected itinerary header journey period text to the specified \"DD Mon YY (Ddd) ~ DD Mon YY (Ddd)\" format.",
+      "id": "REQ-4",
+      "summary": "Update only the selected Day label spans in ScrapbookItineraryView (Doodle) and RetroPostcardItineraryView (Retro) to render three lines: “Day N”, “DD Mon”, and “Ddd” based on the actual date for that rendered day section.",
       "acceptanceCriteria": [
-        "The journey period displays as \"DD Mon YY (Ddd) ~ DD Mon YY (Ddd)\" (example: \"18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)\").",
-        "Weekday is abbreviated (e.g., Mon/Tue/Wed), month is abbreviated (Jan/Feb/Mar...), and year is 2 digits.",
-        "The separator between start and end is a tilde with spaces: \" ~ \" (not a hyphen)."
+        "In the Doodle itinerary view, the selected Day label element displays three lines in this order: “Day N”, then the correct date (e.g., “11 Feb”), then the correct weekday (e.g., “Wed”), all in English.",
+        "In the Retro itinerary view, the selected Day label element displays the same three-line format with the correct date and weekday for that day.",
+        "The date and weekday correspond to the actual day represented by that Day section (derived from the schedule/day grouping being rendered).",
+        "No other elements besides the two specified XPaths are changed.",
+        "No changes are made that alter the overall layout outside the selected span elements (e.g., no new parent containers, no reflow of other components)."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Within ScrapbookItineraryView, update only the selected header paragraph that renders the journey period so it formats start/end dates as \"DD Mon YY (Ddd) ~ DD Mon YY (Ddd)\" (English locale), using a dedicated formatter (e.g., Intl.DateTimeFormat + formatToParts) to guarantee ordering and abbreviations without affecting other date renderings elsewhere."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Make the selected scrapbook schedule row container wrap overflow items onto new lines instead of requiring horizontal scrolling.",
-      "acceptanceCriteria": [
-        "When reducing viewport width, schedule items that do not fit on the first line wrap onto subsequent line(s) within the same day row container.",
-        "All schedule items remain visible without horizontal scrolling.",
-        "The day label remains on the left and schedule content remains to the right (same row structure as before, only wrapping behavior changes)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/TraveloguePanel.tsx",
-          "operation": "modify",
-          "description": "In ScrapbookItineraryView only, adjust the selected schedule items row container (the flex row currently using horizontal overflow) to wrap (e.g., enable flex-wrap) and remove horizontal scrolling behavior, while keeping the left day badge and right schedule container layout unchanged."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Shorten the selected dotted curved connector arrow SVG by ~50% while preserving its styling and arrowhead.",
-      "acceptanceCriteria": [
-        "The visual width of the connector arrow is ~50% shorter than before.",
-        "The arrow remains a dotted curved line with an arrowhead and matches the existing styling (stroke, dash pattern, linecap).",
-        "No other non-selected icons/arrows outside the selected SVG element are modified."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/TraveloguePanel.tsx",
-          "operation": "modify",
-          "description": "In ScrapbookItineraryView only, update the selected connector arrow <svg> (between schedule items) to render approximately 50% shorter (e.g., reduce rendered width and/or adjust its path coordinates proportionally) while keeping the same dotted curved path, stroke settings, and arrowhead; do not modify the similar arrow SVG used in other (non-selected) itinerary variants."
+          "description": "Within ScrapbookItineraryView and RetroPostcardItineraryView, change ONLY the two existing Day label <span> elements matching the provided XPaths to render 3 lines (using line breaks inside the same span): (1) existing “Day N”, (2) date formatted in English as “DD Mon” (e.g., “11 Feb”), and (3) weekday formatted in English as “Ddd” (e.g., “Wed”). Derive the date from the actual day section being rendered (e.g., from that day’s grouping key or the first ScheduleItem date in the group) and format with Intl.DateTimeFormat/toLocaleDateString in English. Do not add new parent containers or modify any surrounding layout/structure; do not modify any other elements."
         }
       ]
     }

@@ -1,51 +1,37 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-06T08:28:23.407Z",
-  "summary": "Diff shows partial work toward itinerary date-range formatting in TraveloguePanel, but does not provide sufficient evidence that the required formatting is fully applied to the specified header paragraph nor that schedule wrapping and arrow shortening were implemented. Two non-requested files were modified.",
+  "generatedAt": "2026-02-09T02:36:33.663Z",
+  "summary": "The diff does not show updates to the specified Day label span elements in ScrapbookItineraryView (Doodle) or RetroPostcardItineraryView (Retro). Instead, it modifies TraveloguePanel.tsx with date formatting utilities and updates metadata/summary files, which does not demonstrably implement the required three-line Day/date/weekday rendering in the two targeted elements.",
   "missing_requirements": [
     {
-      "id": "REQ-1",
-      "requirement": "Update the journey period text in the selected header paragraph to format \"DD Mon YY (Ddd) ~ DD Mon YY (Ddd)\" with a \" ~ \" separator.",
-      "reason": "TraveloguePanel.tsx adds a new formatDateRange helper using Intl.DateTimeFormat with 2-digit day/year and short month/weekday, but the diff is truncated before showing the final string composition (including parentheses and the exact \" ~ \" separator) and does not show that this formatted value is actually rendered in the specific header paragraph element.",
+      "id": "REQ-4",
+      "requirement": "Update ONLY the two selected Day label elements in the Doodle (ScrapbookItineraryView) and Retro (RetroPostcardItineraryView) itinerary views so that each Day label renders three lines: (1) “Day N”, (2) date formatted like “11 Feb”, (3) weekday formatted like “Wed”, derived from the actual day being rendered; no other UI/layout changes.",
+      "reason": "No changes are shown to ScrapbookItineraryView or RetroPostcardItineraryView, nor to any Day label span rendering. The only code change shown is in TraveloguePanel.tsx, which contains generic date formatting functions but no evidence of updating the two specified Day label elements.",
       "evidence": [
-        "frontend/src/components/TraveloguePanel.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "In the selected schedule row container, enable wrapping of overflow schedule items onto subsequent lines with no horizontal scrolling, keeping day label left and content right.",
-      "reason": "No evidence in the provided diff summary shows CSS/layout changes (e.g., flex-wrap, grid adjustments) applied to the schedule row container or schedule items to support wrapping behavior.",
-      "evidence": [
-        "frontend/src/components/TraveloguePanel.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "requirement": "Reduce the selected connector arrow SVG length by ~50% while preserving dotted curved style and arrowhead.",
-      "reason": "No SVG/path/width/viewport changes for the connector arrow are shown in the diff summary; only date formatting logic is visible in the truncated excerpt.",
-      "evidence": [
-        "frontend/src/components/TraveloguePanel.tsx (truncated)"
+        "frontend/src/components/TraveloguePanel.tsx",
+        "frontend-file-summaries.txt"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Modified frontend-file-summaries.txt (project documentation/summary) unrelated to the three specified UI changes.",
-      "reason": "BuildRequest only asks for specific UI formatting/layout updates on three selected elements; updating file summaries is not requested.",
+      "description": "Added/modified date formatting and date-range formatting logic in TraveloguePanel.tsx (e.g., formatDateRange with weekday/year formatting) unrelated to updating the two specified itinerary Day label span elements.",
+      "reason": "BuildRequest constrains changes to ONLY the two selected Day label elements in Doodle and Retro itinerary views; modifying TraveloguePanel.tsx suggests broader/unrequested work and does not map to the specified XPaths/views.",
       "evidence": [
-        "frontend-file-summaries.txt"
+        "frontend/src/components/TraveloguePanel.tsx"
       ]
     },
     {
-      "description": "Modified project_state.json to add new_feature_requests entries (AR-1..AR-6).",
-      "reason": "BuildRequest does not request updating project tracking/state files; it requests UI changes only.",
+      "description": "Updated project tracking/metadata (project_state.json) and a broad frontend summary file (frontend-file-summaries.txt) without evidence of implementing the requested UI change in the targeted components.",
+      "reason": "These updates are not part of the requested frontend behavior change and do not demonstrate the required rendering changes in the specified elements.",
       "evidence": [
-        "project_state.json"
+        "project_state.json",
+        "frontend-file-summaries.txt"
       ]
     }
   ],
-  "confidence": 0.68,
+  "confidence": 0.72,
   "changed_files": [
     "frontend-file-summaries.txt",
     "frontend/src/components/TraveloguePanel.tsx",

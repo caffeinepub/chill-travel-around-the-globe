@@ -1,74 +1,40 @@
 {
   "kind": "build_request",
-  "title": "Adjust itinerary date range format, wrap schedule row overflow, and shorten connector arrows (selected elements only)",
+  "title": "Enhance selected itinerary Day labels to show date and weekday (Doodle + Retro, selected elements only)",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-1",
-      "text": "Update the journey period text rendered in the selected header paragraph element (XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[1]/p[1]) to use the format \"18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)\" (day number, short month name, 2-digit year, weekday abbreviation in parentheses; separator must be \" ~ \").",
+      "id": "REQ-4",
+      "text": "Update ONLY the two selected Day label elements in the Doodle (ScrapbookItineraryView) and Retro (RetroPostcardItineraryView) itinerary views so that each Day label renders three lines: (1) the existing “Day N” label, (2) the corresponding calendar date formatted like “11 Feb” (day number + short month in English), and (3) the corresponding weekday formatted like “Wed” (English short weekday). Use the day’s actual date from the itinerary/day grouping that the UI is rendering. Do not change the surrounding UI layout/structure beyond modifying the content within these two existing elements.\n\nSelected elements to edit:\n- Doodle Day label span XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/span[1]\n- Retro Day label span XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[2]/div[1]/div[1]/div[1]/span[1]",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-1",
+          "msg-2"
         ],
         "quotes": [
-          "Revise the journey period format to like \"18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)\"",
-          "Element 1 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[1]/p[1]"
+          "Enhance the Day presentation of the selected itinerary such that the corresponding Date and the corresponding weekdays are added below. Just change the selected elements inside Doodle and Retro. Do not change the UI layout.",
+          "For example:\nDay 1\n11 Feb\nWed"
         ]
       },
       "acceptanceCriteria": [
-        "The journey period displays as \"DD Mon YY (Ddd) ~ DD Mon YY (Ddd)\" (example: \"18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)\").",
-        "Weekday is abbreviated (e.g., Mon/Tue/Wed), month is abbreviated (Jan/Feb/Mar...), and year is 2 digits.",
-        "The separator between start and end is a tilde with spaces: \" ~ \" (not a hyphen)."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "In the selected schedule row container element (XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]), change the schedule items layout so that when the window is too narrow to show the full row content, the overflow content wraps onto the next line(s) (no horizontal scrolling required to see all schedule items).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-user-1"
-        ],
-        "quotes": [
-          "if the current window cannot show the full schedule content of that row, move the content to the next row",
-          "Element 2 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]"
-        ]
-      },
-      "acceptanceCriteria": [
-        "When reducing viewport width, schedule items that do not fit on the first line wrap onto subsequent line(s) within the same day row container.",
-        "All schedule items remain visible without horizontal scrolling.",
-        "The day label remains on the left and schedule content remains to the right (same row structure as before, only wrapping behavior changes)."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Reduce the connector arrow length by approximately 50% for the selected arrow SVG element (XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[2]/svg[1]) while preserving its existing dotted curved style and arrowhead.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-user-1"
-        ],
-        "quotes": [
-          "Reduce the arrow length by 1/2",
-          "Element 3 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[2]/svg[1]"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The visual width of the connector arrow is ~50% shorter than before.",
-        "The arrow remains a dotted curved line with an arrowhead and matches the existing styling (stroke, dash pattern, linecap).",
-        "No other non-selected icons/arrows outside the selected SVG element are modified."
+        "In the Doodle itinerary view, the selected Day label element displays three lines in this order: “Day N”, then the correct date (e.g., “11 Feb”), then the correct weekday (e.g., “Wed”), all in English.",
+        "In the Retro itinerary view, the selected Day label element displays the same three-line format with the correct date and weekday for that day.",
+        "The date and weekday correspond to the actual day represented by that Day section (derived from the schedule/day grouping being rendered).",
+        "No other elements besides the two specified XPaths are changed.",
+        "No changes are made that alter the overall layout outside the selected span elements (e.g., no new parent containers, no reflow of other components)."
       ]
     }
   ],
   "constraints": [
-    "Apply changes ONLY to the three selected elements identified by the provided XPaths; do not modify other UI outside those selected elements.",
-    "Use English for any user-facing text.",
-    "Do not edit any files under frontend/src/components/ui or other frontend immutablePaths listed in SYSTEM_CONTEXT."
+    "Apply changes ONLY to the two selected elements identified by the provided XPaths (Doodle and Retro Day label spans).",
+    "Do not change the UI layout; only adjust the content rendering within the selected elements.",
+    "All user-facing text must be in English."
   ],
   "nonGoals": [
-    "Do not change backend data models or persistence.",
-    "Do not redesign the overall theme; only implement the specified layout/formatting changes."
+    "Do not change any other itinerary styling, spacing, card layout, schedule row layout, arrows, or header formatting beyond the two selected Day label elements.",
+    "Do not add new itinerary features (filters, sorting, editing, export, etc.).",
+    "Do not change backend data structures or add backend endpoints."
   ],
   "imageRequirements": {
     "required": [],

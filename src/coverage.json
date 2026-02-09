@@ -1,40 +1,18 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-06T08:28:23.410Z",
+  "generatedAt": "2026-02-09T02:36:33.666Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 1,
+    "implemented": 1,
     "items": [
       {
-        "id": "REQ-1",
-        "summary": "Update the journey period text rendered in the selected header paragraph element (XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[1]/p[1]) to use the format \"18 Feb 26 (Wed) ~ 20 Feb 26 (Fri)\" (day number, short month name, 2-digit year, weekday abbreviation in parentheses; separator must be \" ~ \").",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx"
-        ]
-      },
-      {
-        "id": "REQ-2",
-        "summary": "In the selected schedule row container element (XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]), change the schedule items layout so that when the window is too narrow to show the full row content, the overflow content wraps onto the next line(s) (no horizontal scrolling required to see all schedule items).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Reduce the connector arrow length by approximately 50% for the selected arrow SVG element (XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[2]/svg[1]) while preserving its existing dotted curved style and arrowhead.",
+        "id": "REQ-4",
+        "summary": "Update ONLY the two selected Day label elements in the Doodle (ScrapbookItineraryView) and Retro (RetroPostcardItineraryView) itinerary views so that each Day label renders three lines: (1) the existing “Day N” label, (2) the corresponding calendar date formatted like “11 Feb” (day number + short month in English), and (3) the corresponding weekday formatted like “Wed” (English short weekday). Use the day’s actual date from the itinerary/day grouping that the UI is rendering. Do not change the surrounding UI layout/structure beyond modifying the content within these two existing elements.\n\nSelected elements to edit:\n- Doodle Day label span XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/span[1]\n- Retro Day label span XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[2]/div[1]/div[1]/div[1]/span[1]",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/TraveloguePanel.tsx"
@@ -47,6 +25,7 @@
   },
   "changedFiles": [
     "build-request.json",
+    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
