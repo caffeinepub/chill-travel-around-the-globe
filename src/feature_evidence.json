@@ -2,10 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-remove-the-star-logo-icon-from-the-selected-element-1-button-xpath-html-1-body-1-div-3-div-2-div-1-div-2-div-1-div-1-div-1-div-1-div-1-div-2-div-2-button-1-without-removing-or-changing-the-button-s-click-behavior",
-      "featureTitle": "Remove the star logo/icon from the selected Element 1 button (XPath: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[2]/button[1]) without removing or changing the button’s click behavior.",
+      "featureId": "feature-replace-the-current-travelogue-map-button-behavior-that-opens-a-popup-dialog-with-navigation-to-the-existing-2d-map-view-in-locationmapexplorer-centered-on-the-selected-journey-city",
+      "featureTitle": "Replace the current Travelogue “Map” button behavior that opens a popup/dialog with navigation to the existing 2D map view in LocationMapExplorer, centered on the selected journey city.",
       "files": [
-        "frontend/src/components/TraveloguePanel.tsx"
+        "frontend/src/components/TraveloguePanel.tsx",
+        "frontend/src/pages/LocationMapExplorer.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -22,10 +23,12 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-ensure-the-selected-element-2-button-s-text-wraps-onto-multiple-lines-when-long-and-that-the-full-text-content-is-visible-no-truncation-ellipsis-xpath-html-1-body-1-div-3-div-2-div-1-div-2-div-1-div-1-div-1-div-1-div-1-div-2-div-2-button-2",
-      "featureTitle": "Ensure the selected Element 2 button’s text wraps onto multiple lines when long, and that the full text content is visible (no truncation/ellipsis) (XPath: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[2]/button[2]).",
+      "featureId": "feature-when-the-travelogue-map-button-is-invoked-for-a-specific-schedule-item-ensure-the-2d-map-view-also-displays-and-focuses-the-corresponding-schedule-item-e-g-by-automatically-opening-spotlighting-that-schedule-item-s-marker-popup-on-the-2d-map",
+      "featureTitle": "When the Travelogue Map button is invoked for a specific schedule item, ensure the 2D map view also displays and focuses the corresponding schedule item (e.g., by automatically opening/spotlighting that schedule item’s marker/popup on the 2D map).",
       "files": [
-        "frontend/src/components/TraveloguePanel.tsx"
+        "frontend/src/components/MapComponent.tsx",
+        "frontend/src/components/TraveloguePanel.tsx",
+        "frontend/src/pages/LocationMapExplorer.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -42,11 +45,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-a-third-itinerary-theme-option-named-plain-alongside-the-existing-doodle-and-retro-themes-selectable-via-the-existing-theme-controls-represented-by-the-selected-element-1-and-element-2-buttons-xpaths-above-when-plain-is-selected-apply-a-minimal-neutral-plain-itinerary-visual-style-to-only-the-selected-itinerary-content-elements-element-3-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-div-1-div-1-div-1-element-4-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-div-1-div-1-div-2-element-5-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-div-1-div-3-p-2",
-      "featureTitle": "Add a third itinerary theme option named \"Plain\" alongside the existing Doodle and Retro themes, selectable via the existing theme controls represented by the selected Element 1 and Element 2 buttons (XPaths above). When Plain is selected, apply a minimal, neutral, \"plain itinerary\" visual style to ONLY the selected itinerary content elements (Element 3 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1], Element 4 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[2], Element 5 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[3]/p[2]).",
+      "featureId": "feature-implement-a-url-state-handoff-so-that-switching-to-the-2d-view-from-the-map-button-persists-enough-information-to-load-the-correct-journey-city-and-schedule-item-even-after-a-page-refresh-use-the-existing-url-param-utilities-in-frontend-src-utils-urlparams-ts",
+      "featureTitle": "Implement a URL/state handoff so that switching to the 2D view from the Map button persists enough information to load the correct journey city and schedule item even after a page refresh (use the existing URL param utilities in frontend/src/utils/urlParams.ts).",
       "files": [
-        "frontend/src/components/TraveloguePanel.tsx",
-        "frontend/src/index.css"
+        "frontend/src/pages/LocationMapExplorer.tsx",
+        "frontend/src/utils/urlParams.ts"
       ],
       "components": [
         "authorization@1.0.1",
@@ -59,6 +62,26 @@
       ],
       "testIds": [
         "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-apply-the-behavior-change-only-to-the-user-selected-ui-elements-the-map-button-control-in-the-header-and-the-popup-container-currently-used-for-the-map-action-ensuring-other-dialogs-e-g-itinerary-and-edit-schedule-dialogs-continue-to-function-unchanged",
+      "featureTitle": "Apply the behavior change only to the user-selected UI elements (the Map button control in the header and the popup container currently used for the Map action), ensuring other dialogs (e.g., itinerary and edit schedule dialogs) continue to function unchanged.",
+      "files": [
+        "frontend/src/components/TraveloguePanel.tsx"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@1.1.2",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
       ],
       "confidence": "high"
     }

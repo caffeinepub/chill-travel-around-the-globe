@@ -33,6 +33,93 @@ export function getUrlParameter(paramName: string): string | null {
 }
 
 /**
+ * Sets a URL parameter in the hash query string without reloading the page
+ * Preserves route information and other parameters in the hash
+ *
+ * @param paramName - The parameter name to set
+ * @param paramValue - The parameter value to set
+ *
+ * @example
+ * // URL: https://app.com/#/
+ * // After setUrlParameter('city', 'Paris')
+ * // URL: https://app.com/#/?city=Paris
+ */
+export function setUrlParameter(paramName: string, paramValue: string): void {
+    if (!window.history.replaceState) {
+        return;
+    }
+
+    const hash = window.location.hash;
+    const hashContent = hash.length > 1 ? hash.substring(1) : '';
+
+    // Split route path from query string
+    const queryStartIndex = hashContent.indexOf('?');
+    const routePath = queryStartIndex === -1 ? hashContent : hashContent.substring(0, queryStartIndex);
+    const queryString = queryStartIndex === -1 ? '' : hashContent.substring(queryStartIndex + 1);
+
+    // Parse and update the parameter
+    const params = new URLSearchParams(queryString);
+    params.set(paramName, paramValue);
+
+    // Reconstruct the URL
+    const newQueryString = params.toString();
+    const newHash = routePath + (newQueryString ? '?' + newQueryString : '');
+
+    // Update the URL without reloading
+    const newUrl = window.location.pathname + window.location.search + (newHash ? '#' + newHash : '');
+    window.history.replaceState(null, '', newUrl);
+}
+
+/**
+ * Sets multiple URL parameters in the hash query string without reloading the page
+ * Preserves route information and other parameters in the hash
+ *
+ * @param params - Object with parameter names and values to set
+ *
+ * @example
+ * // URL: https://app.com/#/
+ * // After setUrlParameters({ city: 'Paris', date: '2024-01-01' })
+ * // URL: https://app.com/#/?city=Paris&date=2024-01-01
+ */
+export function setUrlParameters(params: Record<string, string>): void {
+    if (!window.history.replaceState) {
+        return;
+    }
+
+    const hash = window.location.hash;
+    const hashContent = hash.length > 1 ? hash.substring(1) : '';
+
+    // Split route path from query string
+    const queryStartIndex = hashContent.indexOf('?');
+    const routePath = queryStartIndex === -1 ? hashContent : hashContent.substring(0, queryStartIndex);
+    const queryString = queryStartIndex === -1 ? '' : hashContent.substring(queryStartIndex + 1);
+
+    // Parse and update the parameters
+    const urlParams = new URLSearchParams(queryString);
+    Object.entries(params).forEach(([key, value]) => {
+        urlParams.set(key, value);
+    });
+
+    // Reconstruct the URL
+    const newQueryString = urlParams.toString();
+    const newHash = routePath + (newQueryString ? '?' + newQueryString : '');
+
+    // Update the URL without reloading
+    const newUrl = window.location.pathname + window.location.search + (newHash ? '#' + newHash : '');
+    window.history.replaceState(null, '', newUrl);
+}
+
+/**
+ * Clears a URL parameter from the hash query string without reloading the page
+ * Preserves route information and other parameters in the hash
+ *
+ * @param paramName - The parameter name to clear
+ */
+export function clearUrlParameter(paramName: string): void {
+    clearParamFromHash(paramName);
+}
+
+/**
  * Stores a parameter in sessionStorage for persistence across navigation
  * Useful for maintaining state like admin tokens throughout the session
  *

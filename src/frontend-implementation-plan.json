@@ -1,56 +1,90 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Add third Plain itinerary theme and adjust selected theme controls (remove star icon, wrap long text)",
+  "title": "Travelogue Map button navigates to 2D map and focuses journey/schedule via URL handoff",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Remove the star logo/icon from the selected Element 1 theme button while preserving its click behavior and layout.",
+      "summary": "Change Travelogue Map action from opening a dialog to navigating to the existing 2D map view and centering via the existing search flow on the journey city.",
       "acceptanceCriteria": [
-        "The Element 1 button renders with no star logo/icon visible (no empty spacing where the icon used to be).",
-        "The Element 1 button remains clickable and performs the same action as before."
+        "Clicking the Travelogue Map button does not open any dialog/popup (no overlay div is rendered for this action).",
+        "After clicking the Travelogue Map button, the app switches to the 2D view and searches/centers the map on the journey’s city name (using the existing search flow)."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Locate the JSX that renders the theme control button corresponding to Element 1 (Doodle/illustrated theme control in the itinerary theme-control area). Remove the star icon element (and any icon wrapper/gap styling) from that button only, ensuring the onClick handler and selection logic remain unchanged and the button content has no leftover spacing reserved for the icon."
+          "description": "Replace the current Map-button behavior that sets local dialog state (mapJourney) with a callback-based navigation intent (e.g., call a new prop like onMapNavigate with journey city). Ensure the old TravelogueJourneyMapDialog is not opened for this action, so no dialog/overlay is rendered."
+        },
+        {
+          "path": "frontend/src/pages/LocationMapExplorer.tsx",
+          "operation": "modify",
+          "description": "Add a handler wired into TraveloguePanel (new prop) that uses the existing performSearch flow to search for the journey city, sets viewMode to '2D', and clears unrelated focus state (travel spots/bookmarks) for this action."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Make the selected Element 2 theme button label wrap to multiple lines with no truncation/ellipsis.",
+      "summary": "When Map is invoked from a schedule item, auto-focus that schedule item on the 2D map by highlighting/opening its marker/popup.",
       "acceptanceCriteria": [
-        "When the Element 2 button label is long, it wraps to the next line(s) within the button instead of truncating.",
-        "All characters of the Element 2 button label are visible (no ellipsis) at typical dialog widths."
+        "If a schedule item is the source of the Map action, the 2D map automatically highlights that schedule item (marker is visually distinguishable and/or its popup is opened).",
+        "The focused schedule item shown on the 2D map matches the originating schedule item (date/time/activity/location)."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Update the JSX/className for the theme control button corresponding to Element 2 so its label can wrap (e.g., remove any truncate/ellipsis/whitespace-nowrap/line-clamp styling and ensure multiline wrapping with normal whitespace and word breaking). Limit the change to the Element 2 button rendering so other buttons/text in the app are unaffected."
+          "description": "Ensure schedule items in the Travelogue UI can invoke the Map action with schedule-item identity (at minimum journeyCity + date + time; optionally include activity/location for verification). Pass this data through the new onMapNavigate callback rather than opening the dialog."
+        },
+        {
+          "path": "frontend/src/pages/LocationMapExplorer.tsx",
+          "operation": "modify",
+          "description": "Track a focused schedule-item identity in state when Map is invoked from a schedule item, and pass it down to MapComponent as a new optional prop (e.g., focusedScheduleItem). Ensure switching to 2D/search happens before focus is applied."
+        },
+        {
+          "path": "frontend/src/components/MapComponent.tsx",
+          "operation": "modify",
+          "description": "Add support for a new optional prop representing the schedule item to focus. Ensure schedule markers retain enough metadata (journey city/date/time/activity/location) to match the requested focus, then programmatically center on the marker and open its popup and/or apply a distinct highlight styling so it is visually distinguishable."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Add a third itinerary theme option labeled \"Plain\" and apply a minimal, neutral style to only the specified itinerary content elements when selected.",
+      "summary": "Persist Map navigation context in the URL so 2D map can restore the selected city and schedule item after refresh using existing urlParams utilities.",
       "acceptanceCriteria": [
-        "A third theme option labeled \"Plain\" is available alongside the existing Doodle and Retro options within the same theme-control area as Element 1 and Element 2.",
-        "Selecting \"Plain\" updates the styling of the selected itinerary elements (Elements 3–5) to a minimal, neutral appearance (e.g., no doodle/illustration effects; subdued borders/shadows; neutral background and text).",
-        "Switching between Doodle, Retro, and Plain updates styling accordingly, without changing any non-selected elements outside the specified XPaths."
+        "Triggering the Map action updates the URL (query or hash query) with parameters sufficient to restore the 2D view selection on refresh.",
+        "Refreshing the page after using the Map action restores the 2D view and re-focuses the intended city and schedule item without user re-clicking."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/urlParams.ts",
+          "operation": "modify",
+          "description": "Extend the existing URL param utilities to support setting/updating (and optionally clearing) non-secret URL parameters for this feature (e.g., helper(s) to write query/hash-query params without reloading). Reuse existing parsing/persistence patterns in this file."
+        },
+        {
+          "path": "frontend/src/pages/LocationMapExplorer.tsx",
+          "operation": "modify",
+          "description": "On Map action, write URL parameters for the target city and (when applicable) schedule identity (e.g., journeyCity, scheduleDate, scheduleTime). On initial load, read these parameters via frontend/src/utils/urlParams.ts and automatically restore: set viewMode='2D', performSearch(city), and pass the schedule identity to MapComponent so it can re-focus after the search completes."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Limit the behavior change to the Travelogue Map button and its previous popup container; keep all other dialogs working unchanged.",
+      "acceptanceCriteria": [
+        "No unrelated buttons or dialogs change behavior.",
+        "The popup/dialog that previously appeared for the Map action is no longer shown, while other existing popups (e.g., edit schedule item) still open and work normally."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Extend the existing itinerary theme controls (the same control group that currently exposes Doodle and Retro via Element 1 and Element 2) to include a third selectable option labeled \"Plain\" (English text). Implement/extend local UI state for the selected theme (UI-only unless an existing mechanism already persists it), wire the new \"Plain\" button into the same selection mechanism, and apply theme-specific classNames ONLY to the three specified itinerary content elements (Elements 3–5) so that only those elements change appearance when switching themes."
+          "description": "Remove/disable only the state/rendering paths that open the journey-map dialog for the Map action, while leaving existing itinerary dialogs and edit schedule dialogs intact. Ensure only the Map control is rerouted to navigation behavior."
         },
         {
-          "path": "frontend/src/index.css",
+          "path": "frontend/src/components/TravelogueJourneyMapDialog.tsx",
           "operation": "modify",
-          "description": "Add narrowly-scoped CSS rules/classes to support the \"Plain\" itinerary styling (minimal/neutral) and any theme-specific overrides needed for Elements 3–5. Ensure the selectors/classes are applied only by the three itinerary elements updated in frontend/src/components/TraveloguePanel.tsx, so no global restyling occurs outside the specified XPaths."
+          "description": "Add a deprecation comment and/or adjust exports/docs to reflect that this dialog is no longer used by the Travelogue Map action (do not change other dialogs). Keep the component available to avoid breaking other code, but ensure it is not invoked by the Map button flow."
         }
       ]
     }

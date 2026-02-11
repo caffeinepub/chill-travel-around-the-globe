@@ -1,57 +1,85 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T03:12:04.945Z",
-  "summary": "Diff shows groundwork for a third itinerary theme (type includes 'plain' and CSS mentions Plain theme styles), but the provided truncated changes do not clearly demonstrate the required UI control updates (star removal, text wrapping) nor confirm the 'Plain' option is exposed and applied only to the specified itinerary elements.",
+  "generatedAt": "2026-02-11T02:38:48.226Z",
+  "summary": "Diff implements URL-based handoff and 2D map focusing logic (city + optional schedule item) via LocationMapExplorer and MapComponent, and adds an onMapNavigate callback hook point in TraveloguePanel. However, the diff evidence is insufficient to confirm the Map button’s popup/dialog removal and that only the Map-action UI elements changed (other dialogs unchanged). Several unrelated enhancements appear to be added beyond the BuildRequest.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Remove the star logo/icon from the selected Element 1 theme button without changing click behavior.",
-      "reason": "The diff snippet does not include the JSX/markup for the specific Element 1 button, so there is no direct evidence the star icon was removed from that button (and that no spacing remains) while preserving its click behavior.",
+      "requirement": "Replace the current Travelogue “Map” button behavior that opens a popup/dialog with navigation to the existing 2D map view in LocationMapExplorer, centered on the selected journey city; clicking Map should not render any dialog/popup for this action.",
+      "reason": "While LocationMapExplorer now supports restoring 2D view and searching by a city from URL params, the diff does not clearly show the existing Travelogue Map button no longer opens a Dialog/popup/overlay for the Map action. TraveloguePanel still imports Dialog components, and the relevant Map button click handler code is truncated/not shown, so removal of the Map popup cannot be verified from provided evidence.",
       "evidence": [
-        "frontend/src/components/TraveloguePanel.tsx (truncated)"
+        "frontend/src/components/TraveloguePanel.tsx (imports Dialog/DialogContent/DialogHeader/DialogTitle/DialogTrigger; Map-button handler area truncated)",
+        "frontend/src/pages/LocationMapExplorer.tsx (adds URL param restore + 2D view state, but does not prove Map popup removal)"
       ]
     },
     {
-      "id": "REQ-2",
-      "requirement": "Ensure the selected Element 2 button’s text wraps onto multiple lines when long, with no truncation/ellipsis.",
-      "reason": "No button styling/props for the specific Element 2 button are shown in the truncated TraveloguePanel diff, and no CSS evidence is shown that targets that exact button to enable wrapping and remove truncation/ellipsis.",
+      "id": "REQ-4",
+      "requirement": "Apply the behavior change only to the Map button control and the popup container used for the Map action, ensuring other dialogs (itinerary/edit schedule, etc.) continue to function unchanged.",
+      "reason": "The diff summary indicates multiple unrelated UI/feature changes (e.g., AdminPanel calendar popover, media gallery enhancements, search bar width changes). This conflicts with the constraint that only the Map action flow should change; also no explicit evidence confirms other dialogs were left unchanged.",
       "evidence": [
-        "frontend/src/components/TraveloguePanel.tsx (truncated)",
-        "frontend/src/index.css (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "requirement": "Add a third theme option labeled \"Plain\" alongside Doodle and Retro within the existing theme controls, and when selected apply minimal/neutral styling only to the specified itinerary elements (Elements 3–5), with correct switching among all three themes.",
-      "reason": "While the code introduces an ItineraryTheme union including 'plain' and mentions Plain theme CSS, the truncated diff does not show (a) the actual theme control UI containing a visible \"Plain\" label, nor (b) evidence that switching applies styles exclusively to the specified itinerary elements and not to other elements outside the given XPaths.",
-      "evidence": [
-        "frontend/src/components/TraveloguePanel.tsx (truncated)",
-        "frontend/src/index.css (truncated)"
+        "frontend-file-summaries.txt (mentions changes to AdminPanel, MediaGalleryPopup, index.css, useQueries, etc.)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Added/updated global CSS for Three.js CSS2D '.journey-label' styling.",
-      "reason": "The BuildRequest is limited to theme controls and styling for only the 5 specified elements; journey-label styling is not requested and appears to be unrelated global styling.",
+      "description": "Added/updated React Query hooks including a new useGetCitiesPaginated hook calling getCitiesPaginated, and changed useSearchCities enabling logic.",
+      "reason": "Not requested by any REQ; BuildRequest explicitly focuses on Map button navigation/focus behavior and disallows backend model/endpoint changes (a new getCitiesPaginated call suggests additional backend capability).",
       "evidence": [
-        "frontend/src/index.css (truncated)"
+        "frontend-file-summaries.txt (useQueries.ts summary mentions new useGetCitiesPaginated and updated useSearchCities)"
       ]
     },
     {
-      "description": "Global design token/base styling changes in index.css (OKLCH variables, base layer rules) beyond the specified elements.",
-      "reason": "Non-goal/constraint indicates not to restyle the entire app globally; changes to global CSS variables/base styles may affect the whole app and are not explicitly requested in the BuildRequest.",
+      "description": "AdminPanel enhanced with interactive calendar popover with drag-select date-range selection and time input controls; corrected journey date/time binding logic.",
+      "reason": "Not requested; unrelated to Travelogue Map action flow.",
       "evidence": [
-        "frontend/src/index.css (truncated)"
+        "frontend-file-summaries.txt (AdminPanel.tsx summary)"
+      ]
+    },
+    {
+      "description": "Global CSS changes including updated search bar width to 37.5% and added journey-label CSS2D styles.",
+      "reason": "Not requested; unrelated to Map button navigation/focus behavior.",
+      "evidence": [
+        "frontend-file-summaries.txt (index.css summary)"
+      ]
+    },
+    {
+      "description": "MediaGalleryPopup enhanced with tabs for photos/videos/social content, embedded YouTube/Instagram players, fullscreen views, and audio-enabled playback changes.",
+      "reason": "Not requested; unrelated to Map button behavior.",
+      "evidence": [
+        "frontend-file-summaries.txt (MediaGalleryPopup.tsx summary)"
+      ]
+    },
+    {
+      "description": "LoginPanel styling changes (transparent button floating overlay aesthetic).",
+      "reason": "Not requested; unrelated to Map button behavior.",
+      "evidence": [
+        "frontend-file-summaries.txt (LoginPanel.tsx summary)"
+      ]
+    },
+    {
+      "description": "BackendDebugger added to App.tsx for global backend actor access.",
+      "reason": "Not requested and potentially conflicts with the constraint to keep changes focused on the Map action flow.",
+      "evidence": [
+        "frontend-file-summaries.txt (App.tsx summary mentions BackendDebugger)"
+      ]
+    },
+    {
+      "description": "MapComponent icon change for 'city' travel spot type (new black city SVG icon).",
+      "reason": "Not requested; BuildRequest is about Map button navigation and focus, not marker icon redesign.",
+      "evidence": [
+        "frontend/src/components/MapComponent.tsx (getTravelSpotIcon case 'city' now returns an embedded SVG icon)"
       ]
     }
   ],
   "confidence": 0.62,
   "changed_files": [
     "frontend-file-summaries.txt",
+    "frontend/src/components/MapComponent.tsx",
     "frontend/src/components/TraveloguePanel.tsx",
-    "frontend/src/index.css",
+    "frontend/src/pages/LocationMapExplorer.tsx",
+    "frontend/src/utils/urlParams.ts",
     "project_state.json"
   ]
 }

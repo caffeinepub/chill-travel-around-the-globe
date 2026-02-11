@@ -1,11 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Add a third “Plain” itinerary theme option and refine the existing theme selection buttons by removing an unwanted icon and ensuring long labels fully wrap.
+**Goal:** Change the Travelogue “Map” button to navigate to the existing 2D map view and automatically focus the selected journey city and (when applicable) the originating schedule item, without showing a popup.
 
 **Planned changes:**
-- Remove the star icon/logo from the selected Element 1 theme button while keeping the button’s click behavior unchanged and without leaving empty icon spacing.
-- Update the selected Element 2 theme button label styling so long text wraps to multiple lines and displays fully (no truncation/ellipsis).
-- Add a third theme option labeled “Plain” alongside the existing Doodle and Retro options in the same theme-control area, and when selected apply a minimal, neutral “plain itinerary” style only to the specified itinerary content elements (Elements 3–5).
+- Update the Travelogue header “Map” button so it navigates to the existing 2D map view (LocationMapExplorer) instead of opening a dialog/popup, and triggers the existing search/centering flow for the selected journey city.
+- When the Map action originates from a specific schedule item, pass enough context so the 2D map view highlights/focuses that schedule item (e.g., opening/spotlighting its marker/popup).
+- Implement URL/state handoff via existing URL param utilities so the 2D view can restore the selected journey city and schedule item after a page refresh.
+- Limit the behavior change to only the identified Map button control and its current popup container, ensuring other dialogs continue to work unchanged.
 
-**User-visible outcome:** Users can choose among Doodle, Retro, and the new Plain theme; the first theme button no longer shows a star icon, and the second theme button cleanly wraps long text so the full label is visible.
+**User-visible outcome:** Clicking “Map” takes the user to the 2D map view centered on the selected journey city; if launched from a schedule item, that item is automatically highlighted on the map, and the selection persists on refresh.

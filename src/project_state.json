@@ -1,34 +1,40 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Itinerary UI project with theme options; currently supports Doodle and Retro, and plans to add a third Plain theme option. UI tweaks requested for selected elements include removing a star logo and enabling full text wrapping.",
+  "summary": "App should show journey schedule via a 2D page view: clicking the Map button should navigate to a 2D page for the selected journey city and highlight/display the corresponding schedule item (instead of opening a popup).",
   "architectural_notes": [],
-  "known_issues": [
-    "Deployment/build process intermittently fails with generic 'Deployment error' / 'Oops, something went wrong with our AI' messages."
-  ],
-  "isFixRequest": false,
+  "known_issues": [],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-remove-the-star-logo-icon-from-the-selected-element-1-button-xpath-html-1-body-1-div-3-div-2-div-1-div-2-div-1-div-1-div-1-div-1-div-1-div-2-div-2-button-1-without-removing-or-changing-the-button-s-click-behavior",
-      "title": "Remove the star logo/icon from the selected Element 1 button (XPath: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[2]/button[1]) without removing or changing the button’s click behavior.",
+      "id": "feature-replace-the-current-travelogue-map-button-behavior-that-opens-a-popup-dialog-with-navigation-to-the-existing-2d-map-view-in-locationmapexplorer-centered-on-the-selected-journey-city",
+      "title": "Replace the current Travelogue “Map” button behavior that opens a popup/dialog with navigation to the existing 2D map view in LocationMapExplorer, centered on the selected journey city.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-ensure-the-selected-element-2-button-s-text-wraps-onto-multiple-lines-when-long-and-that-the-full-text-content-is-visible-no-truncation-ellipsis-xpath-html-1-body-1-div-3-div-2-div-1-div-2-div-1-div-1-div-1-div-1-div-1-div-2-div-2-button-2",
-      "title": "Ensure the selected Element 2 button’s text wraps onto multiple lines when long, and that the full text content is visible (no truncation/ellipsis) (XPath: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[2]/button[2]).",
+      "id": "feature-when-the-travelogue-map-button-is-invoked-for-a-specific-schedule-item-ensure-the-2d-map-view-also-displays-and-focuses-the-corresponding-schedule-item-e-g-by-automatically-opening-spotlighting-that-schedule-item-s-marker-popup-on-the-2d-map",
+      "title": "When the Travelogue Map button is invoked for a specific schedule item, ensure the 2D map view also displays and focuses the corresponding schedule item (e.g., by automatically opening/spotlighting that schedule item’s marker/popup on the 2D map).",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-a-third-itinerary-theme-option-named-plain-alongside-the-existing-doodle-and-retro-themes-selectable-via-the-existing-theme-controls-represented-by-the-selected-element-1-and-element-2-buttons-xpaths-above-when-plain-is-selected-apply-a-minimal-neutral-plain-itinerary-visual-style-to-only-the-selected-itinerary-content-elements-element-3-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-div-1-div-1-div-1-element-4-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-div-1-div-1-div-2-element-5-xpath-html-1-body-1-div-5-div-1-div-7-div-2-div-1-div-1-div-2-div-1-div-1-div-3-p-2",
-      "title": "Add a third itinerary theme option named \"Plain\" alongside the existing Doodle and Retro themes, selectable via the existing theme controls represented by the selected Element 1 and Element 2 buttons (XPaths above). When Plain is selected, apply a minimal, neutral, \"plain itinerary\" visual style to ONLY the selected itinerary content elements (Element 3 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1], Element 4 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[2], Element 5 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[3]/p[2]).",
+      "id": "feature-implement-a-url-state-handoff-so-that-switching-to-the-2d-view-from-the-map-button-persists-enough-information-to-load-the-correct-journey-city-and-schedule-item-even-after-a-page-refresh-use-the-existing-url-param-utilities-in-frontend-src-utils-urlparams-ts",
+      "title": "Implement a URL/state handoff so that switching to the 2D view from the Map button persists enough information to load the correct journey city and schedule item even after a page refresh (use the existing URL param utilities in frontend/src/utils/urlParams.ts).",
       "reqIds": [
         "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-apply-the-behavior-change-only-to-the-user-selected-ui-elements-the-map-button-control-in-the-header-and-the-popup-container-currently-used-for-the-map-action-ensuring-other-dialogs-e-g-itinerary-and-edit-schedule-dialogs-continue-to-function-unchanged",
+      "title": "Apply the behavior change only to the user-selected UI elements (the Map button control in the header and the popup container currently used for the Map action), ensuring other dialogs (e.g., itinerary and edit schedule dialogs) continue to function unchanged.",
+      "reqIds": [
+        "REQ-4"
       ],
       "version": 1
     }
@@ -36,24 +42,13 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Remove the star logo from Element 1",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Enable text wrapping for Element 2 so long text displays fully",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Add a third 'Plain' itinerary theme option alongside Doodle and Retro, selectable via the existing theme controls",
+      "summary": "Change Map button behavior to navigate to the 2D page for the selected journey city and display the corresponding schedule item (no popup).",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Add third Plain itinerary theme and adjust selected theme controls (remove star icon, wrap long text)",
+  "gameProjectType": "2d",
+  "projectName": "Change Travelogue Map button to navigate to 2D view and focus the selected journey/schedule item (no popup)",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

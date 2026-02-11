@@ -1,71 +1,83 @@
 {
   "kind": "build_request",
-  "title": "Add third Plain itinerary theme and adjust selected theme controls (remove star icon, wrap long text)",
+  "title": "Change Travelogue Map button to navigate to 2D view and focus the selected journey/schedule item (no popup)",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Remove the star logo/icon from the selected Element 1 button (XPath: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[2]/button[1]) without removing or changing the button’s click behavior.",
+      "text": "Replace the current Travelogue “Map” button behavior that opens a popup/dialog with navigation to the existing 2D map view in LocationMapExplorer, centered on the selected journey city.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-user-1"
         ],
         "quotes": [
-          "1) remove the star logo of element 1"
+          "when clicking the map button, instead of poping up a new pop up box, please direct it to the 2d page with the respective journey city"
         ]
       },
       "acceptanceCriteria": [
-        "The Element 1 button renders with no star logo/icon visible (no empty spacing where the icon used to be).",
-        "The Element 1 button remains clickable and performs the same action as before."
+        "Clicking the Travelogue Map button does not open any dialog/popup (no overlay div is rendered for this action).",
+        "After clicking the Travelogue Map button, the app switches to the 2D view and searches/centers the map on the journey’s city name (using the existing search flow)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Ensure the selected Element 2 button’s text wraps onto multiple lines when long, and that the full text content is visible (no truncation/ellipsis) (XPath: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[2]/button[2]).",
+      "text": "When the Travelogue Map button is invoked for a specific schedule item, ensure the 2D map view also displays and focuses the corresponding schedule item (e.g., by automatically opening/spotlighting that schedule item’s marker/popup on the 2D map).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-user-1"
         ],
         "quotes": [
-          "2)  wrap the text of element 2 if it is long and show all of content"
+          "and display the corresponding schedule item"
         ]
       },
       "acceptanceCriteria": [
-        "When the Element 2 button label is long, it wraps to the next line(s) within the button instead of truncating.",
-        "All characters of the Element 2 button label are visible (no ellipsis) at typical dialog widths."
+        "If a schedule item is the source of the Map action, the 2D map automatically highlights that schedule item (marker is visually distinguishable and/or its popup is opened).",
+        "The focused schedule item shown on the 2D map matches the originating schedule item (date/time/activity/location)."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Add a third itinerary theme option named \"Plain\" alongside the existing Doodle and Retro themes, selectable via the existing theme controls represented by the selected Element 1 and Element 2 buttons (XPaths above). When Plain is selected, apply a minimal, neutral, \"plain itinerary\" visual style to ONLY the selected itinerary content elements (Element 3 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1], Element 4 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[2], Element 5 XPath: /html[1]/body[1]/div[5]/div[1]/div[7]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[3]/p[2]).",
+      "text": "Implement a URL/state handoff so that switching to the 2D view from the Map button persists enough information to load the correct journey city and schedule item even after a page refresh (use the existing URL param utilities in frontend/src/utils/urlParams.ts).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "Other than Doodle and Retro Theme, add another plain theme for user who prefer plain itinerary theme",
-          "yes, add as a third option alongside with Doodle and RETRO"
+          "msg-user-1"
         ]
       },
       "acceptanceCriteria": [
-        "A third theme option labeled \"Plain\" is available alongside the existing Doodle and Retro options within the same theme-control area as Element 1 and Element 2.",
-        "Selecting \"Plain\" updates the styling of the selected itinerary elements (Elements 3–5) to a minimal, neutral appearance (e.g., no doodle/illustration effects; subdued borders/shadows; neutral background and text).",
-        "Switching between Doodle, Retro, and Plain updates styling accordingly, without changing any non-selected elements outside the specified XPaths."
+        "Triggering the Map action updates the URL (query or hash query) with parameters sufficient to restore the 2D view selection on refresh.",
+        "Refreshing the page after using the Map action restores the 2D view and re-focuses the intended city and schedule item without user re-clicking."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Apply the behavior change only to the user-selected UI elements (the Map button control in the header and the popup container currently used for the Map action), ensuring other dialogs (e.g., itinerary and edit schedule dialogs) continue to function unchanged.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-user-1"
+        ],
+        "quotes": [
+          "/html[1]/body[1]/div[5]",
+          "/html[1]/body[1]/div[1]/div[2]/div[1]/header[1]/div[1]/div[1]/form[1]/div[1]/div[1]/div[1]/button[2]"
+        ]
+      },
+      "acceptanceCriteria": [
+        "No unrelated buttons or dialogs change behavior.",
+        "The popup/dialog that previously appeared for the Map action is no longer shown, while other existing popups (e.g., edit schedule item) still open and work normally."
       ]
     }
   ],
   "constraints": [
-    "Apply changes ONLY to the 5 selected elements identified by the provided XPath expressions (and code that directly renders/styles those exact elements).",
-    "Do not edit files in frontend immutablePaths (e.g., frontend/src/main.tsx, frontend/src/hooks/useActor.ts, frontend/src/hooks/useInternetIdentity.ts, and frontend/src/components/ui/*).",
-    "Use English for any user-facing text (e.g., the new theme label must be \"Plain\")."
+    "Frontend immutable paths must not be modified: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui/*.",
+    "Backend must remain single-actor; no new backend services."
   ],
   "nonGoals": [
-    "Do not introduce new authentication methods or third-party identity providers.",
-    "Do not add new backend data models or persistence for themes unless already required by existing UI (theme selection can remain UI-only if that is how Doodle/Retro currently work).",
-    "Do not restyle the entire app globally; only adjust styling related to the selected elements and their theme representations."
+    "Do not add new backend endpoints or change Motoko data models for this request.",
+    "Do not redesign the overall Travelogue UI beyond changing the Map action flow.",
+    "Do not add real-time features (WebSockets) or third-party auth providers."
   ],
   "imageRequirements": {
     "required": [],
