@@ -2,11 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-replace-the-current-travelogue-map-button-behavior-that-opens-a-popup-dialog-with-navigation-to-the-existing-2d-map-view-in-locationmapexplorer-centered-on-the-selected-journey-city",
-      "featureTitle": "Replace the current Travelogue “Map” button behavior that opens a popup/dialog with navigation to the existing 2D map view in LocationMapExplorer, centered on the selected journey city.",
+      "featureId": "feature-in-the-travelogue-journey-action-row-add-a-new-button-labeled-map-with-a-2d-map-style-icon-positioned-next-to-the-existing-flying-button",
+      "featureTitle": "In the Travelogue journey action row, add a new button labeled \"Map\" with a 2D/map-style icon, positioned next to the existing \"Flying\" button.",
       "files": [
-        "frontend/src/components/TraveloguePanel.tsx",
-        "frontend/src/pages/LocationMapExplorer.tsx"
+        "frontend/src/components/TraveloguePanel.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -23,11 +22,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-when-the-travelogue-map-button-is-invoked-for-a-specific-schedule-item-ensure-the-2d-map-view-also-displays-and-focuses-the-corresponding-schedule-item-e-g-by-automatically-opening-spotlighting-that-schedule-item-s-marker-popup-on-the-2d-map",
-      "featureTitle": "When the Travelogue Map button is invoked for a specific schedule item, ensure the 2D map view also displays and focuses the corresponding schedule item (e.g., by automatically opening/spotlighting that schedule item’s marker/popup on the 2D map).",
+      "featureId": "feature-when-the-new-map-button-is-clicked-for-a-journey-switch-the-main-explorer-to-the-existing-2d-map-view-and-display-all-schedule-items-for-that-journey-on-the-2d-map-according-to-each-schedule-item-s-input-location",
+      "featureTitle": "When the new \"Map\" button is clicked for a journey, switch the main explorer to the existing 2D map view and display all schedule items for that journey on the 2D map according to each schedule item’s input location.",
       "files": [
         "frontend/src/components/MapComponent.tsx",
-        "frontend/src/components/TraveloguePanel.tsx",
         "frontend/src/pages/LocationMapExplorer.tsx"
       ],
       "components": [
@@ -45,11 +43,12 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-implement-a-url-state-handoff-so-that-switching-to-the-2d-view-from-the-map-button-persists-enough-information-to-load-the-correct-journey-city-and-schedule-item-even-after-a-page-refresh-use-the-existing-url-param-utilities-in-frontend-src-utils-urlparams-ts",
-      "featureTitle": "Implement a URL/state handoff so that switching to the 2D view from the Map button persists enough information to load the correct journey city and schedule item even after a page refresh (use the existing URL param utilities in frontend/src/utils/urlParams.ts).",
+      "featureId": "feature-wire-traveloguepanel-and-locationmapexplorer-together-with-a-callback-event-so-the-travelogue-map-button-can-trigger-2d-mode-and-provide-the-selected-journey-identifier-and-its-schedule-items-or-enough-data-to-mapcomponent-for-rendering",
+      "featureTitle": "Wire TraveloguePanel and LocationMapExplorer together with a callback/event so the Travelogue \"Map\" button can trigger 2D mode and provide the selected journey identifier and its schedule items (or enough data) to MapComponent for rendering.",
       "files": [
-        "frontend/src/pages/LocationMapExplorer.tsx",
-        "frontend/src/utils/urlParams.ts"
+        "frontend/src/components/MapComponent.tsx",
+        "frontend/src/components/TraveloguePanel.tsx",
+        "frontend/src/pages/LocationMapExplorer.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -62,26 +61,6 @@
       ],
       "testIds": [
         "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-apply-the-behavior-change-only-to-the-user-selected-ui-elements-the-map-button-control-in-the-header-and-the-popup-container-currently-used-for-the-map-action-ensuring-other-dialogs-e-g-itinerary-and-edit-schedule-dialogs-continue-to-function-unchanged",
-      "featureTitle": "Apply the behavior change only to the user-selected UI elements (the Map button control in the header and the popup container currently used for the Map action), ensuring other dialogs (e.g., itinerary and edit schedule dialogs) continue to function unchanged.",
-      "files": [
-        "frontend/src/components/TraveloguePanel.tsx"
-      ],
-      "components": [
-        "authorization@1.0.1",
-        "blob-storage@1.1.2",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
       ],
       "confidence": "high"
     }

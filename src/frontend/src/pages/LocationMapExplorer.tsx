@@ -16,8 +16,8 @@ import MusicPlayerBar from '@/components/MusicPlayerBar';
 import MusicPanel from '@/components/MusicPanel';
 import WebsiteLayoutPanel from '@/components/WebsiteLayoutPanel';
 import { useSearchLocation, SUPPORTED_COUNTRIES, useGetWebsiteLayoutPreferences } from '@/hooks/useQueries';
-import { TravelSpot, Song, MapBookmark } from '@/backend';
-import { setUrlParameters, getUrlParameter, clearUrlParameter } from '@/utils/urlParams';
+import { useActor } from '@/hooks/useActor';
+import { TravelSpot, Song, MapBookmark, ScheduleItem } from '@/backend';
 
 interface LocationResult {
   coordinates: [number, number];
@@ -35,20 +35,12 @@ interface FlightAnimationData {
   toCoords: { lat: number; lon: number };
 }
 
-interface FocusedScheduleItem {
-  date: bigint;
-  time: string;
-  location: string;
-  activity: string;
-}
-
 export default function LocationMapExplorer() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
   const [viewMode, setViewMode] = useState<'3D' | '2D'>('3D');
   const [focusedTravelSpot, setFocusedTravelSpot] = useState<TravelSpot | null>(null);
   const [focusedBookmark, setFocusedBookmark] = useState<MapBookmark | null>(null);
-  const [focusedScheduleItem, setFocusedScheduleItem] = useState<FocusedScheduleItem | null>(null);
   const [currentSong, setCurrentSong] = useState<Song & { albumTitle: string } | undefined>(undefined);
   const [showTimeZones, setShowTimeZones] = useState(false);
   const [worldHotspotOpen, setWorldHotspotOpen] = useState(false);
@@ -62,44 +54,13 @@ export default function LocationMapExplorer() {
   const [rotationSpeed, setRotationSpeed] = useState<number>(0.0005);
   const [countryFontSize, setCountryFontSize] = useState<number>(8);
   const [flightAnimation, setFlightAnimation] = useState<FlightAnimationData | null>(null);
+  const [journeyScheduleItems, setJourneyScheduleItems] = useState<Array<ScheduleItem & { coordinates: [number, number] }>>([]);
 
   const { mutate: searchLocation, isPending } = useSearchLocation();
   const { data: layoutPreferences } = useGetWebsiteLayoutPreferences();
+  const { actor } = useActor();
 
   const offsets = [-12, -11, -10, -9.5, -9, -8, -7, -6, -5, -4, -3.5, -3, -2, -1, 0, 1, 2, 3, 3.5, 4, 4.5, 5, 5.5, 5.75, 6, 6.5, 7, 8, 8.75, 9, 9.5, 10, 10.5, 11, 12, 12.75, 13, 14];
-
-  // Check URL parameters on mount to restore map navigation state
-  useEffect(() => {
-    const mapCity = getUrlParameter('mapCity');
-    const scheduleDate = getUrlParameter('scheduleDate');
-    const scheduleTime = getUrlParameter('scheduleTime');
-    const scheduleLocation = getUrlParameter('scheduleLocation');
-    const scheduleActivity = getUrlParameter('scheduleActivity');
-
-    if (mapCity) {
-      // Restore 2D view and search for the city
-      setViewMode('2D');
-      setSearchQuery(mapCity);
-      performSearch(mapCity);
-
-      // If schedule item parameters are present, restore the focused schedule item
-      if (scheduleDate && scheduleTime && scheduleLocation && scheduleActivity) {
-        setFocusedScheduleItem({
-          date: BigInt(scheduleDate),
-          time: scheduleTime,
-          location: scheduleLocation,
-          activity: scheduleActivity
-        });
-      }
-
-      // Clear URL parameters after restoring state
-      clearUrlParameter('mapCity');
-      clearUrlParameter('scheduleDate');
-      clearUrlParameter('scheduleTime');
-      clearUrlParameter('scheduleLocation');
-      clearUrlParameter('scheduleActivity');
-    }
-  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,7 +83,8 @@ export default function LocationMapExplorer() {
           // Clear focused travel spot and bookmark when performing new search
           setFocusedTravelSpot(null);
           setFocusedBookmark(null);
-          // Don't clear focused schedule item here - it will be handled by MapComponent
+          // Clear journey schedule items when performing new search
+          setJourneyScheduleItems([]);
           const locationDisplay = result.country && result.name !== result.country 
             ? `${result.name}, ${result.country}`
             : result.name;
@@ -187,9 +149,11 @@ export default function LocationMapExplorer() {
     // Set the focused travel spot
     setFocusedTravelSpot(spot);
     
-    // Clear focused bookmark and schedule item
+    // Clear focused bookmark
     setFocusedBookmark(null);
-    setFocusedScheduleItem(null);
+    
+    // Clear journey schedule items
+    setJourneyScheduleItems([]);
   }, []);
 
   // Handle bookmark focus from Vibes panel
@@ -200,44 +164,11 @@ export default function LocationMapExplorer() {
     // Set the focused bookmark
     setFocusedBookmark(bookmark);
     
-    // Clear focused travel spot and schedule item
+    // Clear focused travel spot
     setFocusedTravelSpot(null);
-    setFocusedScheduleItem(null);
-  }, []);
-
-  // Handle map navigation from Travelogue panel
-  const handleMapNavigate = useCallback((journeyCity: string, scheduleItem?: FocusedScheduleItem) => {
-    // Switch to 2D view
-    setViewMode('2D');
     
-    // Search for the journey city
-    setSearchQuery(journeyCity);
-    performSearch(journeyCity);
-    
-    // Clear other focused items
-    setFocusedTravelSpot(null);
-    setFocusedBookmark(null);
-    
-    // Set focused schedule item if provided
-    if (scheduleItem) {
-      setFocusedScheduleItem(scheduleItem);
-      
-      // Update URL parameters for persistence
-      setUrlParameters({
-        mapCity: journeyCity,
-        scheduleDate: scheduleItem.date.toString(),
-        scheduleTime: scheduleItem.time,
-        scheduleLocation: scheduleItem.location,
-        scheduleActivity: scheduleItem.activity
-      });
-    } else {
-      setFocusedScheduleItem(null);
-      
-      // Update URL with just the city
-      setUrlParameters({
-        mapCity: journeyCity
-      });
-    }
+    // Clear journey schedule items
+    setJourneyScheduleItems([]);
   }, []);
 
   // Handle song selection from music panel
@@ -253,10 +184,103 @@ export default function LocationMapExplorer() {
     toast.info(`Flying from ${fromCity} to ${toCity}...`);
   }, []);
 
-  // Clear focused schedule item after it's been handled by MapComponent
-  const handleScheduleItemFocused = useCallback(() => {
-    setFocusedScheduleItem(null);
-  }, []);
+  // Geocode a location to get coordinates
+  const geocodeLocation = async (locationName: string): Promise<[number, number] | null> => {
+    try {
+      const encodedQuery = encodeURIComponent(locationName);
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodedQuery}&limit=1&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'LocationMapExplorer/1.0'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Geocoding request failed');
+      }
+
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const result = data[0];
+        const lat = parseFloat(result.lat);
+        const lon = parseFloat(result.lon);
+
+        if (!isNaN(lat) && !isNaN(lon)) {
+          return [lat, lon];
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      return null;
+    }
+  };
+
+  // Handle map journey from Travelogue panel
+  const handleMapJourney = useCallback(async (journeyCity: string) => {
+    try {
+      // Check if actor is available
+      if (!actor) {
+        toast.error('Backend not available');
+        return;
+      }
+      
+      // Switch to 2D mode
+      setViewMode('2D');
+      
+      // Search for the journey city to center the map
+      setSearchQuery(journeyCity);
+      performSearch(journeyCity);
+      
+      // Fetch schedule items for this journey
+      const scheduleItems = await actor.getScheduleItems(journeyCity);
+      
+      if (scheduleItems.length === 0) {
+        toast.info(`No schedule items found for ${journeyCity}`);
+        return;
+      }
+      
+      // Geocode each schedule item location
+      const itemsWithCoords: Array<ScheduleItem & { coordinates: [number, number] }> = [];
+      let failedCount = 0;
+      
+      for (const item of scheduleItems) {
+        const coords = await geocodeLocation(item.location);
+        if (coords) {
+          itemsWithCoords.push({ ...item, coordinates: coords });
+        } else {
+          failedCount++;
+          console.warn(`Failed to geocode location: ${item.location}`);
+        }
+      }
+      
+      if (itemsWithCoords.length === 0) {
+        toast.error(`Could not map any schedule locations for ${journeyCity}`);
+        return;
+      }
+      
+      // Set the journey schedule items to display on map
+      setJourneyScheduleItems(itemsWithCoords);
+      
+      // Clear focused travel spot and bookmark
+      setFocusedTravelSpot(null);
+      setFocusedBookmark(null);
+      
+      // Show success/warning message
+      if (failedCount > 0) {
+        toast.warning(`Showing ${itemsWithCoords.length} schedule items on map. ${failedCount} location(s) could not be mapped.`);
+      } else {
+        toast.success(`Showing ${itemsWithCoords.length} schedule items for ${journeyCity} on map`);
+      }
+    } catch (error) {
+      console.error('Error handling map journey:', error);
+      toast.error('Failed to display journey schedule on map');
+    }
+  }, [actor]);
 
   const shouldShowGlobe = viewMode === '3D';
   const shouldShowMap = viewMode === '2D' && selectedLocation;
@@ -382,10 +406,9 @@ export default function LocationMapExplorer() {
             locationType={selectedLocation.type}
             focusedTravelSpot={focusedTravelSpot}
             focusedBookmark={focusedBookmark}
-            focusedScheduleItem={focusedScheduleItem}
+            journeyScheduleItems={journeyScheduleItems}
             onTravelSpotFocused={() => setFocusedTravelSpot(null)}
             onBookmarkFocused={() => setFocusedBookmark(null)}
-            onScheduleItemFocused={handleScheduleItemFocused}
           />
         ) : (
           <div className="h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900">
@@ -410,7 +433,7 @@ export default function LocationMapExplorer() {
               <AdminPanel />
               
               {/* Travelogue Panel - Icon Only */}
-              <TraveloguePanel onFlightAnimation={handleFlightAnimation} onMapNavigate={handleMapNavigate} />
+              <TraveloguePanel onFlightAnimation={handleFlightAnimation} onMapJourney={handleMapJourney} />
 
               {/* Vibes Panel - Icon Only */}
               <VibesPanel onTravelSpotFocus={handleTravelSpotFocus} onBookmarkFocus={handleBookmarkFocus} />
@@ -515,6 +538,7 @@ export default function LocationMapExplorer() {
                             </div>
                           </TooltipContent>
                         </Tooltip>
+                        
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <ToggleGroupItem 
@@ -527,12 +551,12 @@ export default function LocationMapExplorer() {
                           </TooltipTrigger>
                           <TooltipContent side="bottom" className="max-w-sm p-4 glass-morphism">
                             <div className="space-y-2">
-                              <p className="font-medium text-gray-400">Interactive 2D Map with Travel Details</p>
+                              <p className="font-medium text-gray-400">Interactive 2D Map with Travel Spots & Bookmarks</p>
                               <p className="text-sm leading-relaxed text-gray-400">
-                                Drag to pan • Scroll to zoom • Click markers for details • Click map to bookmark
+                                Drag to pan • Scroll to zoom • Click markers for details • Click map to add bookmarks
                               </p>
                               <p className="text-sm text-green-400">
-                                View city ratings, albums, travel spots, and schedule items on the map
+                                View travel spots, schedule items, and personal bookmarks on the map
                               </p>
                             </div>
                           </TooltipContent>
@@ -545,13 +569,16 @@ export default function LocationMapExplorer() {
             </div>
           </header>
 
-          {/* Remaining UI elements omitted for brevity - keeping existing implementation */}
+          {/* Citylogue Panel - positioned at bottom left */}
+          {/* ... rest of the component remains the same ... */}
         </div>
       </div>
 
-      {/* Music Player Bar - conditionally rendered based on layout preferences */}
+      {/* Music Player Bar - positioned at bottom */}
       {layoutPreferences?.showMusicPlayer && (
-        <MusicPlayerBar currentSong={currentSong} onSongChange={setCurrentSong} />
+        <div className="fixed bottom-0 left-0 right-0 z-[10001] pointer-events-auto">
+          <MusicPlayerBar currentSong={currentSong} onSongChange={setCurrentSong} />
+        </div>
       )}
     </TooltipProvider>
   );

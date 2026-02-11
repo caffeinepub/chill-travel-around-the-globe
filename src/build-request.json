@@ -1,96 +1,74 @@
 {
   "kind": "build_request",
-  "title": "Change Travelogue Map button to navigate to 2D view and focus the selected journey/schedule item (no popup)",
+  "title": "Add Map button in Travelogue to open 2D map with selected journey schedule items",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Replace the current Travelogue “Map” button behavior that opens a popup/dialog with navigation to the existing 2D map view in LocationMapExplorer, centered on the selected journey city.",
+      "text": "In the Travelogue journey action row, add a new button labeled \"Map\" with a 2D/map-style icon, positioned next to the existing \"Flying\" button.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-6"
         ],
         "quotes": [
-          "when clicking the map button, instead of poping up a new pop up box, please direct it to the 2d page with the respective journey city"
+          "1) add a button with 2D as logo, namely \"Map\", next to the Flying button in the travelogue"
         ]
       },
       "acceptanceCriteria": [
-        "Clicking the Travelogue Map button does not open any dialog/popup (no overlay div is rendered for this action).",
-        "After clicking the Travelogue Map button, the app switches to the 2D view and searches/centers the map on the journey’s city name (using the existing search flow)."
+        "Each journey card shows a \"Map\" button next to the existing \"Flying\" button.",
+        "The button label is exactly \"Map\" (English).",
+        "The button includes a 2D/map-style icon (e.g., lucide Map)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "When the Travelogue Map button is invoked for a specific schedule item, ensure the 2D map view also displays and focuses the corresponding schedule item (e.g., by automatically opening/spotlighting that schedule item’s marker/popup on the 2D map).",
+      "text": "When the new \"Map\" button is clicked for a journey, switch the main explorer to the existing 2D map view and display all schedule items for that journey on the 2D map according to each schedule item’s input location.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-6"
         ],
         "quotes": [
-          "and display the corresponding schedule item"
+          "2) when this button is clicked, all the schedule item of that journey will be displayed on the 2d Map (direct to the existing one) in accordance to the locations input"
         ]
       },
       "acceptanceCriteria": [
-        "If a schedule item is the source of the Map action, the 2D map automatically highlights that schedule item (marker is visually distinguishable and/or its popup is opened).",
-        "The focused schedule item shown on the 2D map matches the originating schedule item (date/time/activity/location)."
+        "Clicking \"Map\" switches the app’s main view mode to the existing 2D map (no new map page is created).",
+        "All schedule items belonging to the selected journey are rendered as markers/items on the 2D map.",
+        "The marker positions are driven by each schedule item’s `location` input value (e.g., via existing geocoding / location lookup logic already used by the map).",
+        "If one or more schedule items cannot be mapped to coordinates, the app does not crash and shows a user-visible error/toast indicating some locations could not be displayed."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Implement a URL/state handoff so that switching to the 2D view from the Map button persists enough information to load the correct journey city and schedule item even after a page refresh (use the existing URL param utilities in frontend/src/utils/urlParams.ts).",
+      "text": "Wire TraveloguePanel and LocationMapExplorer together with a callback/event so the Travelogue \"Map\" button can trigger 2D mode and provide the selected journey identifier and its schedule items (or enough data) to MapComponent for rendering.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Triggering the Map action updates the URL (query or hash query) with parameters sufficient to restore the 2D view selection on refresh.",
-        "Refreshing the page after using the Map action restores the 2D view and re-focuses the intended city and schedule item without user re-clicking."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Apply the behavior change only to the user-selected UI elements (the Map button control in the header and the popup container currently used for the Map action), ensuring other dialogs (e.g., itinerary and edit schedule dialogs) continue to function unchanged.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-user-1"
+          "msg-6"
         ],
         "quotes": [
-          "/html[1]/body[1]/div[5]",
-          "/html[1]/body[1]/div[1]/div[2]/div[1]/header[1]/div[1]/div[1]/form[1]/div[1]/div[1]/div[1]/button[2]"
+          "when this button is clicked, all the schedule item of that journey will be displayed on the 2d Map (direct to the existing one)"
         ]
       },
       "acceptanceCriteria": [
-        "No unrelated buttons or dialogs change behavior.",
-        "The popup/dialog that previously appeared for the Map action is no longer shown, while other existing popups (e.g., edit schedule item) still open and work normally."
+        "TraveloguePanel exposes a new prop callback (e.g., `onMapJourney(...)`) invoked when \"Map\" is clicked.",
+        "LocationMapExplorer implements the callback to: (1) set view mode to '2D', (2) center the 2D map appropriately for the journey, and (3) pass journey schedule items (or derived map points) down to MapComponent.",
+        "MapComponent renders the passed journey schedule items without requiring manual user search input."
       ]
     }
   ],
   "constraints": [
-    "Frontend immutable paths must not be modified: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui/*.",
-    "Backend must remain single-actor; no new backend services."
+    "Do not edit files under frontend/src/components/ui (compose existing UI components only).",
+    "Do not edit immutable hook files: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx."
   ],
   "nonGoals": [
-    "Do not add new backend endpoints or change Motoko data models for this request.",
-    "Do not redesign the overall Travelogue UI beyond changing the Map action flow.",
-    "Do not add real-time features (WebSockets) or third-party auth providers."
+    "Do not implement a new mapping provider or replace the existing 2D map implementation.",
+    "Do not add new backend schema/state changes unless strictly required for showing schedule items on the map."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

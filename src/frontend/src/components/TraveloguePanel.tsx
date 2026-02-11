@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Calendar, MapPin, ChevronDown, ChevronRight, Eye, MoreHorizontal, Filter, Plane, X, Map as MapIcon } from 'lucide-react';
+import { BookOpen, Calendar, MapPin, ChevronDown, ChevronRight, Eye, MoreHorizontal, Filter, Plane, X, Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -7,18 +7,17 @@ import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { useGetAllJourneys, useGetJourneyScheduleWithDays, useUpdateScheduleItem, useDeleteScheduleItem, useAddScheduleItem, useGetWebsiteLayoutPreferences, useGetScheduleItems } from '@/hooks/useQueries';
+import { useGetAllJourneys, useGetJourneyScheduleWithDays, useUpdateScheduleItem, useDeleteScheduleItem, useAddScheduleItem, useGetWebsiteLayoutPreferences } from '@/hooks/useQueries';
 import { Journey, ScheduleItem } from '@/backend';
 import { toast } from 'sonner';
 
 interface TraveloguePanelProps {
   onFlightAnimation?: (fromCity: string, toCity: string, fromCoords: { lat: number; lon: number }, toCoords: { lat: number; lon: number }) => void;
-  onMapNavigate?: (journeyCity: string, scheduleItem?: { date: bigint; time: string; location: string; activity: string }) => void;
+  onMapJourney?: (journeyCity: string) => void;
 }
 
-export default function TraveloguePanel({ onFlightAnimation, onMapNavigate }: TraveloguePanelProps) {
+export default function TraveloguePanel({ onFlightAnimation, onMapJourney }: TraveloguePanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [expandedJourneys, setExpandedJourneys] = useState<string[]>([]);
   const [fullItineraryJourney, setFullItineraryJourney] = useState<Journey | null>(null);
@@ -179,22 +178,10 @@ export default function TraveloguePanel({ onFlightAnimation, onMapNavigate }: Tr
     }
   };
 
-  // Handle map button click - navigate to 2D map with journey city
-  const handleMapClick = (journey: Journey, scheduleItem?: ScheduleItem) => {
-    if (onMapNavigate) {
-      if (scheduleItem) {
-        // Navigate with schedule item focus
-        onMapNavigate(journey.city, {
-          date: scheduleItem.date,
-          time: scheduleItem.time,
-          location: scheduleItem.location,
-          activity: scheduleItem.activity
-        });
-      } else {
-        // Navigate with just journey city
-        onMapNavigate(journey.city);
-      }
-    }
+  // Handle map button click
+  const handleMapClick = (journey: Journey) => {
+    if (!onMapJourney) return;
+    onMapJourney(journey.city);
   };
 
   // Filter journeys based on current date
@@ -359,7 +346,7 @@ export default function TraveloguePanel({ onFlightAnimation, onMapNavigate }: Tr
                       onViewFullItinerary={() => setFullItineraryJourney(journey)}
                       onViewRetroItinerary={() => setRetroItineraryJourney(journey)}
                       onFlyingClick={() => handleFlyingClick(journey)}
-                      onMapClick={(scheduleItem) => handleMapClick(journey, scheduleItem)}
+                      onMapClick={() => handleMapClick(journey)}
                       isFlying={flyingJourneys.has(journey.city)}
                       formatDate={formatDate}
                       formatScheduleDate={formatScheduleDate}
@@ -389,7 +376,7 @@ export default function TraveloguePanel({ onFlightAnimation, onMapNavigate }: Tr
                       onViewFullItinerary={() => setFullItineraryJourney(journey)}
                       onViewRetroItinerary={() => setRetroItineraryJourney(journey)}
                       onFlyingClick={() => handleFlyingClick(journey)}
-                      onMapClick={(scheduleItem) => handleMapClick(journey, scheduleItem)}
+                      onMapClick={() => handleMapClick(journey)}
                       isFlying={flyingJourneys.has(journey.city)}
                       formatDate={formatDate}
                       formatScheduleDate={formatScheduleDate}
@@ -419,7 +406,7 @@ export default function TraveloguePanel({ onFlightAnimation, onMapNavigate }: Tr
                       onViewFullItinerary={() => setFullItineraryJourney(journey)}
                       onViewRetroItinerary={() => setRetroItineraryJourney(journey)}
                       onFlyingClick={() => handleFlyingClick(journey)}
-                      onMapClick={(scheduleItem) => handleMapClick(journey, scheduleItem)}
+                      onMapClick={() => handleMapClick(journey)}
                       isFlying={flyingJourneys.has(journey.city)}
                       formatDate={formatDate}
                       formatScheduleDate={formatScheduleDate}
@@ -455,7 +442,7 @@ export default function TraveloguePanel({ onFlightAnimation, onMapNavigate }: Tr
       <Dialog open={!!retroItineraryJourney} onOpenChange={() => setRetroItineraryJourney(null)}>
         <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden z-[3200] p-0 bg-[#f5e6d3] border-none">
           {retroItineraryJourney && (
-            <RetroItineraryView 
+            <RetroPostcardItineraryView 
               journey={retroItineraryJourney}
               formatDate={formatDate}
               formatDateRange={formatDateRange}
@@ -494,23 +481,23 @@ export default function TraveloguePanel({ onFlightAnimation, onMapNavigate }: Tr
               />
             </div>
             <div>
-              <Label htmlFor="edit-location">Location</Label>
+              <Label htmlFor="edit-location">Location *</Label>
               <Input
                 id="edit-location"
                 type="text"
                 value={editForm.location}
                 onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
-                placeholder="Enter location"
+                placeholder="Enter location (required)"
                 required
               />
             </div>
             <div>
               <Label htmlFor="edit-activity">Activity</Label>
-              <Textarea
+              <Input
                 id="edit-activity"
+                type="text"
                 value={editForm.activity}
                 onChange={(e) => setEditForm({ ...editForm, activity: e.target.value })}
-                placeholder="Enter activity"
                 required
               />
             </div>
@@ -537,44 +524,42 @@ interface JourneyCardProps {
   onViewFullItinerary: () => void;
   onViewRetroItinerary: () => void;
   onFlyingClick: () => void;
-  onMapClick: (scheduleItem?: ScheduleItem) => void;
+  onMapClick: () => void;
   isFlying: boolean;
   formatDate: (timestamp: bigint) => string;
   formatScheduleDate: (timestamp: bigint) => string;
   formatTime: (timeString: string) => string;
   onSixDotClick: (item: ScheduleItem, journey: Journey) => void;
-  badgeColor: string;
+  badgeColor: 'orange' | 'green' | 'blue';
   defaultSearchPlace: string;
 }
 
-function JourneyCard({
-  journey,
-  isExpanded,
-  onToggle,
-  onViewFullItinerary,
-  onViewRetroItinerary,
+function JourneyCard({ 
+  journey, 
+  isExpanded, 
+  onToggle, 
+  onViewFullItinerary, 
+  onViewRetroItinerary, 
   onFlyingClick,
   onMapClick,
   isFlying,
-  formatDate,
-  formatScheduleDate,
-  formatTime,
+  formatDate, 
+  formatScheduleDate, 
+  formatTime, 
   onSixDotClick,
   badgeColor,
   defaultSearchPlace
 }: JourneyCardProps) {
   const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.city);
 
-  const getBadgeClass = (color: string) => {
+  const getBadgeClass = (color: 'orange' | 'green' | 'blue') => {
     switch (color) {
       case 'orange':
-        return 'bg-orange-500 text-white';
+        return 'bg-orange-500 hover:bg-orange-600';
       case 'green':
-        return 'bg-green-500 text-white';
+        return 'bg-green-500 hover:bg-green-600';
       case 'blue':
-        return 'bg-blue-500 text-white';
-      default:
-        return 'bg-gray-500 text-white';
+        return 'bg-blue-500 hover:bg-blue-600';
     }
   };
 
@@ -600,44 +585,42 @@ function JourneyCard({
           </div>
           <div className="flex items-center gap-2">
             <Badge className={getBadgeClass(badgeColor)}>
-              {scheduleWithDays.length} {scheduleWithDays.length === 1 ? 'Day' : 'Days'}
+              {scheduleWithDays.length} {scheduleWithDays.length === 1 ? 'day' : 'days'}
             </Badge>
             <Button
               variant="outline"
               size="sm"
               onClick={onViewFullItinerary}
-              className="h-8"
+              className="gap-2"
             >
-              <Eye className="h-3 w-3 mr-1" />
+              <Eye className="h-4 w-4" />
               Doodle
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={onViewRetroItinerary}
-              className="h-8"
+              className="gap-2"
             >
-              <Eye className="h-3 w-3 mr-1" />
+              <Eye className="h-4 w-4" />
               Retro
             </Button>
             <Button
               variant={isFlying ? "default" : "outline"}
               size="sm"
               onClick={onFlyingClick}
-              className="h-8"
-              title={isFlying ? `Stop flying from ${defaultSearchPlace}` : `Fly from ${defaultSearchPlace} to ${journey.city}`}
+              className="gap-2"
             >
-              <Plane className="h-3 w-3 mr-1" />
+              <Plane className="h-4 w-4" />
               Flying
             </Button>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onMapClick()}
-              className="h-8"
-              title="View on 2D map"
+              onClick={onMapClick}
+              className="gap-2"
             >
-              <MapIcon className="h-3 w-3 mr-1" />
+              <Map className="h-4 w-4" />
               Map
             </Button>
           </div>
@@ -654,42 +637,26 @@ function JourneyCard({
               <div className="space-y-4">
                 {scheduleWithDays.map(([dayLabel, items]) => (
                   <div key={dayLabel} className="space-y-2">
-                    <h4 className="font-semibold text-sm text-primary">{dayLabel}</h4>
-                    <div className="space-y-2 pl-4">
+                    <h4 className="font-semibold text-sm">{dayLabel}</h4>
+                    <div className="space-y-2">
                       {items.map((item, idx) => (
-                        <div key={idx} className="flex items-start gap-2 text-sm border-l-2 border-muted pl-3 py-1">
+                        <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{formatTime(item.time)}</span>
-                              <span className="text-muted-foreground">•</span>
-                              <span>{item.activity}</span>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-medium">{formatTime(item.time)}</span>
+                              <span className="text-xs text-muted-foreground">•</span>
+                              <span className="text-sm text-muted-foreground">{item.location}</span>
                             </div>
-                            {item.location && (
-                              <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
-                                {item.location}
-                              </div>
-                            )}
+                            <p className="text-sm">{item.activity}</p>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onMapClick(item)}
-                              className="h-6 w-6 p-0"
-                              title="View on map"
-                            >
-                              <MapIcon className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onSixDotClick(item, journey)}
-                              className="h-6 w-6 p-0"
-                            >
-                              <MoreHorizontal className="h-3 w-3" />
-                            </Button>
-                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onSixDotClick(item, journey)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
                         </div>
                       ))}
                     </div>
@@ -711,22 +678,20 @@ function ScrapbookItineraryView({ journey, formatDate, formatDateRange, formatSc
   return (
     <div className="p-8 overflow-y-auto max-h-[90vh]">
       <div className="text-center mb-8">
-        <h2 className="text-4xl font-bold text-amber-900 mb-2">{journey.city}</h2>
-        <p className="text-lg text-amber-700">{formatDateRange(journey.startDate, journey.endDate)}</p>
+        <h2 className="text-3xl font-bold mb-2">{journey.city}</h2>
+        <p className="text-lg text-muted-foreground">{formatDateRange(journey.startDate, journey.endDate)}</p>
       </div>
       <div className="space-y-6">
         {scheduleWithDays.map(([dayLabel, items]: [string, ScheduleItem[]]) => (
-          <div key={dayLabel} className="bg-white/60 rounded-lg p-6 shadow-md">
-            <h3 className="text-2xl font-semibold text-amber-800 mb-4">{dayLabel}</h3>
+          <div key={dayLabel} className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-xl font-semibold mb-4">{dayLabel}</h3>
             <div className="space-y-3">
               {items.map((item, idx) => (
-                <div key={idx} className="flex gap-3 text-amber-900">
-                  <span className="font-medium min-w-[80px]">{formatTime(item.time)}</span>
-                  <div className="flex-1">
-                    <p className="font-medium">{item.activity}</p>
-                    {item.location && (
-                      <p className="text-sm text-amber-700">{item.location}</p>
-                    )}
+                <div key={idx} className="flex gap-3">
+                  <span className="font-medium">{formatTime(item.time)}</span>
+                  <div>
+                    <p className="font-medium">{item.location}</p>
+                    <p className="text-sm text-muted-foreground">{item.activity}</p>
                   </div>
                 </div>
               ))}
@@ -738,29 +703,27 @@ function ScrapbookItineraryView({ journey, formatDate, formatDateRange, formatSc
   );
 }
 
-// Retro Itinerary View Component (placeholder - keeping existing implementation)
-function RetroItineraryView({ journey, formatDate, formatDateRange, formatScheduleDate, formatTime }: any) {
+// Retro Postcard Itinerary View Component (placeholder - keeping existing implementation)
+function RetroPostcardItineraryView({ journey, formatDate, formatDateRange, formatScheduleDate, formatTime }: any) {
   const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.city);
   
   return (
     <div className="p-8 overflow-y-auto max-h-[90vh]">
-      <div className="text-center mb-8 border-4 border-amber-800 p-6 bg-amber-50">
-        <h2 className="text-4xl font-bold text-amber-900 mb-2" style={{ fontFamily: 'serif' }}>{journey.city}</h2>
-        <p className="text-lg text-amber-700">{formatDateRange(journey.startDate, journey.endDate)}</p>
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-bold mb-2">{journey.city}</h2>
+        <p className="text-lg text-muted-foreground">{formatDateRange(journey.startDate, journey.endDate)}</p>
       </div>
       <div className="space-y-6">
         {scheduleWithDays.map(([dayLabel, items]: [string, ScheduleItem[]]) => (
-          <div key={dayLabel} className="bg-amber-50 border-2 border-amber-800 rounded p-6">
-            <h3 className="text-2xl font-semibold text-amber-900 mb-4" style={{ fontFamily: 'serif' }}>{dayLabel}</h3>
+          <div key={dayLabel} className="bg-[#fff8e7] p-6 rounded-lg border-2 border-[#8b7355]">
+            <h3 className="text-xl font-semibold mb-4">{dayLabel}</h3>
             <div className="space-y-3">
               {items.map((item, idx) => (
-                <div key={idx} className="flex gap-3 text-amber-900">
-                  <span className="font-medium min-w-[80px]">{formatTime(item.time)}</span>
-                  <div className="flex-1">
-                    <p className="font-medium">{item.activity}</p>
-                    {item.location && (
-                      <p className="text-sm text-amber-700">{item.location}</p>
-                    )}
+                <div key={idx} className="flex gap-3">
+                  <span className="font-medium">{formatTime(item.time)}</span>
+                  <div>
+                    <p className="font-medium">{item.location}</p>
+                    <p className="text-sm text-muted-foreground">{item.activity}</p>
                   </div>
                 </div>
               ))}

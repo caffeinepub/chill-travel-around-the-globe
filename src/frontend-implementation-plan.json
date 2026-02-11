@@ -1,90 +1,74 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Travelogue Map button navigates to 2D map and focuses journey/schedule via URL handoff",
+  "title": "Travelogue: Map button to open existing 2D map with journey schedule markers",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Change Travelogue Map action from opening a dialog to navigating to the existing 2D map view and centering via the existing search flow on the journey city.",
+      "summary": "Add a \"Map\" button with a 2D/map-style icon next to the existing \"Flying\" button on each Travelogue journey card.",
       "acceptanceCriteria": [
-        "Clicking the Travelogue Map button does not open any dialog/popup (no overlay div is rendered for this action).",
-        "After clicking the Travelogue Map button, the app switches to the 2D view and searches/centers the map on the journey’s city name (using the existing search flow)."
+        "Each journey card shows a \"Map\" button next to the existing \"Flying\" button.",
+        "The button label is exactly \"Map\" (English).",
+        "The button includes a 2D/map-style icon (e.g., lucide Map)."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Replace the current Map-button behavior that sets local dialog state (mapJourney) with a callback-based navigation intent (e.g., call a new prop like onMapNavigate with journey city). Ensure the old TravelogueJourneyMapDialog is not opened for this action, so no dialog/overlay is rendered."
-        },
-        {
-          "path": "frontend/src/pages/LocationMapExplorer.tsx",
-          "operation": "modify",
-          "description": "Add a handler wired into TraveloguePanel (new prop) that uses the existing performSearch flow to search for the journey city, sets viewMode to '2D', and clears unrelated focus state (travel spots/bookmarks) for this action."
+          "description": "Add a new \"Map\" action button (label exactly \"Map\") with a 2D/map-style icon (e.g., lucide-react Map) in the journey action row, positioned next to the existing \"Flying\" button, and wire it to invoke a new callback prop when clicked."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "When Map is invoked from a schedule item, auto-focus that schedule item on the 2D map by highlighting/opening its marker/popup.",
+      "summary": "On \"Map\" click, switch the main explorer to the existing 2D map view and render all schedule items for the selected journey as map markers using their location inputs, with robust error handling for unmappable locations.",
       "acceptanceCriteria": [
-        "If a schedule item is the source of the Map action, the 2D map automatically highlights that schedule item (marker is visually distinguishable and/or its popup is opened).",
-        "The focused schedule item shown on the 2D map matches the originating schedule item (date/time/activity/location)."
+        "Clicking \"Map\" switches the app’s main view mode to the existing 2D map (no new map page is created).",
+        "All schedule items belonging to the selected journey are rendered as markers/items on the 2D map.",
+        "The marker positions are driven by each schedule item’s `location` input value (e.g., via existing geocoding / location lookup logic already used by the map).",
+        "If one or more schedule items cannot be mapped to coordinates, the app does not crash and shows a user-visible error/toast indicating some locations could not be displayed."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/TraveloguePanel.tsx",
-          "operation": "modify",
-          "description": "Ensure schedule items in the Travelogue UI can invoke the Map action with schedule-item identity (at minimum journeyCity + date + time; optionally include activity/location for verification). Pass this data through the new onMapNavigate callback rather than opening the dialog."
-        },
-        {
           "path": "frontend/src/pages/LocationMapExplorer.tsx",
           "operation": "modify",
-          "description": "Track a focused schedule-item identity in state when Map is invoked from a schedule item, and pass it down to MapComponent as a new optional prop (e.g., focusedScheduleItem). Ensure switching to 2D/search happens before focus is applied."
+          "description": "Implement the \"Map\" click flow to: switch viewMode to '2D', resolve the journey’s map context (e.g., by searching/setting selectedLocation to the journey city), fetch that journey’s schedule items, geocode each schedule item location into coordinates (reusing existing location lookup logic), store derived map points in state, and pass them into MapComponent for immediate rendering; show a toast if any locations fail to resolve."
         },
         {
           "path": "frontend/src/components/MapComponent.tsx",
           "operation": "modify",
-          "description": "Add support for a new optional prop representing the schedule item to focus. Ensure schedule markers retain enough metadata (journey city/date/time/activity/location) to match the requested focus, then programmatically center on the marker and open its popup and/or apply a distinct highlight styling so it is visually distinguishable."
+          "description": "Extend MapComponent to accept optional journey schedule map data (e.g., an array of schedule items with resolved coordinates) and render these as markers in addition to (or in preference to) any existing schedule marker logic; ensure marker rendering is resilient to missing/invalid points and supports fitting/centering the map view based on the journey markers when provided."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Expose a reusable, map-consistent location lookup helper for turning free-text locations into coordinates (aligned with the existing geocoding/location lookup behavior already used elsewhere), and/or add a small helper hook/utility to geocode an array of schedule item locations for the journey-map feature with per-item error capture (no crashes)."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Persist Map navigation context in the URL so 2D map can restore the selected city and schedule item after refresh using existing urlParams utilities.",
+      "summary": "Wire TraveloguePanel and LocationMapExplorer together via a callback so Travelogue can trigger 2D mode and provide the selected journey and its schedule items (or derived map points) to MapComponent.",
       "acceptanceCriteria": [
-        "Triggering the Map action updates the URL (query or hash query) with parameters sufficient to restore the 2D view selection on refresh.",
-        "Refreshing the page after using the Map action restores the 2D view and re-focuses the intended city and schedule item without user re-clicking."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/utils/urlParams.ts",
-          "operation": "modify",
-          "description": "Extend the existing URL param utilities to support setting/updating (and optionally clearing) non-secret URL parameters for this feature (e.g., helper(s) to write query/hash-query params without reloading). Reuse existing parsing/persistence patterns in this file."
-        },
-        {
-          "path": "frontend/src/pages/LocationMapExplorer.tsx",
-          "operation": "modify",
-          "description": "On Map action, write URL parameters for the target city and (when applicable) schedule identity (e.g., journeyCity, scheduleDate, scheduleTime). On initial load, read these parameters via frontend/src/utils/urlParams.ts and automatically restore: set viewMode='2D', performSearch(city), and pass the schedule identity to MapComponent so it can re-focus after the search completes."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Limit the behavior change to the Travelogue Map button and its previous popup container; keep all other dialogs working unchanged.",
-      "acceptanceCriteria": [
-        "No unrelated buttons or dialogs change behavior.",
-        "The popup/dialog that previously appeared for the Map action is no longer shown, while other existing popups (e.g., edit schedule item) still open and work normally."
+        "TraveloguePanel exposes a new prop callback (e.g., `onMapJourney(...)`) invoked when \"Map\" is clicked.",
+        "LocationMapExplorer implements the callback to: (1) set view mode to '2D', (2) center the 2D map appropriately for the journey, and (3) pass journey schedule items (or derived map points) down to MapComponent.",
+        "MapComponent renders the passed journey schedule items without requiring manual user search input."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Remove/disable only the state/rendering paths that open the journey-map dialog for the Map action, while leaving existing itinerary dialogs and edit schedule dialogs intact. Ensure only the Map control is rerouted to navigation behavior."
+          "description": "Add a new optional prop callback (e.g., onMapJourney) to TraveloguePanel and invoke it from each journey card’s new \"Map\" button with the selected journey identifier (journey.city) and sufficient journey context to fetch/render schedule items."
         },
         {
-          "path": "frontend/src/components/TravelogueJourneyMapDialog.tsx",
+          "path": "frontend/src/pages/LocationMapExplorer.tsx",
           "operation": "modify",
-          "description": "Add a deprecation comment and/or adjust exports/docs to reflect that this dialog is no longer used by the Travelogue Map action (do not change other dialogs). Keep the component available to avoid breaking other code, but ensure it is not invoked by the Map button flow."
+          "description": "Pass an onMapJourney callback into TraveloguePanel; in the handler, orchestrate: setting viewMode to '2D', selecting/centering the map for the journey (e.g., by using the existing search flow for journey.city and/or fitting bounds to derived schedule points), and providing derived journey schedule map points to MapComponent as props so it renders without manual search input."
+        },
+        {
+          "path": "frontend/src/components/MapComponent.tsx",
+          "operation": "modify",
+          "description": "Add/adjust props so LocationMapExplorer can supply journey schedule items (or precomputed map points) directly; ensure MapComponent uses these props to render schedule markers immediately and does not require any manual search input to show them."
         }
       ]
     }

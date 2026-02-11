@@ -1,40 +1,32 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "App should show journey schedule via a 2D page view: clicking the Map button should navigate to a 2D page for the selected journey city and highlight/display the corresponding schedule item (instead of opening a popup).",
+  "summary": "Add a Map button in the travelogue UI that navigates to the existing 2D map and displays the selected journey’s schedule items based on their input locations.",
   "architectural_notes": [],
   "known_issues": [],
-  "isFixRequest": true,
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-replace-the-current-travelogue-map-button-behavior-that-opens-a-popup-dialog-with-navigation-to-the-existing-2d-map-view-in-locationmapexplorer-centered-on-the-selected-journey-city",
-      "title": "Replace the current Travelogue “Map” button behavior that opens a popup/dialog with navigation to the existing 2D map view in LocationMapExplorer, centered on the selected journey city.",
+      "id": "feature-in-the-travelogue-journey-action-row-add-a-new-button-labeled-map-with-a-2d-map-style-icon-positioned-next-to-the-existing-flying-button",
+      "title": "In the Travelogue journey action row, add a new button labeled \"Map\" with a 2D/map-style icon, positioned next to the existing \"Flying\" button.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-when-the-travelogue-map-button-is-invoked-for-a-specific-schedule-item-ensure-the-2d-map-view-also-displays-and-focuses-the-corresponding-schedule-item-e-g-by-automatically-opening-spotlighting-that-schedule-item-s-marker-popup-on-the-2d-map",
-      "title": "When the Travelogue Map button is invoked for a specific schedule item, ensure the 2D map view also displays and focuses the corresponding schedule item (e.g., by automatically opening/spotlighting that schedule item’s marker/popup on the 2D map).",
+      "id": "feature-when-the-new-map-button-is-clicked-for-a-journey-switch-the-main-explorer-to-the-existing-2d-map-view-and-display-all-schedule-items-for-that-journey-on-the-2d-map-according-to-each-schedule-item-s-input-location",
+      "title": "When the new \"Map\" button is clicked for a journey, switch the main explorer to the existing 2D map view and display all schedule items for that journey on the 2D map according to each schedule item’s input location.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-implement-a-url-state-handoff-so-that-switching-to-the-2d-view-from-the-map-button-persists-enough-information-to-load-the-correct-journey-city-and-schedule-item-even-after-a-page-refresh-use-the-existing-url-param-utilities-in-frontend-src-utils-urlparams-ts",
-      "title": "Implement a URL/state handoff so that switching to the 2D view from the Map button persists enough information to load the correct journey city and schedule item even after a page refresh (use the existing URL param utilities in frontend/src/utils/urlParams.ts).",
+      "id": "feature-wire-traveloguepanel-and-locationmapexplorer-together-with-a-callback-event-so-the-travelogue-map-button-can-trigger-2d-mode-and-provide-the-selected-journey-identifier-and-its-schedule-items-or-enough-data-to-mapcomponent-for-rendering",
+      "title": "Wire TraveloguePanel and LocationMapExplorer together with a callback/event so the Travelogue \"Map\" button can trigger 2D mode and provide the selected journey identifier and its schedule items (or enough data) to MapComponent for rendering.",
       "reqIds": [
         "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-apply-the-behavior-change-only-to-the-user-selected-ui-elements-the-map-button-control-in-the-header-and-the-popup-container-currently-used-for-the-map-action-ensuring-other-dialogs-e-g-itinerary-and-edit-schedule-dialogs-continue-to-function-unchanged",
-      "title": "Apply the behavior change only to the user-selected UI elements (the Map button control in the header and the popup container currently used for the Map action), ensuring other dialogs (e.g., itinerary and edit schedule dialogs) continue to function unchanged.",
-      "reqIds": [
-        "REQ-4"
       ],
       "version": 1
     }
@@ -42,13 +34,18 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Change Map button behavior to navigate to the 2D page for the selected journey city and display the corresponding schedule item (no popup).",
+      "summary": "Add a 'Map' button (2D logo) next to the 'Flying' button in the travelogue UI.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "On 'Map' button click, navigate to the existing 2D map and display all schedule items for that journey according to their input locations.",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "gameProjectType": "2d",
-  "projectName": "Change Travelogue Map button to navigate to 2D view and focus the selected journey/schedule item (no popup)",
+  "projectName": "Add Map button in Travelogue to open 2D map with selected journey schedule items",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }
