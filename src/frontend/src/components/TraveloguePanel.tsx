@@ -14,10 +14,9 @@ import { toast } from 'sonner';
 
 interface TraveloguePanelProps {
   onFlightAnimation?: (fromCity: string, toCity: string, fromCoords: { lat: number; lon: number }, toCoords: { lat: number; lon: number }) => void;
-  onMapJourney?: (journeyCity: string) => void;
 }
 
-export default function TraveloguePanel({ onFlightAnimation, onMapJourney }: TraveloguePanelProps) {
+export default function TraveloguePanel({ onFlightAnimation }: TraveloguePanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [expandedJourneys, setExpandedJourneys] = useState<string[]>([]);
   const [fullItineraryJourney, setFullItineraryJourney] = useState<Journey | null>(null);
@@ -178,10 +177,9 @@ export default function TraveloguePanel({ onFlightAnimation, onMapJourney }: Tra
     }
   };
 
-  // Handle map button click
-  const handleMapClick = (journey: Journey) => {
-    if (!onMapJourney) return;
-    onMapJourney(journey.city);
+  // Handle map button click (no-op for now)
+  const handleMapClick = () => {
+    // No-op: button does nothing yet
   };
 
   // Filter journeys based on current date
@@ -346,7 +344,7 @@ export default function TraveloguePanel({ onFlightAnimation, onMapJourney }: Tra
                       onViewFullItinerary={() => setFullItineraryJourney(journey)}
                       onViewRetroItinerary={() => setRetroItineraryJourney(journey)}
                       onFlyingClick={() => handleFlyingClick(journey)}
-                      onMapClick={() => handleMapClick(journey)}
+                      onMapClick={handleMapClick}
                       isFlying={flyingJourneys.has(journey.city)}
                       formatDate={formatDate}
                       formatScheduleDate={formatScheduleDate}
@@ -376,7 +374,7 @@ export default function TraveloguePanel({ onFlightAnimation, onMapJourney }: Tra
                       onViewFullItinerary={() => setFullItineraryJourney(journey)}
                       onViewRetroItinerary={() => setRetroItineraryJourney(journey)}
                       onFlyingClick={() => handleFlyingClick(journey)}
-                      onMapClick={() => handleMapClick(journey)}
+                      onMapClick={handleMapClick}
                       isFlying={flyingJourneys.has(journey.city)}
                       formatDate={formatDate}
                       formatScheduleDate={formatScheduleDate}
@@ -406,7 +404,7 @@ export default function TraveloguePanel({ onFlightAnimation, onMapJourney }: Tra
                       onViewFullItinerary={() => setFullItineraryJourney(journey)}
                       onViewRetroItinerary={() => setRetroItineraryJourney(journey)}
                       onFlyingClick={() => handleFlyingClick(journey)}
-                      onMapClick={() => handleMapClick(journey)}
+                      onMapClick={handleMapClick}
                       isFlying={flyingJourneys.has(journey.city)}
                       formatDate={formatDate}
                       formatScheduleDate={formatScheduleDate}
@@ -455,7 +453,7 @@ export default function TraveloguePanel({ onFlightAnimation, onMapJourney }: Tra
 
       {/* Edit Schedule Item Popup */}
       <Dialog open={editPopupOpen} onOpenChange={setEditPopupOpen}>
-        <DialogContent className="z-[3300]">
+        <DialogContent className="max-w-md z-[3300]">
           <DialogHeader>
             <DialogTitle>Edit Schedule Item</DialogTitle>
           </DialogHeader>
@@ -481,13 +479,13 @@ export default function TraveloguePanel({ onFlightAnimation, onMapJourney }: Tra
               />
             </div>
             <div>
-              <Label htmlFor="edit-location">Location *</Label>
+              <Label htmlFor="edit-location">Location</Label>
               <Input
                 id="edit-location"
                 type="text"
                 value={editForm.location}
                 onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
-                placeholder="Enter location (required)"
+                placeholder="Enter location"
                 required
               />
             </div>
@@ -498,6 +496,7 @@ export default function TraveloguePanel({ onFlightAnimation, onMapJourney }: Tra
                 type="text"
                 value={editForm.activity}
                 onChange={(e) => setEditForm({ ...editForm, activity: e.target.value })}
+                placeholder="Enter activity"
                 required
               />
             </div>
@@ -534,47 +533,42 @@ interface JourneyCardProps {
   defaultSearchPlace: string;
 }
 
-function JourneyCard({ 
-  journey, 
-  isExpanded, 
-  onToggle, 
-  onViewFullItinerary, 
-  onViewRetroItinerary, 
+function JourneyCard({
+  journey,
+  isExpanded,
+  onToggle,
+  onViewFullItinerary,
+  onViewRetroItinerary,
   onFlyingClick,
   onMapClick,
   isFlying,
-  formatDate, 
-  formatScheduleDate, 
-  formatTime, 
+  formatDate,
+  formatScheduleDate,
+  formatTime,
   onSixDotClick,
   badgeColor,
   defaultSearchPlace
 }: JourneyCardProps) {
   const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.city);
 
-  const getBadgeClass = (color: 'orange' | 'green' | 'blue') => {
-    switch (color) {
-      case 'orange':
-        return 'bg-orange-500 hover:bg-orange-600';
-      case 'green':
-        return 'bg-green-500 hover:bg-green-600';
-      case 'blue':
-        return 'bg-blue-500 hover:bg-blue-600';
-    }
-  };
+  const badgeColorClass = {
+    orange: 'bg-orange-500 hover:bg-orange-600',
+    green: 'bg-green-500 hover:bg-green-600',
+    blue: 'bg-blue-500 hover:bg-blue-600'
+  }[badgeColor];
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="sm"
               onClick={onToggle}
-              className="h-8 w-8 p-0"
+              className="p-0 h-auto hover:bg-transparent"
             >
-              {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
             </Button>
             <div>
               <CardTitle className="text-lg">{journey.city}</CardTitle>
@@ -584,14 +578,11 @@ function JourneyCard({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge className={getBadgeClass(badgeColor)}>
-              {scheduleWithDays.length} {scheduleWithDays.length === 1 ? 'day' : 'days'}
-            </Badge>
             <Button
               variant="outline"
               size="sm"
               onClick={onViewFullItinerary}
-              className="gap-2"
+              className="flex items-center gap-1"
             >
               <Eye className="h-4 w-4" />
               Doodle
@@ -600,16 +591,16 @@ function JourneyCard({
               variant="outline"
               size="sm"
               onClick={onViewRetroItinerary}
-              className="gap-2"
+              className="flex items-center gap-1"
             >
               <Eye className="h-4 w-4" />
               Retro
             </Button>
             <Button
-              variant={isFlying ? "default" : "outline"}
+              variant="outline"
               size="sm"
               onClick={onFlyingClick}
-              className="gap-2"
+              className={`flex items-center gap-1 ${isFlying ? 'bg-blue-100 dark:bg-blue-900' : ''}`}
             >
               <Plane className="h-4 w-4" />
               Flying
@@ -618,17 +609,20 @@ function JourneyCard({
               variant="outline"
               size="sm"
               onClick={onMapClick}
-              className="gap-2"
+              className="flex items-center gap-1"
             >
-              <Map className="h-4 w-4" />
-              Map
+              <span className="text-xs font-bold">2D</span>
+              <span className="ml-1">Map</span>
             </Button>
+            <Badge className={`${badgeColorClass} text-white`}>
+              {scheduleWithDays.length} {scheduleWithDays.length === 1 ? 'day' : 'days'}
+            </Badge>
           </div>
         </div>
       </CardHeader>
-      <Collapsible open={isExpanded}>
-        <CollapsibleContent>
-          <CardContent className="pt-0">
+      <CollapsibleContent>
+        {isExpanded && (
+          <CardContent>
             {scheduleWithDays.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
                 No schedule items for this journey
@@ -636,24 +630,31 @@ function JourneyCard({
             ) : (
               <div className="space-y-4">
                 {scheduleWithDays.map(([dayLabel, items]) => (
-                  <div key={dayLabel} className="space-y-2">
-                    <h4 className="font-semibold text-sm">{dayLabel}</h4>
+                  <div key={dayLabel}>
+                    <h4 className="font-semibold text-sm mb-2">{dayLabel}</h4>
                     <div className="space-y-2">
                       {items.map((item, idx) => (
-                        <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm font-medium">{formatTime(item.time)}</span>
-                              <span className="text-xs text-muted-foreground">•</span>
-                              <span className="text-sm text-muted-foreground">{item.location}</span>
-                            </div>
-                            <p className="text-sm">{item.activity}</p>
+                        <div
+                          key={idx}
+                          className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex-shrink-0 w-16 text-xs text-muted-foreground">
+                            {formatTime(item.time)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium">{item.activity}</p>
+                            {item.location && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {item.location}
+                              </p>
+                            )}
                           </div>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => onSixDotClick(item, journey)}
-                            className="h-8 w-8 p-0"
+                            className="flex-shrink-0 h-8 w-8 p-0"
                           >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
@@ -665,34 +666,79 @@ function JourneyCard({
               </div>
             )}
           </CardContent>
-        </CollapsibleContent>
-      </Collapsible>
+        )}
+      </CollapsibleContent>
     </Card>
   );
 }
 
-// Scrapbook Itinerary View Component (placeholder - keeping existing implementation)
-function ScrapbookItineraryView({ journey, formatDate, formatDateRange, formatScheduleDate, formatTime }: any) {
+// Scrapbook Itinerary View Component
+interface ScrapbookItineraryViewProps {
+  journey: Journey;
+  formatDate: (timestamp: bigint) => string;
+  formatDateRange: (startTimestamp: bigint, endTimestamp: bigint) => string;
+  formatScheduleDate: (timestamp: bigint) => string;
+  formatTime: (timeString: string) => string;
+}
+
+function ScrapbookItineraryView({
+  journey,
+  formatDate,
+  formatDateRange,
+  formatScheduleDate,
+  formatTime
+}: ScrapbookItineraryViewProps) {
   const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.city);
-  
+
   return (
-    <div className="p-8 overflow-y-auto max-h-[90vh]">
+    <div className="relative w-full h-full overflow-y-auto p-8 bg-[#fef9f3]">
+      {/* Header */}
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold mb-2">{journey.city}</h2>
-        <p className="text-lg text-muted-foreground">{formatDateRange(journey.startDate, journey.endDate)}</p>
+        <h1 className="text-4xl font-bold text-[#8b4513] mb-2" style={{ fontFamily: 'cursive' }}>
+          {journey.city}
+        </h1>
+        <p className="text-lg text-[#a0522d]">
+          {formatDateRange(journey.startDate, journey.endDate)}
+        </p>
       </div>
-      <div className="space-y-6">
-        {scheduleWithDays.map(([dayLabel, items]: [string, ScheduleItem[]]) => (
-          <div key={dayLabel} className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-xl font-semibold mb-4">{dayLabel}</h3>
-            <div className="space-y-3">
-              {items.map((item, idx) => (
-                <div key={idx} className="flex gap-3">
-                  <span className="font-medium">{formatTime(item.time)}</span>
-                  <div>
-                    <p className="font-medium">{item.location}</p>
-                    <p className="text-sm text-muted-foreground">{item.activity}</p>
+
+      {/* Schedule Items */}
+      <div className="space-y-6 max-w-4xl mx-auto">
+        {scheduleWithDays.map(([dayLabel, items], dayIdx) => (
+          <div key={dayLabel} className="relative">
+            {/* Day Label */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-[#ff6b6b] text-white px-4 py-2 rounded-full shadow-md">
+                <span className="font-bold">{dayLabel}</span>
+              </div>
+              <div className="flex-1 h-0.5 bg-[#ffd93d] opacity-50"></div>
+            </div>
+
+            {/* Items for this day */}
+            <div className="space-y-3 pl-8">
+              {items.map((item, itemIdx) => (
+                <div
+                  key={itemIdx}
+                  className="relative bg-white p-4 rounded-lg shadow-md border-2 border-[#ffd93d] transform hover:scale-105 transition-transform"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 bg-[#6bcf7f] text-white px-3 py-1 rounded-full text-sm font-semibold">
+                      {formatTime(item.time)}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-[#8b4513] mb-1">{item.activity}</p>
+                      {item.location && (
+                        <p className="text-sm text-[#a0522d] flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {item.location}
+                        </p>
+                      )}
+                    </div>
                   </div>
+                  {/* Decorative arrow connector (50% shorter) */}
+                  {itemIdx < items.length - 1 && (
+                    <div className="absolute left-20 bottom-[-12px] w-0.5 h-3 bg-[#ffd93d]"></div>
+                  )}
                 </div>
               ))}
             </div>
@@ -703,28 +749,78 @@ function ScrapbookItineraryView({ journey, formatDate, formatDateRange, formatSc
   );
 }
 
-// Retro Postcard Itinerary View Component (placeholder - keeping existing implementation)
-function RetroPostcardItineraryView({ journey, formatDate, formatDateRange, formatScheduleDate, formatTime }: any) {
+// Retro Postcard Itinerary View Component
+interface RetroPostcardItineraryViewProps {
+  journey: Journey;
+  formatDate: (timestamp: bigint) => string;
+  formatDateRange: (startTimestamp: bigint, endTimestamp: bigint) => string;
+  formatScheduleDate: (timestamp: bigint) => string;
+  formatTime: (timeString: string) => string;
+}
+
+function RetroPostcardItineraryView({
+  journey,
+  formatDate,
+  formatDateRange,
+  formatScheduleDate,
+  formatTime
+}: RetroPostcardItineraryViewProps) {
   const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.city);
-  
+
   return (
-    <div className="p-8 overflow-y-auto max-h-[90vh]">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold mb-2">{journey.city}</h2>
-        <p className="text-lg text-muted-foreground">{formatDateRange(journey.startDate, journey.endDate)}</p>
+    <div className="relative w-full h-full overflow-y-auto p-8 bg-[#f5e6d3]">
+      {/* Vintage Header */}
+      <div className="text-center mb-8 border-4 border-[#8b4513] p-6 bg-[#fdf6e3] shadow-lg">
+        <h1 className="text-5xl font-bold text-[#8b4513] mb-2" style={{ fontFamily: 'serif' }}>
+          {journey.city}
+        </h1>
+        <div className="flex items-center justify-center gap-2 text-lg text-[#a0522d]">
+          <Calendar className="h-5 w-5" />
+          <span>{formatDateRange(journey.startDate, journey.endDate)}</span>
+        </div>
       </div>
-      <div className="space-y-6">
-        {scheduleWithDays.map(([dayLabel, items]: [string, ScheduleItem[]]) => (
-          <div key={dayLabel} className="bg-[#fff8e7] p-6 rounded-lg border-2 border-[#8b7355]">
-            <h3 className="text-xl font-semibold mb-4">{dayLabel}</h3>
-            <div className="space-y-3">
-              {items.map((item, idx) => (
-                <div key={idx} className="flex gap-3">
-                  <span className="font-medium">{formatTime(item.time)}</span>
-                  <div>
-                    <p className="font-medium">{item.location}</p>
-                    <p className="text-sm text-muted-foreground">{item.activity}</p>
+
+      {/* Schedule Items in Postcard Style */}
+      <div className="space-y-6 max-w-4xl mx-auto">
+        {scheduleWithDays.map(([dayLabel, items], dayIdx) => (
+          <div key={dayLabel} className="relative">
+            {/* Day Stamp */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-[#d4a574] text-[#4a2511] px-6 py-2 border-2 border-[#8b4513] shadow-md transform -rotate-2">
+                <span className="font-bold text-lg" style={{ fontFamily: 'serif' }}>{dayLabel}</span>
+              </div>
+            </div>
+
+            {/* Items as Postcards */}
+            <div className="space-y-4 pl-8">
+              {items.map((item, itemIdx) => (
+                <div
+                  key={itemIdx}
+                  className="relative bg-[#fdf6e3] p-5 border-4 border-[#8b4513] shadow-lg transform hover:scale-105 transition-transform"
+                  style={{ fontFamily: 'serif' }}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 bg-[#8b4513] text-[#fdf6e3] px-4 py-2 border-2 border-[#4a2511]">
+                      <span className="font-bold">{formatTime(item.time)}</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-xl text-[#4a2511] mb-2">{item.activity}</p>
+                      {item.location && (
+                        <p className="text-sm text-[#8b4513] flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          {item.location}
+                        </p>
+                      )}
+                    </div>
                   </div>
+                  {/* Vintage stamp decoration */}
+                  <div className="absolute top-2 right-2 w-12 h-12 border-2 border-[#8b4513] rounded-full flex items-center justify-center bg-[#d4a574] opacity-50">
+                    <span className="text-xs font-bold text-[#4a2511]">✓</span>
+                  </div>
+                  {/* Decorative arrow connector (50% shorter) */}
+                  {itemIdx < items.length - 1 && (
+                    <div className="absolute left-24 bottom-[-16px] w-0.5 h-4 bg-[#8b4513]"></div>
+                  )}
                 </div>
               ))}
             </div>

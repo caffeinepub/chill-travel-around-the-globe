@@ -16,8 +16,7 @@ import MusicPlayerBar from '@/components/MusicPlayerBar';
 import MusicPanel from '@/components/MusicPanel';
 import WebsiteLayoutPanel from '@/components/WebsiteLayoutPanel';
 import { useSearchLocation, SUPPORTED_COUNTRIES, useGetWebsiteLayoutPreferences } from '@/hooks/useQueries';
-import { useActor } from '@/hooks/useActor';
-import { TravelSpot, Song, MapBookmark, ScheduleItem } from '@/backend';
+import { TravelSpot, Song, MapBookmark } from '@/backend';
 
 interface LocationResult {
   coordinates: [number, number];
@@ -54,11 +53,9 @@ export default function LocationMapExplorer() {
   const [rotationSpeed, setRotationSpeed] = useState<number>(0.0005);
   const [countryFontSize, setCountryFontSize] = useState<number>(8);
   const [flightAnimation, setFlightAnimation] = useState<FlightAnimationData | null>(null);
-  const [journeyScheduleItems, setJourneyScheduleItems] = useState<Array<ScheduleItem & { coordinates: [number, number] }>>([]);
 
   const { mutate: searchLocation, isPending } = useSearchLocation();
   const { data: layoutPreferences } = useGetWebsiteLayoutPreferences();
-  const { actor } = useActor();
 
   const offsets = [-12, -11, -10, -9.5, -9, -8, -7, -6, -5, -4, -3.5, -3, -2, -1, 0, 1, 2, 3, 3.5, 4, 4.5, 5, 5.5, 5.75, 6, 6.5, 7, 8, 8.75, 9, 9.5, 10, 10.5, 11, 12, 12.75, 13, 14];
 
@@ -83,8 +80,6 @@ export default function LocationMapExplorer() {
           // Clear focused travel spot and bookmark when performing new search
           setFocusedTravelSpot(null);
           setFocusedBookmark(null);
-          // Clear journey schedule items when performing new search
-          setJourneyScheduleItems([]);
           const locationDisplay = result.country && result.name !== result.country 
             ? `${result.name}, ${result.country}`
             : result.name;
@@ -151,9 +146,6 @@ export default function LocationMapExplorer() {
     
     // Clear focused bookmark
     setFocusedBookmark(null);
-    
-    // Clear journey schedule items
-    setJourneyScheduleItems([]);
   }, []);
 
   // Handle bookmark focus from Vibes panel
@@ -166,9 +158,6 @@ export default function LocationMapExplorer() {
     
     // Clear focused travel spot
     setFocusedTravelSpot(null);
-    
-    // Clear journey schedule items
-    setJourneyScheduleItems([]);
   }, []);
 
   // Handle song selection from music panel
@@ -183,104 +172,6 @@ export default function LocationMapExplorer() {
     setViewMode('3D');
     toast.info(`Flying from ${fromCity} to ${toCity}...`);
   }, []);
-
-  // Geocode a location to get coordinates
-  const geocodeLocation = async (locationName: string): Promise<[number, number] | null> => {
-    try {
-      const encodedQuery = encodeURIComponent(locationName);
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodedQuery}&limit=1&addressdetails=1`,
-        {
-          headers: {
-            'User-Agent': 'LocationMapExplorer/1.0'
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Geocoding request failed');
-      }
-
-      const data = await response.json();
-      
-      if (data && data.length > 0) {
-        const result = data[0];
-        const lat = parseFloat(result.lat);
-        const lon = parseFloat(result.lon);
-
-        if (!isNaN(lat) && !isNaN(lon)) {
-          return [lat, lon];
-        }
-      }
-
-      return null;
-    } catch (error) {
-      console.error('Geocoding error:', error);
-      return null;
-    }
-  };
-
-  // Handle map journey from Travelogue panel
-  const handleMapJourney = useCallback(async (journeyCity: string) => {
-    try {
-      // Check if actor is available
-      if (!actor) {
-        toast.error('Backend not available');
-        return;
-      }
-      
-      // Switch to 2D mode
-      setViewMode('2D');
-      
-      // Search for the journey city to center the map
-      setSearchQuery(journeyCity);
-      performSearch(journeyCity);
-      
-      // Fetch schedule items for this journey
-      const scheduleItems = await actor.getScheduleItems(journeyCity);
-      
-      if (scheduleItems.length === 0) {
-        toast.info(`No schedule items found for ${journeyCity}`);
-        return;
-      }
-      
-      // Geocode each schedule item location
-      const itemsWithCoords: Array<ScheduleItem & { coordinates: [number, number] }> = [];
-      let failedCount = 0;
-      
-      for (const item of scheduleItems) {
-        const coords = await geocodeLocation(item.location);
-        if (coords) {
-          itemsWithCoords.push({ ...item, coordinates: coords });
-        } else {
-          failedCount++;
-          console.warn(`Failed to geocode location: ${item.location}`);
-        }
-      }
-      
-      if (itemsWithCoords.length === 0) {
-        toast.error(`Could not map any schedule locations for ${journeyCity}`);
-        return;
-      }
-      
-      // Set the journey schedule items to display on map
-      setJourneyScheduleItems(itemsWithCoords);
-      
-      // Clear focused travel spot and bookmark
-      setFocusedTravelSpot(null);
-      setFocusedBookmark(null);
-      
-      // Show success/warning message
-      if (failedCount > 0) {
-        toast.warning(`Showing ${itemsWithCoords.length} schedule items on map. ${failedCount} location(s) could not be mapped.`);
-      } else {
-        toast.success(`Showing ${itemsWithCoords.length} schedule items for ${journeyCity} on map`);
-      }
-    } catch (error) {
-      console.error('Error handling map journey:', error);
-      toast.error('Failed to display journey schedule on map');
-    }
-  }, [actor]);
 
   const shouldShowGlobe = viewMode === '3D';
   const shouldShowMap = viewMode === '2D' && selectedLocation;
@@ -406,7 +297,6 @@ export default function LocationMapExplorer() {
             locationType={selectedLocation.type}
             focusedTravelSpot={focusedTravelSpot}
             focusedBookmark={focusedBookmark}
-            journeyScheduleItems={journeyScheduleItems}
             onTravelSpotFocused={() => setFocusedTravelSpot(null)}
             onBookmarkFocused={() => setFocusedBookmark(null)}
           />
@@ -433,7 +323,7 @@ export default function LocationMapExplorer() {
               <AdminPanel />
               
               {/* Travelogue Panel - Icon Only */}
-              <TraveloguePanel onFlightAnimation={handleFlightAnimation} onMapJourney={handleMapJourney} />
+              <TraveloguePanel onFlightAnimation={handleFlightAnimation} />
 
               {/* Vibes Panel - Icon Only */}
               <VibesPanel onTravelSpotFocus={handleTravelSpotFocus} onBookmarkFocus={handleBookmarkFocus} />
@@ -550,13 +440,26 @@ export default function LocationMapExplorer() {
                             </ToggleGroupItem>
                           </TooltipTrigger>
                           <TooltipContent side="bottom" className="max-w-sm p-4 glass-morphism">
-                            <div className="space-y-2">
-                              <p className="font-medium text-gray-400">Interactive 2D Map with Travel Spots & Bookmarks</p>
+                            <div className="space-y-3">
+                              <p className="font-medium text-gray-400">2D Interactive Map View</p>
                               <p className="text-sm leading-relaxed text-gray-400">
-                                Drag to pan • Scroll to zoom • Click markers for details • Click map to add bookmarks
+                                Search for any location worldwide to view it on the interactive map.
                               </p>
-                              <p className="text-sm text-green-400">
-                                View travel spots, schedule items, and personal bookmarks on the map
+                              <p className="text-sm text-yellow-400">
+                                Clicking this button will automatically search for {layoutPreferences?.defaultSearchPlace || 'Hong Kong'}.
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                <Badge variant="outline" className="text-xs bg-white/60 dark:bg-slate-800/60">
+                                  <Globe className="h-3 w-3 mr-1" />
+                                  Countries
+                                </Badge>
+                                <Badge variant="outline" className="text-xs bg-white/60 dark:bg-slate-800/60">
+                                  <Building className="h-3 w-3 mr-1" />
+                                  Cities & Towns
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-sky-400">
+                                Pan and zoom freely to explore. Click anywhere on the map to add bookmarks.
                               </p>
                             </div>
                           </TooltipContent>
@@ -569,17 +472,146 @@ export default function LocationMapExplorer() {
             </div>
           </header>
 
-          {/* Citylogue Panel - positioned at bottom left */}
-          {/* ... rest of the component remains the same ... */}
+          {/* Bottom panels - All panels repositioned to bottom of UI page - INCREASED Z-INDEX */}
+          {/* World Travel Hotspot Panel - Fixed at bottom, reduced by 1/3 */}
+          {worldHotspotOpen && (
+            <div 
+              id="world-hotspot-panel"
+              className="fixed bottom-4 left-4 z-[10004] bg-black/80 backdrop-blur-sm rounded-lg px-2.5 py-2 border border-white/20 w-36 pointer-events-auto"
+            >
+              <div className="text-white text-[10px] font-semibold mb-1.5">World Travel Hotspot</div>
+              <div className="flex flex-col gap-1.5">
+                <button
+                  onClick={() => setShowCapitals(prev => !prev)}
+                  className={`px-2 py-1.5 text-white text-[10px] font-medium rounded-md transition-colors duration-200 border ${
+                    showCapitals 
+                      ? 'bg-yellow-500/80 hover:bg-yellow-600/80 border-yellow-400/30' 
+                      : 'bg-gray-500/50 hover:bg-gray-600/50 border-gray-400/30'
+                  }`}
+                  title="Toggle capital city markers (yellow dots)"
+                >
+                  Capitals
+                </button>
+                
+                <button
+                  onClick={() => setShowGlobalCities(prev => !prev)}
+                  className={`px-2 py-1.5 text-[10px] font-medium rounded-md transition-colors duration-200 border ${
+                    showGlobalCities 
+                      ? 'bg-sky-400/80 hover:bg-sky-500/80 border-sky-300/30 text-white' 
+                      : 'bg-gray-500/50 hover:bg-gray-600/50 border-gray-400/30 text-white'
+                  }`}
+                  title="Toggle global city markers (light blue stars)"
+                >
+                  Global Cities
+                </button>
+                
+                <button
+                  onClick={() => setShowMajorCities(prev => !prev)}
+                  className={`px-2 py-1.5 text-white text-[10px] font-medium rounded-md transition-colors duration-200 border ${
+                    showMajorCities 
+                      ? 'bg-white/80 hover:bg-white/90 border-white/30 text-black' 
+                      : 'bg-gray-500/50 hover:bg-gray-600/50 border-gray-400/30'
+                  }`}
+                  title="Toggle major city markers (small white dots)"
+                >
+                  Major Cities
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* World Controls Panel (3D Rotation Speed and Country Font Size) - Fixed at bottom, reduced by 1/3 */}
+          {worldControlsOpen && (
+            <div 
+              id="world-controls-panel"
+              className="fixed bottom-4 left-4 z-[10004] bg-black/80 backdrop-blur-sm rounded-lg px-2.5 py-2 border border-white/20 w-40 pointer-events-auto"
+            >
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-0.5">
+                  <label htmlFor="rotationSpeed" className="text-white text-[10px] font-medium">
+                    3D Rotation Speed
+                  </label>
+                  <input
+                    type="range"
+                    id="rotationSpeed"
+                    min={0}
+                    max="0.006"
+                    step="0.0001"
+                    value={rotationSpeed}
+                    onChange={(e) => setRotationSpeed(Number(e.target.value))}
+                    className="w-full h-1.5 bg-blue-500/30 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-400 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-blue-300 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue-400 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-blue-300"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-0.5">
+                  <label htmlFor="countryFontSize" className="text-white text-[10px] font-medium whitespace-nowrap">
+                    3D Country Font Size
+                  </label>
+                  <input
+                    type="range"
+                    id="countryFontSize"
+                    min="5"
+                    max="20"
+                    step="1"
+                    value={countryFontSize}
+                    onChange={(e) => setCountryFontSize(Number(e.target.value))}
+                    className="w-full h-1.5 bg-blue-500/30 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-400 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-blue-300 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue-400 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-blue-300"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* UTC Offset Panel - Fixed at bottom, reduced by 1/3 */}
+          {showTimeZones && (
+            <div 
+              id="utc-offset-panel"
+              className="fixed bottom-4 left-4 z-[10004] bg-black/80 backdrop-blur-sm rounded-lg px-2.5 py-2 border border-white/20 w-36 pointer-events-auto"
+            >
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="utcOffsetSlider" className="text-white text-[10px] font-medium">
+                  UTC Offset: <span className="text-blue-300">{formatUtcOffsetLabel(offsets[activeOffsetIndex])}</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="range"
+                    id="utcOffsetSlider"
+                    min="0"
+                    max={offsets.length - 1}
+                    step="1"
+                    value={activeOffsetIndex}
+                    onChange={(e) => setActiveOffsetIndex(Number(e.target.value))}
+                    className="w-full h-1.5 bg-blue-500/30 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-400 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-blue-300 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue-400 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-blue-300"
+                    title={`UTC${formatUtcOffsetLabel(offsets[activeOffsetIndex])}`}
+                  />
+                </div>
+                <div className="text-white text-[9px] text-center opacity-70">
+                  Drag to select UTC offset
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Location Info Overlay - only show when map is active */}
+          {shouldShowMap && (
+            <div className="absolute top-20 left-4 z-[200] pointer-events-auto">
+              <div className="p-3 glass-morphism shadow-xl rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  <div className="flex flex-col">
+                    <span className="font-medium text-sm">{selectedLocation.searchQuery}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Music Player Bar - positioned at bottom */}
-      {layoutPreferences?.showMusicPlayer && (
-        <div className="fixed bottom-0 left-0 right-0 z-[10001] pointer-events-auto">
-          <MusicPlayerBar currentSong={currentSong} onSongChange={setCurrentSong} />
-        </div>
-      )}
+      {/* Music Player Bar - positioned absolutely with pointer-events: auto */}
+      <div className="fixed bottom-0 left-0 right-0 z-[2500] pointer-events-auto">
+        <MusicPlayerBar currentSong={currentSong} onSongChange={setCurrentSong} />
+      </div>
     </TooltipProvider>
   );
 }

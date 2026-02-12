@@ -1,74 +1,36 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Travelogue: Map button to open existing 2D map with journey schedule markers",
+  "title": "Add non-functional Map (2D icon) button next to Flying in Travelogue",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Add a \"Map\" button with a 2D/map-style icon next to the existing \"Flying\" button on each Travelogue journey card.",
+      "id": "REQ-4",
+      "summary": "Insert a new \"Map\" button with a simple \"2D\" icon directly next to the existing \"Flying\" button in each Travelogue journey card action area.",
       "acceptanceCriteria": [
-        "Each journey card shows a \"Map\" button next to the existing \"Flying\" button.",
-        "The button label is exactly \"Map\" (English).",
-        "The button includes a 2D/map-style icon (e.g., lucide Map)."
+        "A new \"Map\" button is visible next to the existing \"Flying\" button within each journey card in the Travelogue UI.",
+        "The \"Map\" button includes a clearly visible \"2D\" logo/icon alongside the \"Map\" label.",
+        "The existing \"Flying\" button remains present and in its original position relative to other Travelogue controls (no rearrangement)."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Add a new \"Map\" action button (label exactly \"Map\") with a 2D/map-style icon (e.g., lucide-react Map) in the journey action row, positioned next to the existing \"Flying\" button, and wire it to invoke a new callback prop when clicked."
+          "description": "Within the Travelogue journey action buttons UI (the same area where the \"Flying\" button is rendered in the JourneyCard), add a new sibling \"Map\" button placed immediately adjacent to \"Flying\". Render a simple inline \"2D\" icon/mark (e.g., small text badge) inside the button next to the \"Map\" label. Use the existing shadcn-ui Button component styling conventions already used in this area. Verify the component's usage instructions before implementing. Ensure no changes are made to the doodle/scrapbook and retro itinerary views, and do not alter existing button order beyond inserting this new button next to \"Flying\"."
         }
       ]
     },
     {
-      "id": "REQ-2",
-      "summary": "On \"Map\" click, switch the main explorer to the existing 2D map view and render all schedule items for the selected journey as map markers using their location inputs, with robust error handling for unmappable locations.",
+      "id": "REQ-5",
+      "summary": "Ensure the new \"Map\" button is non-functional and triggers no UI or data side effects when clicked.",
       "acceptanceCriteria": [
-        "Clicking \"Map\" switches the app’s main view mode to the existing 2D map (no new map page is created).",
-        "All schedule items belonging to the selected journey are rendered as markers/items on the 2D map.",
-        "The marker positions are driven by each schedule item’s `location` input value (e.g., via existing geocoding / location lookup logic already used by the map).",
-        "If one or more schedule items cannot be mapped to coordinates, the app does not crash and shows a user-visible error/toast indicating some locations could not be displayed."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/LocationMapExplorer.tsx",
-          "operation": "modify",
-          "description": "Implement the \"Map\" click flow to: switch viewMode to '2D', resolve the journey’s map context (e.g., by searching/setting selectedLocation to the journey city), fetch that journey’s schedule items, geocode each schedule item location into coordinates (reusing existing location lookup logic), store derived map points in state, and pass them into MapComponent for immediate rendering; show a toast if any locations fail to resolve."
-        },
-        {
-          "path": "frontend/src/components/MapComponent.tsx",
-          "operation": "modify",
-          "description": "Extend MapComponent to accept optional journey schedule map data (e.g., an array of schedule items with resolved coordinates) and render these as markers in addition to (or in preference to) any existing schedule marker logic; ensure marker rendering is resilient to missing/invalid points and supports fitting/centering the map view based on the journey markers when provided."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Expose a reusable, map-consistent location lookup helper for turning free-text locations into coordinates (aligned with the existing geocoding/location lookup behavior already used elsewhere), and/or add a small helper hook/utility to geocode an array of schedule item locations for the journey-map feature with per-item error capture (no crashes)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Wire TraveloguePanel and LocationMapExplorer together via a callback so Travelogue can trigger 2D mode and provide the selected journey and its schedule items (or derived map points) to MapComponent.",
-      "acceptanceCriteria": [
-        "TraveloguePanel exposes a new prop callback (e.g., `onMapJourney(...)`) invoked when \"Map\" is clicked.",
-        "LocationMapExplorer implements the callback to: (1) set view mode to '2D', (2) center the 2D map appropriately for the journey, and (3) pass journey schedule items (or derived map points) down to MapComponent.",
-        "MapComponent renders the passed journey schedule items without requiring manual user search input."
+        "Clicking the \"Map\" button produces no visible UI change and triggers no side effects (no route changes, no dialogs, no toasts, no data fetching).",
+        "No backend (Motoko) changes are introduced for this request."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Add a new optional prop callback (e.g., onMapJourney) to TraveloguePanel and invoke it from each journey card’s new \"Map\" button with the selected journey identifier (journey.city) and sufficient journey context to fetch/render schedule items."
-        },
-        {
-          "path": "frontend/src/pages/LocationMapExplorer.tsx",
-          "operation": "modify",
-          "description": "Pass an onMapJourney callback into TraveloguePanel; in the handler, orchestrate: setting viewMode to '2D', selecting/centering the map for the journey (e.g., by using the existing search flow for journey.city and/or fitting bounds to derived schedule points), and providing derived journey schedule map points to MapComponent as props so it renders without manual search input."
-        },
-        {
-          "path": "frontend/src/components/MapComponent.tsx",
-          "operation": "modify",
-          "description": "Add/adjust props so LocationMapExplorer can supply journey schedule items (or precomputed map points) directly; ensure MapComponent uses these props to render schedule markers immediately and does not require any manual search input to show them."
+          "description": "Implement the \"Map\" button click behavior as a strict no-op: do not wire navigation, do not update React state, do not invoke toasts, and do not call any hooks or backend capabilities. If an onClick is required by the existing pattern, provide an empty handler that performs no actions (and avoid any side effects). Keep all changes constrained to the Travelogue journey action buttons area only."
         }
       ]
     }

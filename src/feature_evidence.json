@@ -2,8 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-in-the-travelogue-journey-action-row-add-a-new-button-labeled-map-with-a-2d-map-style-icon-positioned-next-to-the-existing-flying-button",
-      "featureTitle": "In the Travelogue journey action row, add a new button labeled \"Map\" with a 2D/map-style icon, positioned next to the existing \"Flying\" button.",
+      "featureId": "feature-in-the-travelogue-journey-action-buttons-area-selected-elements-context-html-1-body-1-div-3-div-2-div-1-div-2-div-1-div-1-div-1-div-1-and-html-1-body-1-div-3-div-2-div-1-div-2-div-1-add-a-new-button-labeled-map-positioned-directly-next-to-the-existing-flying-button-and-display-a-simple-2d-logo-icon-on-the-button",
+      "featureTitle": "In the Travelogue journey action buttons area (selected elements context: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1] and /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]), add a new button labeled \"Map\" positioned directly next to the existing \"Flying\" button, and display a simple \"2D\" logo/icon on the button.",
       "files": [
         "frontend/src/components/TraveloguePanel.tsx"
       ],
@@ -17,16 +17,15 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-1"
+        "REQ-4"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-when-the-new-map-button-is-clicked-for-a-journey-switch-the-main-explorer-to-the-existing-2d-map-view-and-display-all-schedule-items-for-that-journey-on-the-2d-map-according-to-each-schedule-item-s-input-location",
-      "featureTitle": "When the new \"Map\" button is clicked for a journey, switch the main explorer to the existing 2D map view and display all schedule items for that journey on the 2D map according to each schedule item’s input location.",
+      "featureId": "feature-do-not-implement-any-functionality-for-the-new-map-button-yet-no-navigation-no-state-changes-no-toasts-no-map-updates-and-no-backend-calls-when-clicked",
+      "featureTitle": "Do not implement any functionality for the new \"Map\" button yet (no navigation, no state changes, no toasts, no map updates, and no backend calls when clicked).",
       "files": [
-        "frontend/src/components/MapComponent.tsx",
-        "frontend/src/pages/LocationMapExplorer.tsx"
+        "frontend/src/components/TraveloguePanel.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -38,29 +37,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-wire-traveloguepanel-and-locationmapexplorer-together-with-a-callback-event-so-the-travelogue-map-button-can-trigger-2d-mode-and-provide-the-selected-journey-identifier-and-its-schedule-items-or-enough-data-to-mapcomponent-for-rendering",
-      "featureTitle": "Wire TraveloguePanel and LocationMapExplorer together with a callback/event so the Travelogue \"Map\" button can trigger 2D mode and provide the selected journey identifier and its schedule items (or enough data) to MapComponent for rendering.",
-      "files": [
-        "frontend/src/components/MapComponent.tsx",
-        "frontend/src/components/TraveloguePanel.tsx",
-        "frontend/src/pages/LocationMapExplorer.tsx"
-      ],
-      "components": [
-        "authorization@1.0.1",
-        "blob-storage@1.1.2",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
+        "REQ-5"
       ],
       "confidence": "high"
     }

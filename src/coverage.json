@@ -1,18 +1,18 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T03:41:56.290Z",
+  "generatedAt": "2026-02-12T02:33:43.849Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
-        "id": "REQ-1",
-        "summary": "In the Travelogue journey action row, add a new button labeled \"Map\" with a 2D/map-style icon, positioned next to the existing \"Flying\" button.",
+        "id": "REQ-4",
+        "summary": "In the Travelogue journey action buttons area (selected elements context: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1] and /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]), add a new button labeled \"Map\" positioned directly next to the existing \"Flying\" button, and display a simple \"2D\" logo/icon on the button.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/TraveloguePanel.tsx"
@@ -22,32 +22,14 @@
         ]
       },
       {
-        "id": "REQ-2",
-        "summary": "When the new \"Map\" button is clicked for a journey, switch the main explorer to the existing 2D map view and display all schedule items for that journey on the 2D map according to each schedule item’s input location.",
+        "id": "REQ-5",
+        "summary": "Do not implement any functionality for the new \"Map\" button yet (no navigation, no state changes, no toasts, no map updates, and no backend calls when clicked).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/LocationMapExplorer.tsx",
-          "frontend/src/components/MapComponent.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/components/TraveloguePanel.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/LocationMapExplorer.tsx",
-          "frontend/src/components/MapComponent.tsx"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Wire TraveloguePanel and LocationMapExplorer together with a callback/event so the Travelogue \"Map\" button can trigger 2D mode and provide the selected journey identifier and its schedule items (or enough data) to MapComponent for rendering.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx",
-          "frontend/src/pages/LocationMapExplorer.tsx",
-          "frontend/src/components/MapComponent.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx",
-          "frontend/src/pages/LocationMapExplorer.tsx",
-          "frontend/src/components/MapComponent.tsx"
+          "frontend/src/components/TraveloguePanel.tsx"
         ]
       }
     ]
@@ -58,9 +40,7 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/MapComponent.tsx",
     "frontend/src/components/TraveloguePanel.tsx",
-    "frontend/src/pages/LocationMapExplorer.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

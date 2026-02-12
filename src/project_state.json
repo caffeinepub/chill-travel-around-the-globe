@@ -1,32 +1,27 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Add a Map button in the travelogue UI that navigates to the existing 2D map and displays the selected journey’s schedule items based on their input locations.",
-  "architectural_notes": [],
+  "summary": "Project to add a non-functional 'Map' button (2D logo) next to the 'Flying' button in the Travelogue without changing existing layouts.",
+  "architectural_notes": [
+    "Do not change or rearrange the Travelogue layout when adding the new 'Map' button.",
+    "Do not change anything under the 'doodle' and 'retro' sections/styles."
+  ],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-in-the-travelogue-journey-action-row-add-a-new-button-labeled-map-with-a-2d-map-style-icon-positioned-next-to-the-existing-flying-button",
-      "title": "In the Travelogue journey action row, add a new button labeled \"Map\" with a 2D/map-style icon, positioned next to the existing \"Flying\" button.",
+      "id": "feature-in-the-travelogue-journey-action-buttons-area-selected-elements-context-html-1-body-1-div-3-div-2-div-1-div-2-div-1-div-1-div-1-div-1-and-html-1-body-1-div-3-div-2-div-1-div-2-div-1-add-a-new-button-labeled-map-positioned-directly-next-to-the-existing-flying-button-and-display-a-simple-2d-logo-icon-on-the-button",
+      "title": "In the Travelogue journey action buttons area (selected elements context: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1] and /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]), add a new button labeled \"Map\" positioned directly next to the existing \"Flying\" button, and display a simple \"2D\" logo/icon on the button.",
       "reqIds": [
-        "REQ-1"
+        "REQ-4"
       ],
       "version": 1
     },
     {
-      "id": "feature-when-the-new-map-button-is-clicked-for-a-journey-switch-the-main-explorer-to-the-existing-2d-map-view-and-display-all-schedule-items-for-that-journey-on-the-2d-map-according-to-each-schedule-item-s-input-location",
-      "title": "When the new \"Map\" button is clicked for a journey, switch the main explorer to the existing 2D map view and display all schedule items for that journey on the 2D map according to each schedule item’s input location.",
+      "id": "feature-do-not-implement-any-functionality-for-the-new-map-button-yet-no-navigation-no-state-changes-no-toasts-no-map-updates-and-no-backend-calls-when-clicked",
+      "title": "Do not implement any functionality for the new \"Map\" button yet (no navigation, no state changes, no toasts, no map updates, and no backend calls when clicked).",
       "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-wire-traveloguepanel-and-locationmapexplorer-together-with-a-callback-event-so-the-travelogue-map-button-can-trigger-2d-mode-and-provide-the-selected-journey-identifier-and-its-schedule-items-or-enough-data-to-mapcomponent-for-rendering",
-      "title": "Wire TraveloguePanel and LocationMapExplorer together with a callback/event so the Travelogue \"Map\" button can trigger 2D mode and provide the selected journey identifier and its schedule items (or enough data) to MapComponent for rendering.",
-      "reqIds": [
-        "REQ-3"
+        "REQ-5"
       ],
       "version": 1
     }
@@ -34,18 +29,12 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Add a 'Map' button (2D logo) next to the 'Flying' button in the travelogue UI.",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "On 'Map' button click, navigate to the existing 2D map and display all schedule items for that journey according to their input locations.",
+      "summary": "Add a 'Map' button with a 2D logo next to the 'Flying' button in the Travelogue (no functionality yet)",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Add Map button in Travelogue to open 2D map with selected journey schedule items",
+  "projectName": "Add non-functional 'Map' (2D logo) button next to 'Flying' in Travelogue",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }
