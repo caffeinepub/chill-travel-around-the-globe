@@ -1,36 +1,37 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Add non-functional Map (2D icon) button next to Flying in Travelogue",
+  "title": "Add no-op Map (2D) button next to Flying in Travelogue journey cards",
   "requirements": [
     {
-      "id": "REQ-4",
-      "summary": "Insert a new \"Map\" button with a simple \"2D\" icon directly next to the existing \"Flying\" button in each Travelogue journey card action area.",
+      "id": "REQ-1",
+      "summary": "Render a new \"Map\" button with a visible \"2D\" mark immediately to the right of the existing \"Flying\" button in each Travelogue journey card action area.",
       "acceptanceCriteria": [
-        "A new \"Map\" button is visible next to the existing \"Flying\" button within each journey card in the Travelogue UI.",
-        "The \"Map\" button includes a clearly visible \"2D\" logo/icon alongside the \"Map\" label.",
-        "The existing \"Flying\" button remains present and in its original position relative to other Travelogue controls (no rearrangement)."
+        "In the Travelogue panel, each journey card that shows the Flying button also shows a new Map button immediately to its right.",
+        "The Map button’s visible label text is exactly \"Map\".",
+        "The Map button includes a visible \"2D\" logo/icon mark."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Within the Travelogue journey action buttons UI (the same area where the \"Flying\" button is rendered in the JourneyCard), add a new sibling \"Map\" button placed immediately adjacent to \"Flying\". Render a simple inline \"2D\" icon/mark (e.g., small text badge) inside the button next to the \"Map\" label. Use the existing shadcn-ui Button component styling conventions already used in this area. Verify the component's usage instructions before implementing. Ensure no changes are made to the doodle/scrapbook and retro itinerary views, and do not alter existing button order beyond inserting this new button next to \"Flying\"."
+          "description": "Locate the journey card action controls where the existing \"Flying\" button is rendered (within the JourneyCard UI), and add a new adjacent button immediately to its right labeled exactly \"Map\" with a compact visible \"2D\" mark/icon alongside the label (text-based is acceptable). Ensure the new button is rendered everywhere the Flying button appears (for live/upcoming/past journey cards). Do not edit any files under frontend/src/components/ui."
         }
       ]
     },
     {
-      "id": "REQ-5",
-      "summary": "Ensure the new \"Map\" button is non-functional and triggers no UI or data side effects when clicked.",
+      "id": "REQ-2",
+      "summary": "Make the new \"Map\" button a pure no-op placeholder that only shows standard press visuals and does not change state, navigate, or trigger side effects.",
       "acceptanceCriteria": [
-        "Clicking the \"Map\" button produces no visible UI change and triggers no side effects (no route changes, no dialogs, no toasts, no data fetching).",
-        "No backend (Motoko) changes are introduced for this request."
+        "Clicking the Map button produces no navigation or panel/dialog changes.",
+        "No toast/notification is shown as a result of clicking the Map button.",
+        "No backend calls are initiated by clicking the Map button."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Implement the \"Map\" button click behavior as a strict no-op: do not wire navigation, do not update React state, do not invoke toasts, and do not call any hooks or backend capabilities. If an onClick is required by the existing pattern, provide an empty handler that performs no actions (and avoid any side effects). Keep all changes constrained to the Travelogue journey action buttons area only."
+          "description": "Implement the \"Map\" button click handler as a no-op placeholder (e.g., prevent default/stop propagation if needed) and ensure it does not call any hooks/mutations, does not set React state, does not open dialogs, does not trigger toasts, and does not initiate network/backend calls. Keep existing Flying behavior unchanged."
         }
       ]
     }

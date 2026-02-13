@@ -1,27 +1,24 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project to add a non-functional 'Map' button (2D logo) next to the 'Flying' button in the Travelogue without changing existing layouts.",
-  "architectural_notes": [
-    "Do not change or rearrange the Travelogue layout when adding the new 'Map' button.",
-    "Do not change anything under the 'doodle' and 'retro' sections/styles."
-  ],
+  "summary": "Add a new 'Map' button (2D logo) next to the 'Flying' button in the travelogue; button is present but has no functionality/content yet.",
+  "architectural_notes": [],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-in-the-travelogue-journey-action-buttons-area-selected-elements-context-html-1-body-1-div-3-div-2-div-1-div-2-div-1-div-1-div-1-div-1-and-html-1-body-1-div-3-div-2-div-1-div-2-div-1-add-a-new-button-labeled-map-positioned-directly-next-to-the-existing-flying-button-and-display-a-simple-2d-logo-icon-on-the-button",
-      "title": "In the Travelogue journey action buttons area (selected elements context: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1] and /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]), add a new button labeled \"Map\" positioned directly next to the existing \"Flying\" button, and display a simple \"2D\" logo/icon on the button.",
+      "id": "feature-in-the-travelogue-ui-add-a-new-button-labeled-map-positioned-immediately-to-the-right-of-the-existing-flying-button-wherever-the-flying-button-is-rendered-i-e-within-each-journey-card-s-action-controls-the-map-button-must-display-a-clear-2d-logo-icon-text-based-is-acceptable-e-g-a-compact-2d-mark-alongside-the-map-label",
+      "title": "In the Travelogue UI, add a new button labeled \"Map\" positioned immediately to the right of the existing \"Flying\" button wherever the Flying button is rendered (i.e., within each journey card’s action controls). The Map button must display a clear \"2D\" logo/icon (text-based is acceptable, e.g., a compact “2D” mark) alongside the \"Map\" label.",
       "reqIds": [
-        "REQ-4"
+        "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-do-not-implement-any-functionality-for-the-new-map-button-yet-no-navigation-no-state-changes-no-toasts-no-map-updates-and-no-backend-calls-when-clicked",
-      "title": "Do not implement any functionality for the new \"Map\" button yet (no navigation, no state changes, no toasts, no map updates, and no backend calls when clicked).",
+      "id": "feature-ensure-the-new-map-button-is-a-no-op-placeholder-clicking-tapping-it-must-not-navigate-open-dialogs-trigger-toasts-call-backend-apis-or-otherwise-change-application-state-or-ui-beyond-standard-button-press-visuals",
+      "title": "Ensure the new \"Map\" button is a no-op placeholder: clicking/tapping it must not navigate, open dialogs, trigger toasts, call backend APIs, or otherwise change application state or UI beyond standard button press visuals.",
       "reqIds": [
-        "REQ-5"
+        "REQ-2"
       ],
       "version": 1
     }
@@ -29,12 +26,12 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Add a 'Map' button with a 2D logo next to the 'Flying' button in the Travelogue (no functionality yet)",
+      "summary": "Add a 'Map' button with a 2D logo next to the 'Flying' button in the travelogue; no action/content yet when tapped.",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Add non-functional 'Map' (2D logo) button next to 'Flying' in Travelogue",
+  "projectName": "Add placeholder Map (2D) button next to Flying in Travelogue",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

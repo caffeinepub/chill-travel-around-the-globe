@@ -1,29 +1,29 @@
 {
   "kind": "build_request",
-  "title": "Add non-functional 'Map' (2D logo) button next to 'Flying' in Travelogue",
+  "title": "Add placeholder Map (2D) button next to Flying in Travelogue",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-4",
-      "text": "In the Travelogue journey action buttons area (selected elements context: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1] and /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]), add a new button labeled \"Map\" positioned directly next to the existing \"Flying\" button, and display a simple \"2D\" logo/icon on the button.",
+      "id": "REQ-1",
+      "text": "In the Travelogue UI, add a new button labeled \"Map\" positioned immediately to the right of the existing \"Flying\" button wherever the Flying button is rendered (i.e., within each journey card’s action controls). The Map button must display a clear \"2D\" logo/icon (text-based is acceptable, e.g., a compact “2D” mark) alongside the \"Map\" label.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "1) add a button with 2D as logo, namely \"Map\", next to the Flying button in the travelogue"
+          "1) add a button with 2D as logo, namely \"Map\", right next to the Flying button in the travelogue"
         ]
       },
       "acceptanceCriteria": [
-        "A new \"Map\" button is visible next to the existing \"Flying\" button within each journey card in the Travelogue UI.",
-        "The \"Map\" button includes a clearly visible \"2D\" logo/icon alongside the \"Map\" label.",
-        "The existing \"Flying\" button remains present and in its original position relative to other Travelogue controls (no rearrangement)."
+        "In the Travelogue panel, each journey card that shows the Flying button also shows a new Map button immediately to its right.",
+        "The Map button’s visible label text is exactly \"Map\".",
+        "The Map button includes a visible \"2D\" logo/icon mark."
       ]
     },
     {
-      "id": "REQ-5",
-      "text": "Do not implement any functionality for the new \"Map\" button yet (no navigation, no state changes, no toasts, no map updates, and no backend calls when clicked).",
+      "id": "REQ-2",
+      "text": "Ensure the new \"Map\" button is a no-op placeholder: clicking/tapping it must not navigate, open dialogs, trigger toasts, call backend APIs, or otherwise change application state or UI beyond standard button press visuals.",
       "target": "frontend",
       "source": {
         "messageIds": [
@@ -34,23 +34,34 @@
         ]
       },
       "acceptanceCriteria": [
-        "Clicking the \"Map\" button produces no visible UI change and triggers no side effects (no route changes, no dialogs, no toasts, no data fetching).",
-        "No backend (Motoko) changes are introduced for this request."
+        "Clicking the Map button produces no navigation or panel/dialog changes.",
+        "No toast/notification is shown as a result of clicking the Map button.",
+        "No backend calls are initiated by clicking the Map button."
       ]
     }
   ],
   "constraints": [
-    "Apply changes ONLY within the UI represented by the selected elements in the prompt (Travelogue button area).",
-    "Do not modify any layout, styling, or content under the existing \"doodle\" and \"retro\" itinerary views.",
-    "Do not rearrange the Travelogue layout or the position of existing buttons; only insert the new \"Map\" button next to \"Flying\"."
+    "Do not modify any backend canister code for this change.",
+    "Do not add any functional behavior to the new Map button beyond rendering it in the UI.",
+    "Do not edit files under frontend/src/components/ui or other immutable paths listed in SYSTEM_CONTEXT."
   ],
   "nonGoals": [
-    "Implementing the 2D map view integration or displaying schedule items on the map.",
-    "Adding new routes/pages or deep-linking behavior for the \"Map\" button.",
-    "Changing backend data models or APIs."
+    "Implementing a 2D map view or connecting the Map button to the existing Leaflet/2D explorer.",
+    "Adding routing/deep-links for the Map button.",
+    "Changing the existing Flying button behavior."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

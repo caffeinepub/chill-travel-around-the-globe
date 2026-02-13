@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Add a non-functional “Map” button with a simple 2D icon next to the existing “Flying” button in the Travelogue journey action buttons area.
+**Goal:** Add a placeholder “Map” button with a visible “2D” icon next to the existing “Flying” button in the Travelogue journey cards.
 
 **Planned changes:**
-- Insert a new “Map” action button directly next to the existing “Flying” button within each Travelogue journey card’s action button area.
-- Display a simple “2D” logo/icon on the “Map” button alongside the “Map” label.
-- Ensure the “Map” button has no click behavior (no navigation, state changes, toasts, map updates, or backend calls).
+- In the Travelogue UI, render a new “Map” button immediately to the right of the “Flying” button wherever the Flying button appears within each journey card’s action controls.
+- Include a clear visible “2D” mark/icon alongside the “Map” label on the new button (text-based is acceptable).
+- Make the Map button a no-op placeholder: it should not navigate, open dialogs, show toasts, call APIs, or otherwise change app state/UI beyond normal press visuals.
 
-**User-visible outcome:** Users see a new “Map” button (with a visible 2D icon) next to “Flying” in Travelogue journey cards, and clicking it does nothing.
+**User-visible outcome:** In Travelogue, journey cards that have a “Flying” button will also show a “Map” button with a “2D” icon next to it, and clicking “Map” does nothing.

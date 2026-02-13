@@ -1,7 +1,7 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T02:33:43.849Z",
+  "generatedAt": "2026-02-12T02:41:18.750Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
@@ -11,8 +11,8 @@
     "implemented": 2,
     "items": [
       {
-        "id": "REQ-4",
-        "summary": "In the Travelogue journey action buttons area (selected elements context: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1] and /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]), add a new button labeled \"Map\" positioned directly next to the existing \"Flying\" button, and display a simple \"2D\" logo/icon on the button.",
+        "id": "REQ-1",
+        "summary": "In the Travelogue UI, add a new button labeled \"Map\" positioned immediately to the right of the existing \"Flying\" button wherever the Flying button is rendered (i.e., within each journey card’s action controls). The Map button must display a clear \"2D\" logo/icon (text-based is acceptable, e.g., a compact “2D” mark) alongside the \"Map\" label.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/TraveloguePanel.tsx"
@@ -22,8 +22,8 @@
         ]
       },
       {
-        "id": "REQ-5",
-        "summary": "Do not implement any functionality for the new \"Map\" button yet (no navigation, no state changes, no toasts, no map updates, and no backend calls when clicked).",
+        "id": "REQ-2",
+        "summary": "Ensure the new \"Map\" button is a no-op placeholder: clicking/tapping it must not navigate, open dialogs, trigger toasts, call backend APIs, or otherwise change application state or UI beyond standard button press visuals.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/TraveloguePanel.tsx"

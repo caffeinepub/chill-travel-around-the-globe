@@ -2,8 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-in-the-travelogue-journey-action-buttons-area-selected-elements-context-html-1-body-1-div-3-div-2-div-1-div-2-div-1-div-1-div-1-div-1-and-html-1-body-1-div-3-div-2-div-1-div-2-div-1-add-a-new-button-labeled-map-positioned-directly-next-to-the-existing-flying-button-and-display-a-simple-2d-logo-icon-on-the-button",
-      "featureTitle": "In the Travelogue journey action buttons area (selected elements context: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1] and /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]), add a new button labeled \"Map\" positioned directly next to the existing \"Flying\" button, and display a simple \"2D\" logo/icon on the button.",
+      "featureId": "feature-in-the-travelogue-ui-add-a-new-button-labeled-map-positioned-immediately-to-the-right-of-the-existing-flying-button-wherever-the-flying-button-is-rendered-i-e-within-each-journey-card-s-action-controls-the-map-button-must-display-a-clear-2d-logo-icon-text-based-is-acceptable-e-g-a-compact-2d-mark-alongside-the-map-label",
+      "featureTitle": "In the Travelogue UI, add a new button labeled \"Map\" positioned immediately to the right of the existing \"Flying\" button wherever the Flying button is rendered (i.e., within each journey card’s action controls). The Map button must display a clear \"2D\" logo/icon (text-based is acceptable, e.g., a compact “2D” mark) alongside the \"Map\" label.",
       "files": [
         "frontend/src/components/TraveloguePanel.tsx"
       ],
@@ -17,13 +17,13 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-4"
+        "REQ-1"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-do-not-implement-any-functionality-for-the-new-map-button-yet-no-navigation-no-state-changes-no-toasts-no-map-updates-and-no-backend-calls-when-clicked",
-      "featureTitle": "Do not implement any functionality for the new \"Map\" button yet (no navigation, no state changes, no toasts, no map updates, and no backend calls when clicked).",
+      "featureId": "feature-ensure-the-new-map-button-is-a-no-op-placeholder-clicking-tapping-it-must-not-navigate-open-dialogs-trigger-toasts-call-backend-apis-or-otherwise-change-application-state-or-ui-beyond-standard-button-press-visuals",
+      "featureTitle": "Ensure the new \"Map\" button is a no-op placeholder: clicking/tapping it must not navigate, open dialogs, trigger toasts, call backend APIs, or otherwise change application state or UI beyond standard button press visuals.",
       "files": [
         "frontend/src/components/TraveloguePanel.tsx"
       ],
@@ -37,7 +37,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-5"
+        "REQ-2"
       ],
       "confidence": "high"
     }

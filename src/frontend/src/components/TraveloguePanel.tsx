@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Calendar, MapPin, ChevronDown, ChevronRight, Eye, MoreHorizontal, Filter, Plane, X, Map } from 'lucide-react';
+import { BookOpen, Calendar, MapPin, ChevronDown, ChevronRight, Eye, MoreHorizontal, Filter, Plane, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -177,9 +177,11 @@ export default function TraveloguePanel({ onFlightAnimation }: TraveloguePanelPr
     }
   };
 
-  // Handle map button click (no-op for now)
-  const handleMapClick = () => {
-    // No-op: button does nothing yet
+  // Handle map button click - no-op placeholder
+  const handleMapClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // No-op placeholder - no functionality yet
   };
 
   // Filter journeys based on current date
@@ -453,7 +455,7 @@ export default function TraveloguePanel({ onFlightAnimation }: TraveloguePanelPr
 
       {/* Edit Schedule Item Popup */}
       <Dialog open={editPopupOpen} onOpenChange={setEditPopupOpen}>
-        <DialogContent className="max-w-md z-[3300]">
+        <DialogContent className="z-[3300]">
           <DialogHeader>
             <DialogTitle>Edit Schedule Item</DialogTitle>
           </DialogHeader>
@@ -523,7 +525,7 @@ interface JourneyCardProps {
   onViewFullItinerary: () => void;
   onViewRetroItinerary: () => void;
   onFlyingClick: () => void;
-  onMapClick: () => void;
+  onMapClick: (e: React.MouseEvent) => void;
   isFlying: boolean;
   formatDate: (timestamp: bigint) => string;
   formatScheduleDate: (timestamp: bigint) => string;
@@ -549,7 +551,7 @@ function JourneyCard({
   badgeColor,
   defaultSearchPlace
 }: JourneyCardProps) {
-  const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.city);
+  const { data: scheduleData } = useGetJourneyScheduleWithDays(journey.city);
 
   const badgeColorClass = {
     orange: 'bg-orange-500 hover:bg-orange-600',
@@ -559,121 +561,127 @@ function JourneyCard({
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggle}
-              className="p-0 h-auto hover:bg-transparent"
-            >
-              {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-            </Button>
-            <div>
-              <CardTitle className="text-lg">{journey.city}</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                {formatDate(journey.startDate)} - {formatDate(journey.endDate)}
-              </p>
-            </div>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <CardTitle className="text-xl font-bold flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              {journey.city}
+              <Badge className={`${badgeColorClass} text-white`}>
+                {badgeColor === 'orange' ? 'Live' : badgeColor === 'green' ? 'Upcoming' : 'Past'}
+              </Badge>
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              {formatDate(journey.startDate)} - {formatDate(journey.endDate)}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <Button
-              variant="outline"
               size="sm"
-              onClick={onViewFullItinerary}
-              className="flex items-center gap-1"
-            >
-              <Eye className="h-4 w-4" />
-              Doodle
-            </Button>
-            <Button
               variant="outline"
-              size="sm"
-              onClick={onViewRetroItinerary}
-              className="flex items-center gap-1"
-            >
-              <Eye className="h-4 w-4" />
-              Retro
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
               onClick={onFlyingClick}
-              className={`flex items-center gap-1 ${isFlying ? 'bg-blue-100 dark:bg-blue-900' : ''}`}
+              className={isFlying ? 'bg-blue-100 dark:bg-blue-900' : ''}
+              title={isFlying ? 'Stop Flying' : 'Start Flying'}
             >
-              <Plane className="h-4 w-4" />
+              <Plane className={`h-4 w-4 mr-1 ${isFlying ? 'animate-pulse' : ''}`} />
               Flying
             </Button>
             <Button
-              variant="outline"
               size="sm"
+              variant="outline"
               onClick={onMapClick}
-              className="flex items-center gap-1"
+              title="Map"
             >
-              <span className="text-xs font-bold">2D</span>
-              <span className="ml-1">Map</span>
+              <span className="text-xs font-bold mr-1">2D</span>
+              Map
             </Button>
-            <Badge className={`${badgeColorClass} text-white`}>
-              {scheduleWithDays.length} {scheduleWithDays.length === 1 ? 'day' : 'days'}
-            </Badge>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onToggle}
+            >
+              {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </Button>
           </div>
         </div>
       </CardHeader>
-      <CollapsibleContent>
-        {isExpanded && (
-          <CardContent>
-            {scheduleWithDays.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No schedule items for this journey
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {scheduleWithDays.map(([dayLabel, items]) => (
-                  <div key={dayLabel}>
-                    <h4 className="font-semibold text-sm mb-2">{dayLabel}</h4>
-                    <div className="space-y-2">
-                      {items.map((item, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
-                        >
-                          <div className="flex-shrink-0 w-16 text-xs text-muted-foreground">
-                            {formatTime(item.time)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium">{item.activity}</p>
-                            {item.location && (
-                              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
-                                {item.location}
-                              </p>
-                            )}
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onSixDotClick(item, journey)}
-                            className="flex-shrink-0 h-8 w-8 p-0"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+      <Collapsible open={isExpanded}>
+        <CollapsibleContent>
+          <CardContent className="pt-0">
+            <div className="space-y-4">
+              {/* View Itinerary Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onViewFullItinerary}
+                  className="flex-1"
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  Doodle
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onViewRetroItinerary}
+                  className="flex-1"
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  Retro
+                </Button>
               </div>
-            )}
+
+              {/* Schedule Items */}
+              {scheduleData && scheduleData.length > 0 ? (
+                <div className="space-y-3">
+                  {scheduleData.map(([dayLabel, items]) => (
+                    <div key={dayLabel} className="space-y-2">
+                      <h4 className="font-semibold text-sm text-muted-foreground">{dayLabel}</h4>
+                      <div className="space-y-2">
+                        {items.map((item, idx) => (
+                          <div
+                            key={`${item.date}-${item.time}-${idx}`}
+                            className="flex items-start gap-2 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                                  {formatTime(item.time)}
+                                </span>
+                                <span className="text-xs text-muted-foreground">•</span>
+                                <span className="text-sm font-medium truncate">{item.location}</span>
+                              </div>
+                              <p className="text-sm text-muted-foreground mt-1">{item.activity}</p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => onSixDotClick(item, journey)}
+                              className="shrink-0"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No schedule items yet
+                </p>
+              )}
+            </div>
           </CardContent>
-        )}
-      </CollapsibleContent>
+        </CollapsibleContent>
+      </Collapsible>
     </Card>
   );
 }
 
 // Scrapbook Itinerary View Component
-interface ScrapbookItineraryViewProps {
+interface ItineraryViewProps {
   journey: Journey;
   formatDate: (timestamp: bigint) => string;
   formatDateRange: (startTimestamp: bigint, endTimestamp: bigint) => string;
@@ -681,151 +689,158 @@ interface ScrapbookItineraryViewProps {
   formatTime: (timeString: string) => string;
 }
 
-function ScrapbookItineraryView({
-  journey,
-  formatDate,
-  formatDateRange,
-  formatScheduleDate,
-  formatTime
-}: ScrapbookItineraryViewProps) {
-  const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.city);
+function ScrapbookItineraryView({ journey, formatDate, formatDateRange, formatScheduleDate, formatTime }: ItineraryViewProps) {
+  const { data: scheduleData } = useGetJourneyScheduleWithDays(journey.city);
 
   return (
-    <div className="relative w-full h-full overflow-y-auto p-8 bg-[#fef9f3]">
+    <div className="relative w-full h-full overflow-y-auto">
       {/* Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-[#8b4513] mb-2" style={{ fontFamily: 'cursive' }}>
-          {journey.city}
-        </h1>
-        <p className="text-lg text-[#a0522d]">
+      <div className="sticky top-0 z-10 bg-[#fef9f3] border-b-4 border-[#8b4513] p-6">
+        <h2 className="text-4xl font-bold text-[#8b4513] text-center mb-2" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
+          ✈️ {journey.city} Adventure! ✈️
+        </h2>
+        <p className="text-center text-[#8b4513] text-sm">
           {formatDateRange(journey.startDate, journey.endDate)}
         </p>
       </div>
 
-      {/* Schedule Items */}
-      <div className="space-y-6 max-w-4xl mx-auto">
-        {scheduleWithDays.map(([dayLabel, items], dayIdx) => (
-          <div key={dayLabel} className="relative">
-            {/* Day Label */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-[#ff6b6b] text-white px-4 py-2 rounded-full shadow-md">
-                <span className="font-bold">{dayLabel}</span>
+      {/* Content */}
+      <div className="p-8 space-y-6">
+        {scheduleData && scheduleData.length > 0 ? (
+          scheduleData.map(([dayLabel, items], dayIdx) => (
+            <div key={dayLabel} className="relative">
+              {/* Day Header */}
+              <div className="bg-[#fff8dc] border-4 border-[#8b4513] rounded-lg p-4 mb-4 transform -rotate-1 shadow-lg">
+                <h3 className="text-2xl font-bold text-[#8b4513]" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
+                  📅 {dayLabel}
+                </h3>
               </div>
-              <div className="flex-1 h-0.5 bg-[#ffd93d] opacity-50"></div>
-            </div>
 
-            {/* Items for this day */}
-            <div className="space-y-3 pl-8">
-              {items.map((item, itemIdx) => (
-                <div
-                  key={itemIdx}
-                  className="relative bg-white p-4 rounded-lg shadow-md border-2 border-[#ffd93d] transform hover:scale-105 transition-transform"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 bg-[#6bcf7f] text-white px-3 py-1 rounded-full text-sm font-semibold">
-                      {formatTime(item.time)}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-[#8b4513] mb-1">{item.activity}</p>
-                      {item.location && (
-                        <p className="text-sm text-[#a0522d] flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {item.location}
-                        </p>
-                      )}
+              {/* Schedule Items */}
+              <div className="space-y-4 ml-8">
+                {items.map((item, idx) => (
+                  <div key={`${item.date}-${item.time}-${idx}`} className="relative">
+                    {/* Connector Arrow */}
+                    {idx < items.length - 1 && (
+                      <div className="absolute left-6 top-full h-8 w-0.5 bg-[#8b4513]" style={{ height: '16px' }}>
+                        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+                          <div className="w-0 h-0 border-l-4 border-r-4 border-t-8 border-l-transparent border-r-transparent border-t-[#8b4513]"></div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Item Card */}
+                    <div className="bg-white border-2 border-[#8b4513] rounded-lg p-4 shadow-md transform hover:scale-105 transition-transform">
+                      <div className="flex items-start gap-3">
+                        <div className="bg-[#ffd700] rounded-full w-12 h-12 flex items-center justify-center text-2xl shrink-0">
+                          ⏰
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <span className="text-lg font-bold text-[#8b4513]">
+                              {formatTime(item.time)}
+                            </span>
+                            <span className="text-[#8b4513]">•</span>
+                            <span className="text-lg font-semibold text-[#8b4513] truncate">
+                              {item.location}
+                            </span>
+                          </div>
+                          <p className="text-[#8b4513]">{item.activity}</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  {/* Decorative arrow connector (50% shorter) */}
-                  {itemIdx < items.length - 1 && (
-                    <div className="absolute left-20 bottom-[-12px] w-0.5 h-3 bg-[#ffd93d]"></div>
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
+          ))
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-2xl text-[#8b4513]" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
+              No adventures planned yet! 🌟
+            </p>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
 }
 
 // Retro Postcard Itinerary View Component
-interface RetroPostcardItineraryViewProps {
-  journey: Journey;
-  formatDate: (timestamp: bigint) => string;
-  formatDateRange: (startTimestamp: bigint, endTimestamp: bigint) => string;
-  formatScheduleDate: (timestamp: bigint) => string;
-  formatTime: (timeString: string) => string;
-}
-
-function RetroPostcardItineraryView({
-  journey,
-  formatDate,
-  formatDateRange,
-  formatScheduleDate,
-  formatTime
-}: RetroPostcardItineraryViewProps) {
-  const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.city);
+function RetroPostcardItineraryView({ journey, formatDate, formatDateRange, formatScheduleDate, formatTime }: ItineraryViewProps) {
+  const { data: scheduleData } = useGetJourneyScheduleWithDays(journey.city);
 
   return (
-    <div className="relative w-full h-full overflow-y-auto p-8 bg-[#f5e6d3]">
-      {/* Vintage Header */}
-      <div className="text-center mb-8 border-4 border-[#8b4513] p-6 bg-[#fdf6e3] shadow-lg">
-        <h1 className="text-5xl font-bold text-[#8b4513] mb-2" style={{ fontFamily: 'serif' }}>
+    <div className="relative w-full h-full overflow-y-auto bg-[#f5e6d3]">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-[#8b4513] text-[#f5e6d3] p-6 border-b-4 border-[#654321]">
+        <h2 className="text-4xl font-bold text-center mb-2" style={{ fontFamily: 'Georgia, serif' }}>
           {journey.city}
-        </h1>
-        <div className="flex items-center justify-center gap-2 text-lg text-[#a0522d]">
-          <Calendar className="h-5 w-5" />
-          <span>{formatDateRange(journey.startDate, journey.endDate)}</span>
-        </div>
+        </h2>
+        <p className="text-center text-sm" style={{ fontFamily: 'Georgia, serif' }}>
+          {formatDateRange(journey.startDate, journey.endDate)}
+        </p>
       </div>
 
-      {/* Schedule Items in Postcard Style */}
-      <div className="space-y-6 max-w-4xl mx-auto">
-        {scheduleWithDays.map(([dayLabel, items], dayIdx) => (
-          <div key={dayLabel} className="relative">
-            {/* Day Stamp */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-[#d4a574] text-[#4a2511] px-6 py-2 border-2 border-[#8b4513] shadow-md transform -rotate-2">
-                <span className="font-bold text-lg" style={{ fontFamily: 'serif' }}>{dayLabel}</span>
+      {/* Content */}
+      <div className="p-8 space-y-6">
+        {scheduleData && scheduleData.length > 0 ? (
+          scheduleData.map(([dayLabel, items], dayIdx) => (
+            <div key={dayLabel} className="relative">
+              {/* Day Header */}
+              <div className="bg-[#d4a574] border-4 border-[#8b4513] rounded-sm p-4 mb-4 shadow-lg">
+                <h3 className="text-2xl font-bold text-[#654321]" style={{ fontFamily: 'Georgia, serif' }}>
+                  {dayLabel}
+                </h3>
+              </div>
+
+              {/* Schedule Items */}
+              <div className="space-y-4 ml-8">
+                {items.map((item, idx) => (
+                  <div key={`${item.date}-${item.time}-${idx}`} className="relative">
+                    {/* Connector Arrow */}
+                    {idx < items.length - 1 && (
+                      <div className="absolute left-6 top-full h-8 w-0.5 bg-[#8b4513]" style={{ height: '16px' }}>
+                        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+                          <div className="w-0 h-0 border-l-4 border-r-4 border-t-8 border-l-transparent border-r-transparent border-t-[#8b4513]"></div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Item Card */}
+                    <div className="bg-[#faf0e6] border-2 border-[#8b4513] rounded-sm p-4 shadow-md">
+                      <div className="flex items-start gap-3">
+                        <div className="bg-[#d4a574] rounded-sm w-12 h-12 flex items-center justify-center text-xl font-bold text-[#654321] shrink-0" style={{ fontFamily: 'Georgia, serif' }}>
+                          {formatTime(item.time).split(' ')[0]}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <span className="text-lg font-bold text-[#654321]" style={{ fontFamily: 'Georgia, serif' }}>
+                              {formatTime(item.time)}
+                            </span>
+                            <span className="text-[#654321]">•</span>
+                            <span className="text-lg font-semibold text-[#654321] truncate" style={{ fontFamily: 'Georgia, serif' }}>
+                              {item.location}
+                            </span>
+                          </div>
+                          <p className="text-[#654321]" style={{ fontFamily: 'Georgia, serif' }}>
+                            {item.activity}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-
-            {/* Items as Postcards */}
-            <div className="space-y-4 pl-8">
-              {items.map((item, itemIdx) => (
-                <div
-                  key={itemIdx}
-                  className="relative bg-[#fdf6e3] p-5 border-4 border-[#8b4513] shadow-lg transform hover:scale-105 transition-transform"
-                  style={{ fontFamily: 'serif' }}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 bg-[#8b4513] text-[#fdf6e3] px-4 py-2 border-2 border-[#4a2511]">
-                      <span className="font-bold">{formatTime(item.time)}</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-bold text-xl text-[#4a2511] mb-2">{item.activity}</p>
-                      {item.location && (
-                        <p className="text-sm text-[#8b4513] flex items-center gap-2">
-                          <MapPin className="h-4 w-4" />
-                          {item.location}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  {/* Vintage stamp decoration */}
-                  <div className="absolute top-2 right-2 w-12 h-12 border-2 border-[#8b4513] rounded-full flex items-center justify-center bg-[#d4a574] opacity-50">
-                    <span className="text-xs font-bold text-[#4a2511]">✓</span>
-                  </div>
-                  {/* Decorative arrow connector (50% shorter) */}
-                  {itemIdx < items.length - 1 && (
-                    <div className="absolute left-24 bottom-[-16px] w-0.5 h-4 bg-[#8b4513]"></div>
-                  )}
-                </div>
-              ))}
-            </div>
+          ))
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-2xl text-[#654321]" style={{ fontFamily: 'Georgia, serif' }}>
+              No itinerary available
+            </p>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

@@ -1,21 +1,21 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T02:33:43.847Z",
-  "summary": "The diff does not provide evidence that the requested non-functional \"Map\" button (with a \"2D\" logo) was added next to the existing \"Flying\" button in the Travelogue journey action buttons area. Only an additional icon import (\"Map\") is visible in the truncated TraveloguePanel.tsx snippet, and the other modified files are project metadata/summaries.",
+  "generatedAt": "2026-02-12T02:41:18.747Z",
+  "summary": "The diff does not provide sufficient evidence that the requested placeholder \"Map\" (with visible \"2D\" mark) button was added next to the existing \"Flying\" button in Travelogue journey cards, nor that it is a click no-op. Two ancillary/non-product files were modified without being requested.",
   "missing_requirements": [
     {
-      "id": "REQ-4",
-      "requirement": "Add a new button labeled \"Map\" positioned directly next to the existing \"Flying\" button in the Travelogue journey action buttons area, and display a simple \"2D\" logo/icon on the button.",
-      "reason": "In the provided truncated diff for TraveloguePanel.tsx, there is no visible JSX/markup showing a new \"Map\" button, no evidence of positioning next to the existing \"Flying\" button, and no evidence of a \"2D\" logo/icon being rendered on that button (only an import of a Map icon is shown).",
+      "id": "REQ-1",
+      "requirement": "In the Travelogue UI, add a new button labeled \"Map\" immediately to the right of the existing \"Flying\" button wherever the Flying button is rendered, and include a visible \"2D\" logo/icon mark alongside the label.",
+      "reason": "TraveloguePanel.tsx is truncated in the diff summary and does not show any added/updated JSX for a \"Map\" button, its position relative to \"Flying\", or the presence of a \"2D\" mark.",
       "evidence": [
         "frontend/src/components/TraveloguePanel.tsx (truncated)"
       ]
     },
     {
-      "id": "REQ-5",
-      "requirement": "Do not implement any functionality for the new \"Map\" button yet (no navigation, no state changes, no toasts, no map updates, and no backend calls when clicked).",
-      "reason": "Because the diff does not show the Map button being added, it also does not show the click handler (or lack thereof). Additionally, toast is imported in the component, but the truncated view does not allow verifying whether the Map button triggers side effects or none.",
+      "id": "REQ-2",
+      "requirement": "Ensure the new \"Map\" button is a no-op placeholder: clicking it must not navigate, open dialogs, trigger toasts, call backend APIs, or otherwise change application/UI state beyond normal press visuals.",
+      "reason": "No onClick handler (or lack thereof) for a new \"Map\" button is visible in the truncated TraveloguePanel.tsx diff, so the no-op behavior cannot be verified from provided evidence.",
       "evidence": [
         "frontend/src/components/TraveloguePanel.tsx (truncated)"
       ]
@@ -23,15 +23,15 @@
   ],
   "hallucinated_features": [
     {
-      "description": "Updated project tracking metadata to add/mark feature requests (AR-1/AR-2/AR-3) as pending in project_state.json.",
-      "reason": "The BuildRequest only asks for a UI change in the Travelogue button area and explicitly constrains changes to that UI. Updating project_state.json is not requested as part of the feature implementation.",
+      "description": "Project metadata/state tracking updates indicating the feature is \"pending\" and summarizing the Map button change.",
+      "reason": "The BuildRequest only asked for a UI change; it did not request modifying/adding project tracking metadata files.",
       "evidence": [
         "project_state.json"
       ]
     },
     {
-      "description": "Modified frontend-file-summaries.txt with broad application/component descriptions unrelated to adding a non-functional Map button in Travelogue.",
-      "reason": "The BuildRequest is narrowly scoped to inserting a new Map button in the Travelogue journey action buttons area and does not request documentation/summary updates.",
+      "description": "Updates to repository documentation/summary text describing multiple unrelated frontend changes (search UI, map icons, admin panel calendar, etc.).",
+      "reason": "The BuildRequest is narrowly scoped to adding a placeholder Map button in Travelogue; modifying a broad frontend file summary is not requested and appears unrelated to the specified change.",
       "evidence": [
         "frontend-file-summaries.txt (truncated)"
       ]
