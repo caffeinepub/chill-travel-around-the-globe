@@ -1,46 +1,74 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T02:33:43.847Z",
-  "summary": "The diff does not provide evidence that the requested non-functional \"Map\" button (with a \"2D\" logo) was added next to the existing \"Flying\" button in the Travelogue journey action buttons area. Only an additional icon import (\"Map\") is visible in the truncated TraveloguePanel.tsx snippet, and the other modified files are project metadata/summaries.",
+  "generatedAt": "2026-02-12T10:13:24.592Z",
+  "summary": "REQ-1 and REQ-2 appear to be implemented on the frontend by introducing a journey-scoped map context (activeJourneyCity) and a MapComponent journeyCityFilter prop that uses a new journey-filtered schedule query hook. REQ-3 is only partially evidenced: the frontend hook is referenced, but the diff summary does not clearly show the required backend query method returning schedule items (with coordinates) filtered by journey. The diff also includes several substantial unrelated changes (UI/admin/media/upload/auth/layout), plus a backend state schema migration that was not clearly required by the BuildRequest.",
   "missing_requirements": [
     {
-      "id": "REQ-4",
-      "requirement": "Add a new button labeled \"Map\" positioned directly next to the existing \"Flying\" button in the Travelogue journey action buttons area, and display a simple \"2D\" logo/icon on the button.",
-      "reason": "In the provided truncated diff for TraveloguePanel.tsx, there is no visible JSX/markup showing a new \"Map\" button, no evidence of positioning next to the existing \"Flying\" button, and no evidence of a \"2D\" logo/icon being rendered on that button (only an import of a Map icon is shown).",
+      "id": "REQ-3",
+      "requirement": "Backend exposes a query method that returns schedule items (including their location input and coordinates) for a single journey identifier, and the frontend uses a dedicated React Query hook to fetch it.",
+      "reason": "The diff summary shows the frontend consuming a hook named useGetScheduleItemsWithCoordinatesByJourney, but the backend/main.mo excerpt is truncated before any new query method can be verified. No explicit backend query function signature/implementation returning schedule items with coordinates by journey is visible in the provided diff summary.",
       "evidence": [
-        "frontend/src/components/TraveloguePanel.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "requirement": "Do not implement any functionality for the new \"Map\" button yet (no navigation, no state changes, no toasts, no map updates, and no backend calls when clicked).",
-      "reason": "Because the diff does not show the Map button being added, it also does not show the click handler (or lack thereof). Additionally, toast is imported in the component, but the truncated view does not allow verifying whether the Map button triggers side effects or none.",
-      "evidence": [
-        "frontend/src/components/TraveloguePanel.tsx (truncated)"
+        "backend/main.mo (truncated; no schedule-items-by-journey query shown)",
+        "frontend/src/components/MapComponent.tsx (imports useGetScheduleItemsWithCoordinatesByJourney)",
+        "frontend/src/hooks/useQueries.ts (truncated; cannot verify hook implementation/canister method called)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Updated project tracking metadata to add/mark feature requests (AR-1/AR-2/AR-3) as pending in project_state.json.",
-      "reason": "The BuildRequest only asks for a UI change in the Travelogue button area and explicitly constrains changes to that UI. Updating project_state.json is not requested as part of the feature implementation.",
+      "description": "Introduced a backend stable-state schema migration adding journeyCity into ScheduleItem and wiring (with migration = Migration.run).",
+      "reason": "BuildRequest REQ-3 asked for a backend query + hook; it explicitly says “No migration is introduced unless strictly required by a state schema change.” The diff introduces backend/migration.mo and adds a new stable field journeyCity to ScheduleItem even though journeySchedules is already keyed by journey city (per migration code), so this schema change/migration is not clearly justified by the request based on the provided diff evidence.",
       "evidence": [
-        "project_state.json"
+        "backend/migration.mo",
+        "backend/main.mo ((with migration = Migration.run) and ScheduleItem has new journeyCity field)"
       ]
     },
     {
-      "description": "Modified frontend-file-summaries.txt with broad application/component descriptions unrelated to adding a non-functional Map button in Travelogue.",
-      "reason": "The BuildRequest is narrowly scoped to inserting a new Map button in the Travelogue journey action buttons area and does not request documentation/summary updates.",
+      "description": "Expanded/changed media management features (e.g., added/validated social media URLs; media gallery tabs/embedded players; broadened upload file type support).",
+      "reason": "Not requested by any of REQ-1/REQ-2/REQ-3 (which focus on wiring the Travelogue Map button and journey-filtered schedule items on the existing 2D map).",
       "evidence": [
-        "frontend-file-summaries.txt (truncated)"
+        "frontend/src/hooks/useQueries.ts (validateSocialMediaUrl exported/logic shown)",
+        "frontend/src/components/CityAlbumManager.tsx (social media URL validation + upload type changes)",
+        "frontend/src/components/TravelSpotManager.tsx (geocoding helper + media/social changes)",
+        "frontend-file-summaries.txt (MediaGalleryPopup enhancements described)"
+      ]
+    },
+    {
+      "description": "Website layout panel changes (e.g., local time updating every second, layout setting UI adjustments).",
+      "reason": "Not part of requested map button/journey-scoped schedule marker functionality.",
+      "evidence": [
+        "frontend/src/components/WebsiteLayoutPanel.tsx"
+      ]
+    },
+    {
+      "description": "Admin panel journey date-range popover/calendar enhancements and time input integration.",
+      "reason": "Not requested; outside REQ-1/REQ-2/REQ-3 scope.",
+      "evidence": [
+        "frontend-file-summaries.txt (AdminPanel calendar popover/date binding changes described)"
+      ]
+    },
+    {
+      "description": "Added/changed general UI elements like HeartRating component behavior and additional global styling adjustments.",
+      "reason": "Not requested by the BuildRequest; unrelated to wiring the Travelogue Map button to the 2D map with journey-filtered schedules.",
+      "evidence": [
+        "frontend-file-summaries.txt (HeartRating described)",
+        "frontend/src/index.css (styling changes described in summary)"
       ]
     }
   ],
-  "confidence": 0.62,
+  "confidence": 0.55,
   "changed_files": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "frontend-file-summaries.txt",
+    "frontend/src/components/CityAlbumManager.tsx",
+    "frontend/src/components/MapComponent.tsx",
+    "frontend/src/components/TravelSpotManager.tsx",
     "frontend/src/components/TraveloguePanel.tsx",
+    "frontend/src/components/WebsiteLayoutPanel.tsx",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/pages/LocationMapExplorer.tsx",
     "project_state.json"
   ]
 }

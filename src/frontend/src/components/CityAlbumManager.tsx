@@ -303,9 +303,15 @@ export default function CityAlbumManager() {
     setIsAddingSocialMedia(true);
 
     try {
+      const socialMediaLink: SocialMediaLink = {
+        url: socialMediaUrl.trim(),
+        platform: validation.platform || 'unknown',
+        addedAt: BigInt(Date.now() * 1000000)
+      };
+
       await addSocialMediaLink.mutateAsync({
         city: selectedCity.trim(),
-        url: socialMediaUrl.trim()
+        socialMediaLink
       });
 
       toast.success(`${validation.platform === 'youtube' ? 'YouTube' : 'Instagram'} video link added successfully`);
@@ -526,211 +532,172 @@ export default function CityAlbumManager() {
             ) : (
               <>
                 {/* File Upload Section */}
-                <div>
-                  <Label className="text-sm font-medium mb-3 block">Upload Media Files</Label>
-                  <div>
-                    <Label htmlFor="media-upload" className="cursor-pointer">
-                      <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-muted-foreground/50 transition-colors">
-                        <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground mb-2">
-                          Click to select images and videos
-                        </p>
-                        <Button variant="outline" size="sm" asChild>
-                          <span>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Choose Files
-                          </span>
-                        </Button>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          JPEG, PNG, WebP, AVIF (max 10MB) • MP4, MOV (max 50MB)
-                        </p>
-                      </div>
-                    </Label>
-                    <Input
-                      id="media-upload"
-                      type="file"
-                      accept="image/jpeg,image/jpg,image/png,image/webp,image/avif,video/mp4,video/quicktime,video/mov"
-                      multiple
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label>Upload Media Files</Label>
+                    {hasCompletedUploads && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearCompletedUploads}
+                      >
+                        Clear Completed
+                      </Button>
+                    )}
                   </div>
 
-                  {/* Selected Files Preview */}
-                  {uploadingFiles.length > 0 && (
-                    <div className="space-y-2 mt-4">
-                      <div className="flex items-center justify-between">
-                        <Label>Upload Queue ({uploadingFiles.length})</Label>
-                        {hasCompletedUploads && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={clearCompletedUploads}
-                          >
-                            Clear Completed
-                          </Button>
-                        )}
+                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
+                    <div className="flex flex-col items-center gap-2">
+                      <Upload className="h-8 w-8 text-muted-foreground" />
+                      <div className="text-center">
+                        <Label
+                          htmlFor="file-upload"
+                          className="cursor-pointer text-primary hover:underline"
+                        >
+                          Choose files
+                        </Label>
+                        <Input
+                          id="file-upload"
+                          type="file"
+                          multiple
+                          accept="image/jpeg,image/jpg,image/png,image/webp,image/avif,video/mp4,video/quicktime"
+                          onChange={handleFileSelect}
+                          className="hidden"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          or drag and drop
+                        </p>
                       </div>
-                      <div className="space-y-2 max-h-60 overflow-y-auto">
-                        {uploadingFiles.map((uploadingFile, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 border rounded">
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <div className="flex-shrink-0">
-                                {getStatusIcon(uploadingFile.status)}
-                              </div>
-                              <div className="flex items-center gap-2 flex-shrink-0">
-                                {uploadingFile.file.type.startsWith('video/') ? (
-                                  <Video className="h-4 w-4 text-blue-500" />
-                                ) : (
-                                  <Image className="h-4 w-4 text-green-500" />
-                                )}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium truncate">{uploadingFile.file.name}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {formatFileSize(uploadingFile.file.size)} • {uploadingFile.file.type}
-                                </p>
-                                {uploadingFile.status === 'uploading' && (
-                                  <Progress value={uploadingFile.progress} className="mt-1 h-1" />
-                                )}
-                                {uploadingFile.status === 'error' && uploadingFile.error && (
-                                  <p className="text-xs text-red-500 mt-1">{uploadingFile.error}</p>
-                                )}
-                              </div>
-                            </div>
-                            {(uploadingFile.status === 'pending' || uploadingFile.status === 'error') && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => removeUploadingFile(index)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
+                      <p className="text-xs text-muted-foreground">
+                        JPEG, PNG, WebP, AVIF, MP4, MOV (Images: 10MB max, Videos: 50MB max)
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Uploading Files List */}
+                  {uploadingFiles.length > 0 && (
+                    <div className="space-y-2">
+                      {uploadingFiles.map((uploadingFile, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-3 p-3 border rounded-lg"
+                        >
+                          {getStatusIcon(uploadingFile.status)}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {uploadingFile.file.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatFileSize(uploadingFile.file.size)}
+                            </p>
+                            {uploadingFile.status === 'uploading' && (
+                              <Progress value={uploadingFile.progress} className="mt-1" />
+                            )}
+                            {uploadingFile.status === 'error' && uploadingFile.error && (
+                              <p className="text-xs text-red-500 mt-1">{uploadingFile.error}</p>
                             )}
                           </div>
-                        ))}
-                      </div>
-                      {hasPendingUploads && (
-                        <Button
-                          onClick={handleUploadFiles}
-                          disabled={isUploading || isAnyUploading || addMediaToCityAlbum.isPending}
-                          className="w-full"
-                        >
-                          {isUploading || isAnyUploading || addMediaToCityAlbum.isPending ? (
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          ) : (
-                            <Upload className="h-4 w-4 mr-2" />
+                          {(uploadingFile.status === 'pending' || uploadingFile.status === 'error') && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeUploadingFile(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
                           )}
-                          Upload {uploadingFiles.filter(f => f.status === 'pending').length} File(s)
-                        </Button>
-                      )}
+                        </div>
+                      ))}
                     </div>
+                  )}
+
+                  {hasPendingUploads && (
+                    <Button
+                      onClick={handleUploadFiles}
+                      disabled={isAnyUploading}
+                      className="w-full"
+                    >
+                      {isAnyUploading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload {uploadingFiles.filter(f => f.status === 'pending').length} File(s)
+                        </>
+                      )}
+                    </Button>
                   )}
                 </div>
 
                 <Separator />
 
-                {/* Enhanced Social Media Links Section */}
-                <div>
-                  <Label className="text-sm font-medium mb-3 block">Add Social Media Videos</Label>
-                  
-                  {/* Information Alert */}
-                  <Alert className="mb-4">
+                {/* Social Media Links Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Label>Add Social Media Video Link</Label>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </div>
+
+                  <Alert>
                     <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      <div className="space-y-2">
-                        <p className="font-medium">Supported platforms and formats:</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                          <div className="flex items-center gap-2">
-                            <Youtube className="h-4 w-4 text-red-500" />
-                            <span><strong>YouTube:</strong> Video URLs (youtube.com/watch, youtu.be)</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Instagram className="h-4 w-4 text-pink-500" />
-                            <span><strong>Instagram:</strong> Posts, Reels, IGTV URLs</span>
-                          </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Added videos will appear in the "Social Media" tab when viewing the city on the map.
-                        </p>
-                      </div>
+                    <AlertDescription className="text-xs">
+                      <p className="font-medium mb-1">Supported platforms:</p>
+                      <ul className="list-disc list-inside space-y-0.5">
+                        <li>YouTube: Video URLs (watch, embed, or short links)</li>
+                        <li>Instagram: Post, Reel, or IGTV URLs</li>
+                      </ul>
+                      <p className="mt-2">
+                        Videos will be embedded and playable directly in the city album gallery.
+                      </p>
                     </AlertDescription>
                   </Alert>
 
-                  <form onSubmit={handleAddSocialMediaLink} className="space-y-4">
+                  <form onSubmit={handleAddSocialMediaLink} className="space-y-3">
                     <div>
-                      <div className="relative">
-                        <Input
-                          type="url"
-                          placeholder="Paste YouTube or Instagram video URL here..."
-                          value={socialMediaUrl}
-                          onChange={(e) => handleSocialMediaUrlChange(e.target.value)}
-                          className={`w-full pr-10 ${
-                            urlValidation?.isValid === false ? 'border-red-300 focus:border-red-500' : 
-                            urlValidation?.isValid === true ? 'border-green-300 focus:border-green-500' : ''
-                          }`}
-                        />
-                        {urlValidation && (
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                            {urlValidation.isValid ? (
-                              <CheckCircle className="h-4 w-4 text-green-500" />
-                            ) : (
-                              <AlertCircle className="h-4 w-4 text-red-500" />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Real-time validation feedback */}
+                      <Input
+                        type="url"
+                        placeholder="Paste YouTube or Instagram video URL..."
+                        value={socialMediaUrl}
+                        onChange={(e) => handleSocialMediaUrlChange(e.target.value)}
+                        disabled={isAddingSocialMedia}
+                      />
                       {urlValidation && (
-                        <div className={`mt-2 text-sm flex items-center gap-2 ${
-                          urlValidation.isValid ? 'text-green-600' : 'text-red-600'
-                        }`}>
+                        <div className="mt-2">
                           {urlValidation.isValid ? (
-                            <>
-                              {urlValidation.platform === 'youtube' ? (
-                                <Youtube className="h-4 w-4" />
-                              ) : (
-                                <Instagram className="h-4 w-4" />
-                              )}
+                            <div className="flex items-center gap-2 text-sm text-green-600">
+                              <CheckCircle className="h-4 w-4" />
                               <span>
                                 Valid {urlValidation.platform === 'youtube' ? 'YouTube' : 'Instagram'} video URL
                               </span>
-                            </>
+                            </div>
                           ) : (
-                            <>
+                            <div className="flex items-center gap-2 text-sm text-red-600">
                               <AlertCircle className="h-4 w-4" />
                               <span>{urlValidation.error}</span>
-                            </>
+                            </div>
                           )}
                         </div>
                       )}
-                      
-                      <div className="mt-2 text-xs text-muted-foreground">
-                        <p className="mb-1"><strong>Example URLs:</strong></p>
-                        <div className="space-y-1 pl-2">
-                          <p>• YouTube: https://www.youtube.com/watch?v=VIDEO_ID</p>
-                          <p>• Instagram: https://www.instagram.com/p/POST_ID/</p>
-                        </div>
-                      </div>
                     </div>
-                    
                     <Button
                       type="submit"
-                      disabled={
-                        isAddingSocialMedia || 
-                        addSocialMediaLink.isPending || 
-                        !socialMediaUrl.trim() || 
-                        urlValidation?.isValid !== true
-                      }
+                      disabled={isAddingSocialMedia || !socialMediaUrl.trim() || (urlValidation !== null && !urlValidation.isValid)}
                       className="w-full"
                     >
-                      {isAddingSocialMedia || addSocialMediaLink.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      {isAddingSocialMedia ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Adding Link...
+                        </>
                       ) : (
-                        <Link className="h-4 w-4 mr-2" />
+                        <>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Video Link
+                        </>
                       )}
-                      Add Social Media Link
                     </Button>
                   </form>
                 </div>
@@ -740,77 +707,81 @@ export default function CityAlbumManager() {
         </Card>
       )}
 
-      {/* Media Gallery */}
-      {selectedCity && (
+      {/* Existing Content Display */}
+      {selectedCity && selectedAlbum && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Camera className="h-5 w-5" />
-              {selectedCity} Content Gallery
-              {selectedAlbum && (
-                <Badge variant="secondary">
-                  {selectedAlbum.mediaFiles.length + selectedAlbum.socialMediaLinks.length} items
-                </Badge>
-              )}
+              Content for {selectedCity}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            {!selectedAlbum || (selectedAlbum.mediaFiles.length === 0 && selectedAlbum.socialMediaLinks.length === 0) ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Camera className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium">No content yet</p>
-                <p className="text-sm">
-                  {isAuthenticated 
-                    ? "Upload photos, videos, or add social media links to get started!" 
-                    : "Log in to add content for this city."
-                  }
-                </p>
+          <CardContent className="space-y-6">
+            {/* Media Files */}
+            {selectedAlbum.mediaFiles.length > 0 && (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">
+                  Media Files ({selectedAlbum.mediaFiles.length})
+                </Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {selectedAlbum.mediaFiles.map((media, index) => (
+                    <MediaFileCard
+                      key={index}
+                      media={media}
+                      onDelete={() => handleDeleteMedia(media.path)}
+                      formatDate={formatDate}
+                    />
+                  ))}
+                </div>
               </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Media Files */}
-                {selectedAlbum.mediaFiles.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-4">
-                      <Camera className="h-5 w-5" />
-                      <h4 className="font-medium">Media Files</h4>
-                      <Badge variant="outline">{selectedAlbum.mediaFiles.length}</Badge>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {selectedAlbum.mediaFiles.map((mediaFile, index) => (
-                        <MediaFileCard
-                          key={`${mediaFile.path}-${index}`}
-                          mediaFile={mediaFile}
-                          onDelete={() => handleDeleteMedia(mediaFile.path)}
-                          isDeleting={removeMediaFromCityAlbum.isPending}
-                          canDelete={isAuthenticated}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
+            )}
 
-                {/* Social Media Links */}
-                {selectedAlbum.socialMediaLinks.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-4">
-                      <Link className="h-5 w-5" />
-                      <h4 className="font-medium">Social Media Videos</h4>
-                      <Badge variant="outline">{selectedAlbum.socialMediaLinks.length}</Badge>
+            {/* Social Media Links */}
+            {selectedAlbum.socialMediaLinks.length > 0 && (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">
+                  Social Media Links ({selectedAlbum.socialMediaLinks.length})
+                </Label>
+                <div className="space-y-2">
+                  {selectedAlbum.socialMediaLinks.map((link, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-3 border rounded-lg"
+                    >
+                      {getSocialMediaIcon(link.platform)}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{link.url}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Added {formatDate(link.addedAt)}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.open(link.url, '_blank')}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                      {isAuthenticated && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteSocialMediaLink(link.url)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      )}
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {selectedAlbum.socialMediaLinks.map((link, index) => (
-                        <SocialMediaLinkCard
-                          key={`${link.url}-${index}`}
-                          socialMediaLink={link}
-                          onDelete={() => handleDeleteSocialMediaLink(link.url)}
-                          isDeleting={removeSocialMediaLink.isPending}
-                          canDelete={isAuthenticated}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedAlbum.mediaFiles.length === 0 && selectedAlbum.socialMediaLinks.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <Camera className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>No content yet for {selectedCity}</p>
+                <p className="text-sm">Upload media files or add social media links to get started</p>
               </div>
             )}
           </CardContent>
@@ -820,212 +791,60 @@ export default function CityAlbumManager() {
   );
 }
 
+// Media File Card Component
 interface MediaFileCardProps {
-  mediaFile: MediaFile;
+  media: MediaFile;
   onDelete: () => void;
-  isDeleting: boolean;
-  canDelete: boolean;
+  formatDate: (timestamp: bigint) => string;
 }
 
-function MediaFileCard({ mediaFile, onDelete, isDeleting, canDelete }: MediaFileCardProps) {
-  const { data: fileUrl, isLoading, error } = useFileUrl(mediaFile.path);
-
-  const formatDate = (timestamp: bigint): string => {
-    const date = new Date(Number(timestamp) / 1000000);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-4">
-          <div className="aspect-square bg-muted rounded-md flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error || !fileUrl) {
-    return (
-      <Card>
-        <CardContent className="p-4">
-          <div className="aspect-square bg-red-50 rounded-md flex flex-col items-center justify-center border border-red-200">
-            <AlertCircle className="h-6 w-6 text-red-500 mb-2" />
-            <span className="text-xs text-red-600 text-center">
-              Failed to load media
-            </span>
-            {canDelete && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={onDelete}
-                disabled={isDeleting}
-                className="mt-2"
-              >
-                {isDeleting ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Trash2 className="h-3 w-3" />
-                )}
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+function MediaFileCard({ media, onDelete, formatDate }: MediaFileCardProps) {
+  const { data: fileUrl } = useFileUrl(media.path);
+  const { identity } = useInternetIdentity();
+  const isAuthenticated = !!identity;
 
   return (
-    <Card className="group relative overflow-hidden">
-      <CardContent className="p-0">
-        <div className="aspect-square relative">
-          {mediaFile.mediaType === MediaType.video ? (
-            <video
-              src={fileUrl}
-              className="w-full h-full object-cover rounded-t-lg"
-              controls
-              preload="metadata"
-              style={{ objectFit: 'cover' }}
-            />
-          ) : (
+    <div className="relative group border rounded-lg overflow-hidden">
+      <div className="aspect-square bg-muted flex items-center justify-center">
+        {fileUrl ? (
+          media.mediaType === MediaType.image ? (
             <img
               src={fileUrl}
-              alt="City media"
-              className="w-full h-full object-cover rounded-t-lg"
-              style={{ objectFit: 'cover' }}
-              loading="lazy"
+              alt="Media"
+              className="w-full h-full object-cover"
             />
-          )}
-          
-          {/* Overlay with controls */}
-          {canDelete && (
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={onDelete}
-                disabled={isDeleting}
-              >
-                {isDeleting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Trash2 className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          )}
-
-          {/* Media type indicator */}
-          <div className="absolute top-2 left-2">
-            <Badge variant="secondary" className="text-xs">
-              {mediaFile.mediaType === MediaType.video ? (
-                <Video className="h-3 w-3 mr-1" />
-              ) : (
-                <Image className="h-3 w-3 mr-1" />
-              )}
-              {mediaFile.format.toUpperCase()}
-            </Badge>
-          </div>
-        </div>
-        
-        {/* File info */}
-        <div className="p-2">
-          <p className="text-xs text-muted-foreground">
-            {formatDate(mediaFile.uploadedAt)}
-          </p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-interface SocialMediaLinkCardProps {
-  socialMediaLink: SocialMediaLink;
-  onDelete: () => void;
-  isDeleting: boolean;
-  canDelete: boolean;
-}
-
-function SocialMediaLinkCard({ socialMediaLink, onDelete, isDeleting, canDelete }: SocialMediaLinkCardProps) {
-  const formatDate = (timestamp: bigint): string => {
-    const date = new Date(Number(timestamp) / 1000000);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const getSocialMediaIcon = (platform: string) => {
-    switch (platform.toLowerCase()) {
-      case 'youtube':
-        return <Youtube className="h-5 w-5 text-red-500" />;
-      case 'instagram':
-        return <Instagram className="h-5 w-5 text-pink-500" />;
-      default:
-        return <Link className="h-5 w-5 text-blue-500" />;
-    }
-  };
-
-  const getPlatformName = (platform: string) => {
-    switch (platform.toLowerCase()) {
-      case 'youtube':
-        return 'YouTube';
-      case 'instagram':
-        return 'Instagram';
-      default:
-        return 'Social Media';
-    }
-  };
-
-  return (
-    <Card className="group relative overflow-hidden">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-2">
-            {getSocialMediaIcon(socialMediaLink.platform)}
-            <span className="font-medium text-sm">
-              {getPlatformName(socialMediaLink.platform)}
-            </span>
-          </div>
-          {canDelete && (
+          ) : (
+            <video
+              src={fileUrl}
+              className="w-full h-full object-cover"
+              controls
+            />
+          )
+        ) : (
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        )}
+      </div>
+      <div className="p-2">
+        <div className="flex items-center justify-between">
+          <Badge variant="secondary" className="text-xs">
+            {media.mediaType === MediaType.image ? <Image className="h-3 w-3 mr-1" /> : <Video className="h-3 w-3 mr-1" />}
+            {media.format.toUpperCase()}
+          </Badge>
+          {isAuthenticated && (
             <Button
-              size="sm"
               variant="ghost"
+              size="sm"
               onClick={onDelete}
-              disabled={isDeleting}
-              className="opacity-0 group-hover:opacity-100 transition-opacity"
+              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
             >
-              {isDeleting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="h-4 w-4" />
-              )}
+              <Trash2 className="h-3 w-3 text-red-500" />
             </Button>
           )}
         </div>
-        
-        <div className="space-y-2">
-          <a
-            href={socialMediaLink.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-blue-600 hover:text-blue-800 underline break-all flex items-center gap-1"
-          >
-            View Video
-            <ExternalLink className="h-3 w-3" />
-          </a>
-          <p className="text-xs text-muted-foreground">
-            Added {formatDate(socialMediaLink.addedAt)}
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+        <p className="text-xs text-muted-foreground mt-1">
+          {formatDate(media.uploadedAt)}
+        </p>
+      </div>
+    </div>
   );
 }

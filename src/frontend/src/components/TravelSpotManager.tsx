@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, MapPin, FileText, Info, Search, Loader2, AlertTriangle, Upload, Image, Video, X, Link, Youtube, Instagram, ExternalLink, CheckCircle, Camera } from 'lucide-react';
+import { Plus, Edit, Trash2, MapPin, FileText, Info, Search, Loader2, AlertTriangle, Upload, Image, Video, X, Link, Youtube, Instagram, ExternalLink, CheckCircle, Camera, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -36,6 +36,44 @@ const TRAVEL_SPOT_TYPES = [
   'Airport',
   'Others'
 ];
+
+// Geocode a travel spot within a city context
+async function geocodeTravelSpot(spotName: string, cityName: string): Promise<[number, number] | null> {
+  try {
+    // Try searching for the specific spot within the city
+    const fullQuery = `${spotName}, ${cityName}`;
+    const encodedQuery = encodeURIComponent(fullQuery);
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodedQuery}&limit=1&addressdetails=1`,
+      {
+        headers: {
+          'User-Agent': 'LocationMapExplorer/1.0'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Geocoding request failed');
+    }
+
+    const data = await response.json();
+    
+    if (data && data.length > 0) {
+      const result = data[0];
+      const lat = parseFloat(result.lat);
+      const lng = parseFloat(result.lon);
+
+      if (!isNaN(lat) && !isNaN(lng)) {
+        return [lat, lng];
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Travel spot geocoding error:', error);
+    return null;
+  }
+}
 
 export default function TravelSpotManager() {
   const [selectedCity, setSelectedCity] = useState<string>('');
@@ -216,17 +254,17 @@ export default function TravelSpotManager() {
     setIsAddingSocialMedia(true);
 
     try {
-      await addSocialMediaLinkToTravelSpot.mutateAsync({
-        city: formData.city.trim(),
-        spotName: formData.name.trim(),
-        url: socialMediaUrl.trim()
-      });
-
       const socialMediaLink: SocialMediaLink = {
         url: socialMediaUrl.trim(),
         platform: validation.platform || 'unknown',
         addedAt: BigInt(Date.now() * 1000000)
       };
+
+      await addSocialMediaLinkToTravelSpot.mutateAsync({
+        city: formData.city.trim(),
+        spotName: formData.name.trim(),
+        socialMediaLink
+      });
 
       toast.success(`${validation.platform === 'youtube' ? 'YouTube' : 'Instagram'} video link added successfully`);
       setSocialMediaUrl('');
@@ -254,7 +292,8 @@ export default function TravelSpotManager() {
         const success = await updateTravelSpot.mutateAsync({
           city: editingSpot.city,
           name: editingSpot.name,
-          description: formData.description.trim() || undefined,
+          description: formData.description.trim() || null,
+          coordinates: editingSpot.coordinates,
           spotType: formData.spotType.trim(),
           rating: formData.rating
         });
@@ -278,10 +317,19 @@ export default function TravelSpotManager() {
           return;
         }
       } else {
+        // Geocode the travel spot to get coordinates
+        const coordinates = await geocodeTravelSpot(formData.name.trim(), formData.city.trim());
+        
+        if (!coordinates) {
+          toast.error('Could not find coordinates for this travel spot. Please check the name and city.');
+          return;
+        }
+
         await addTravelSpot.mutateAsync({
           city: formData.city.trim(),
           name: formData.name.trim(),
-          description: formData.description.trim() || undefined,
+          description: formData.description.trim() || null,
+          coordinates,
           spotType: formData.spotType.trim(),
           rating: formData.rating
         });
@@ -511,211 +559,215 @@ export default function TravelSpotManager() {
       {selectedCity && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-primary" />
-                Travel Spots in {selectedCity}
-              </div>
-              <Badge variant="secondary">
-                {validTravelSpots.length} spots
-                {invalidTravelSpots.length > 0 && ` (${invalidTravelSpots.length} need coordinates)`}
-              </Badge>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              Travel Spots in {selectedCity}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Warning for spots with invalid coordinates */}
-            {invalidTravelSpots.length > 0 && (
-              <Alert className="mb-4">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  {invalidTravelSpots.length} travel spot{invalidTravelSpots.length > 1 ? 's' : ''} 
-                  {invalidTravelSpots.length > 1 ? ' have' : ' has'} invalid coordinates and won't appear on the map. 
-                  These were likely created before the geocoding feature was added.
-                </AlertDescription>
-              </Alert>
-            )}
-
             {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p>Loading travel spots...</p>
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
-            ) : travelSpots.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <MapPin className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium">No travel spots yet</p>
-                <p className="text-sm">Add places you've visited in {selectedCity}!</p>
+            ) : validTravelSpots.length === 0 && invalidTravelSpots.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <MapPin className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>No travel spots yet for {selectedCity}</p>
+                <p className="text-sm">Click "Add Spot" to create your first travel spot</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {travelSpots.map((spot, index) => {
-                  const hasValidCoordinates = !(spot.coordinates[0] === 0 && spot.coordinates[1] === 0);
-                  const mediaCount = spot.mediaFiles ? spot.mediaFiles.length : 0;
-                  const socialMediaCount = spot.socialMediaLinks ? spot.socialMediaLinks.length : 0;
-                  
-                  return (
+              <div className="space-y-4">
+                {/* Warning for invalid coordinates */}
+                {invalidTravelSpots.length > 0 && (
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      {invalidTravelSpots.length} travel spot(s) have invalid coordinates (0, 0) and won't appear on the map.
+                      Please edit them to update their location.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Valid Travel Spots */}
+                <div className="space-y-3">
+                  {validTravelSpots.map((spot) => (
                     <TravelSpotCard
-                      key={`${spot.name}-${index}`}
+                      key={`${spot.city}-${spot.name}`}
                       spot={spot}
-                      hasValidCoordinates={hasValidCoordinates}
-                      mediaCount={mediaCount}
-                      socialMediaCount={socialMediaCount}
                       onEdit={() => handleEdit(spot)}
                       onDelete={() => handleDelete(spot.city, spot.name)}
                       formatDate={formatDate}
                     />
-                  );
-                })}
+                  ))}
+                </div>
+
+                {/* Invalid Travel Spots */}
+                {invalidTravelSpots.length > 0 && (
+                  <div className="space-y-3 pt-4 border-t">
+                    <Label className="text-sm font-medium text-orange-600">
+                      Spots with Invalid Coordinates
+                    </Label>
+                    {invalidTravelSpots.map((spot) => (
+                      <TravelSpotCard
+                        key={`${spot.city}-${spot.name}`}
+                        spot={spot}
+                        onEdit={() => handleEdit(spot)}
+                        onDelete={() => handleDelete(spot.city, spot.name)}
+                        formatDate={formatDate}
+                        isInvalid
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
       )}
 
-      {/* Travel Spot Dialog */}
+      {/* Add/Edit Travel Spot Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="sm:max-w-2xl z-[3200] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto z-[3100]">
           <DialogHeader>
             <DialogTitle>
-              {editingSpot ? 'Edit Travel Spot' : 'Add New Travel Spot'}
+              {editingSpot ? 'Edit Travel Spot' : 'Add Travel Spot'}
             </DialogTitle>
           </DialogHeader>
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="spotCity">City</Label>
-              <Input
-                id="spotCity"
-                type="text"
-                placeholder="Enter city name"
-                value={formData.city}
-                onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                disabled={!!editingSpot} // Disable city editing for existing spots
-                autoComplete="off"
-              />
-            </div>
 
-            <div>
-              <Label htmlFor="spotType">Travel Spot Type *</Label>
-              <select
-                id="spotType"
-                value={formData.spotType}
-                onChange={(e) => setFormData(prev => ({ ...prev, spotType: e.target.value }))}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                required
-              >
-                {/* Options will be populated by JavaScript */}
-              </select>
-              <p className="text-xs text-muted-foreground mt-1">
-                Select the type of travel spot from the dropdown
-              </p>
-            </div>
-            
-            <div>
-              <Label htmlFor="spotName">Travel Spot Name *</Label>
-              <Input
-                id="spotName"
-                type="text"
-                placeholder="e.g., Central Park, Eiffel Tower, Local Market"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                disabled={!!editingSpot} // Disable name editing for existing spots
-                autoComplete="off"
-              />
-              {!editingSpot && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Be specific for better location accuracy (e.g., "Times Square" instead of just "Square")
-                </p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="spotRating">Rating (Optional)</Label>
-              <div className="mt-2">
-                <HeartRating 
-                  rating={formData.rating} 
-                  onRatingChange={(rating) => setFormData(prev => ({ ...prev, rating }))}
-                  size="md"
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="city">City *</Label>
+                <Input
+                  id="city"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  placeholder="e.g., Paris, Tokyo, New York"
+                  required
+                  disabled={!!editingSpot}
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Rate this travel spot from 0.0 to 10.0
-              </p>
-            </div>
-            
-            <div>
-              <Label htmlFor="spotDescription">Description (Optional)</Label>
-              <Textarea
-                id="spotDescription"
-                placeholder="Describe what makes this place special..."
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                rows={3}
-              />
+
+              <div>
+                <Label htmlFor="name">Travel Spot Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g., Eiffel Tower, Shibuya Crossing"
+                  required
+                  disabled={!!editingSpot}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Optional description of the travel spot"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="spotType">Travel Spot Type *</Label>
+                <select
+                  id="spotType"
+                  value={formData.spotType}
+                  onChange={(e) => setFormData({ ...formData, spotType: e.target.value })}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  required
+                >
+                  {/* Options will be populated by useEffect */}
+                </select>
+              </div>
+
+              <div>
+                <Label>Rating</Label>
+                <HeartRating
+                  rating={formData.rating}
+                  onRatingChange={(rating) => setFormData({ ...formData, rating })}
+                  size="lg"
+                />
+              </div>
             </div>
 
+            <Separator />
+
             {/* Media Upload Section */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label>Travel Spot Media (Optional)</Label>
-                <Badge variant="outline" className="text-xs">
-                  Photos & Videos
-                </Badge>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Label>Upload Media (Optional)</Label>
+                <Info className="h-4 w-4 text-muted-foreground" />
               </div>
-              
+
               <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4">
-                <div className="text-center">
-                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Upload photos and videos for this travel spot
-                  </p>
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/mov,video/quicktime"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                    id="media-upload"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => document.getElementById('media-upload')?.click()}
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Select Files
-                  </Button>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Supported: JPEG, PNG, WebP, AVIF, MP4, MOV
+                <div className="flex flex-col items-center gap-2">
+                  <Upload className="h-6 w-6 text-muted-foreground" />
+                  <div className="text-center">
+                    <Label
+                      htmlFor="spot-file-upload"
+                      className="cursor-pointer text-primary hover:underline text-sm"
+                    >
+                      Choose files
+                    </Label>
+                    <Input
+                      id="spot-file-upload"
+                      type="file"
+                      multiple
+                      accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/quicktime"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    JPEG, PNG, WebP, AVIF, MP4, MOV
                   </p>
                 </div>
               </div>
 
-              {/* Selected Files Display */}
+              {/* Selected Files Preview */}
               {selectedFiles.length > 0 && (
                 <div className="space-y-2">
                   <Label className="text-sm">Selected Files ({selectedFiles.length})</Label>
-                  <div className="max-h-32 overflow-y-auto space-y-1">
-                    {selectedFiles.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          {getFileIcon(file)}
-                          <span className="text-sm truncate">{file.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            ({formatFileSize(file.size)})
-                          </span>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeFile(index)}
-                          className="h-6 w-6 p-0"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
+                  {selectedFiles.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-2 border rounded-lg"
+                    >
+                      {getFileIcon(file)}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{file.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatFileSize(file.size)}
+                        </p>
                       </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFile(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Preview Uploaded Media */}
+              {previewMediaFiles.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm text-green-600">
+                    <CheckCircle className="h-4 w-4 inline mr-1" />
+                    Uploaded Media ({previewMediaFiles.length})
+                  </Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {previewMediaFiles.map((media, index) => (
+                      <MediaPreviewCard key={index} media={media} />
                     ))}
                   </div>
                 </div>
@@ -724,206 +776,88 @@ export default function TravelSpotManager() {
 
             <Separator />
 
-            {/* Social Media Videos Section */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label>Social Media Videos (Optional)</Label>
-                <Badge variant="outline" className="text-xs">
-                  YouTube & Instagram
-                </Badge>
+            {/* Social Media Links Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Label>Add Social Media Video Link (Optional)</Label>
+                <Info className="h-4 w-4 text-muted-foreground" />
               </div>
-              
-              {/* Information Alert */}
+
               <Alert>
                 <Info className="h-4 w-4" />
-                <AlertDescription>
-                  <div className="space-y-2">
-                    <p className="font-medium">Supported platforms and formats:</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Youtube className="h-4 w-4 text-red-500" />
-                        <span><strong>YouTube:</strong> Video URLs (youtube.com/watch, youtu.be)</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Instagram className="h-4 w-4 text-pink-500" />
-                        <span><strong>Instagram:</strong> Posts, Reels, IGTV URLs</span>
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Added videos will appear in the "Social Media" tab when viewing the travel spot on the map.
-                    </p>
-                  </div>
+                <AlertDescription className="text-xs">
+                  Add YouTube or Instagram video links. Videos will be embedded in the travel spot gallery.
                 </AlertDescription>
               </Alert>
 
-              <div className="space-y-4">
-                <div>
-                  <div className="relative">
-                    <Input
-                      type="url"
-                      placeholder="Paste YouTube or Instagram video URL here..."
-                      value={socialMediaUrl}
-                      onChange={(e) => handleSocialMediaUrlChange(e.target.value)}
-                      className={`w-full pr-10 ${
-                        urlValidation?.isValid === false ? 'border-red-300 focus:border-red-500' : 
-                        urlValidation?.isValid === true ? 'border-green-300 focus:border-green-500' : ''
-                      }`}
-                    />
-                    {urlValidation && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        {urlValidation.isValid ? (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <AlertTriangle className="h-4 w-4 text-red-500" />
-                        )}
+              <div className="space-y-3">
+                <Input
+                  type="url"
+                  placeholder="Paste YouTube or Instagram video URL..."
+                  value={socialMediaUrl}
+                  onChange={(e) => handleSocialMediaUrlChange(e.target.value)}
+                  disabled={isAddingSocialMedia}
+                />
+                {urlValidation && (
+                  <div className="mt-2">
+                    {urlValidation.isValid ? (
+                      <div className="flex items-center gap-2 text-sm text-green-600">
+                        <CheckCircle className="h-4 w-4" />
+                        <span>
+                          Valid {urlValidation.platform === 'youtube' ? 'YouTube' : 'Instagram'} video URL
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-sm text-red-600">
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{urlValidation.error}</span>
                       </div>
                     )}
                   </div>
-                  
-                  {/* Real-time validation feedback */}
-                  {urlValidation && (
-                    <div className={`mt-2 text-sm flex items-center gap-2 ${
-                      urlValidation.isValid ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {urlValidation.isValid ? (
-                        <>
-                          {urlValidation.platform === 'youtube' ? (
-                            <Youtube className="h-4 w-4" />
-                          ) : (
-                            <Instagram className="h-4 w-4" />
-                          )}
-                          <span>
-                            Valid {urlValidation.platform === 'youtube' ? 'YouTube' : 'Instagram'} video URL
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <AlertTriangle className="h-4 w-4" />
-                          <span>{urlValidation.error}</span>
-                        </>
-                      )}
-                    </div>
-                  )}
-                  
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    <p className="mb-1"><strong>Example URLs:</strong></p>
-                    <div className="space-y-1 pl-2">
-                      <p>• YouTube: https://www.youtube.com/watch?v=VIDEO_ID</p>
-                      <p>• Instagram: https://www.instagram.com/p/POST_ID/</p>
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
+
+              {/* Preview Social Media Links */}
+              {previewSocialMediaLinks.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm text-green-600">
+                    <CheckCircle className="h-4 w-4 inline mr-1" />
+                    Added Social Media Links ({previewSocialMediaLinks.length})
+                  </Label>
+                  {previewSocialMediaLinks.map((link, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-2 border rounded-lg"
+                    >
+                      {getSocialMediaIcon(link.platform)}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{link.url}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Preview Section */}
-            {(previewMediaFiles.length > 0 || previewSocialMediaLinks.length > 0) && (
-              <>
-                <Separator />
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Camera className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium text-muted-foreground">Preview - Recently Added</span>
-                    <Badge variant="outline" className="text-xs">
-                      {previewMediaFiles.length + previewSocialMediaLinks.length} items
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    {/* Media Files Preview */}
-                    {previewMediaFiles.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Image className="h-3 w-3 text-blue-500" />
-                          <span className="text-xs text-muted-foreground">Photos & Videos ({previewMediaFiles.length})</span>
-                        </div>
-                        <div className="grid grid-cols-4 gap-2">
-                          {previewMediaFiles.slice(0, 4).map((mediaFile, index) => (
-                            <MediaFilePreview key={index} mediaFile={mediaFile} />
-                          ))}
-                          {previewMediaFiles.length > 4 && (
-                            <div className="aspect-square bg-muted/50 rounded border flex items-center justify-center">
-                              <span className="text-xs text-muted-foreground">+{previewMediaFiles.length - 4}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Social Media Links Preview */}
-                    {previewSocialMediaLinks.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Link className="h-3 w-3 text-purple-500" />
-                          <span className="text-xs text-muted-foreground">Social Media ({previewSocialMediaLinks.length})</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          {previewSocialMediaLinks.slice(0, 2).map((link, index) => (
-                            <SocialMediaLinkPreview key={index} socialMediaLink={link} />
-                          ))}
-                          {previewSocialMediaLinks.length > 2 && (
-                            <div className="p-2 bg-muted/50 rounded border flex items-center justify-center">
-                              <span className="text-xs text-muted-foreground">+{previewSocialMediaLinks.length - 2} more</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {!editingSpot && (
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertDescription className="text-sm">
-                  The location will be automatically geocoded to find its real-world coordinates. 
-                  Media files and social media videos will be uploaded and associated with this travel spot.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {editingSpot && (selectedFiles.length > 0 || socialMediaUrl.trim()) && (
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertDescription className="text-sm">
-                  {selectedFiles.length > 0 && socialMediaUrl.trim() 
-                    ? 'Selected media files will be uploaded and the social media video will be added to this travel spot\'s gallery.'
-                    : selectedFiles.length > 0 
-                    ? 'Selected media files will be uploaded and added to this travel spot\'s gallery.'
-                    : 'The social media video will be added to this travel spot\'s gallery.'
-                  }
-                </AlertDescription>
-              </Alert>
-            )}
-            
             <div className="flex justify-end gap-2 pt-4">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setIsDialogOpen(false)}
+                onClick={() => handleDialogOpenChange(false)}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={addTravelSpot.isPending || updateTravelSpot.isPending || isUploading || addMediaToTravelSpot.isPending || isAddingSocialMedia || addSocialMediaLinkToTravelSpot.isPending}
+                disabled={addTravelSpot.isPending || updateTravelSpot.isPending || isUploading}
               >
-                {isUploading || addMediaToTravelSpot.isPending || isAddingSocialMedia || addSocialMediaLinkToTravelSpot.isPending ? (
+                {(addTravelSpot.isPending || updateTravelSpot.isPending || isUploading) ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    {isUploading || addMediaToTravelSpot.isPending ? 'Uploading media...' : 'Adding social media...'}
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {isUploading ? 'Uploading...' : 'Saving...'}
                   </>
-                ) : addTravelSpot.isPending || updateTravelSpot.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    {addTravelSpot.isPending ? 'Finding location...' : 'Saving...'}
-                  </>
-                ) : editingSpot ? (
-                  'Update Spot'
                 ) : (
-                  'Add Spot'
+                  editingSpot ? 'Update Spot' : 'Add Spot'
                 )}
               </Button>
             </div>
@@ -934,280 +868,178 @@ export default function TravelSpotManager() {
   );
 }
 
+// Travel Spot Card Component
 interface TravelSpotCardProps {
   spot: TravelSpot;
-  hasValidCoordinates: boolean;
-  mediaCount: number;
-  socialMediaCount: number;
   onEdit: () => void;
   onDelete: () => void;
   formatDate: (timestamp: bigint) => string;
+  isInvalid?: boolean;
 }
 
-function TravelSpotCard({ 
-  spot, 
-  hasValidCoordinates, 
-  mediaCount, 
-  socialMediaCount, 
-  onEdit, 
-  onDelete, 
-  formatDate 
-}: TravelSpotCardProps) {
+function TravelSpotCard({ spot, onEdit, onDelete, formatDate, isInvalid }: TravelSpotCardProps) {
+  const [showMediaGallery, setShowMediaGallery] = useState(false);
   const { data: mediaFiles = [] } = useGetTravelSpotMediaFiles(spot.city, spot.name);
   const { data: socialMediaLinks = [] } = useGetTravelSpotSocialMediaLinks(spot.city, spot.name);
 
+  const totalMediaCount = mediaFiles.length + socialMediaLinks.length;
+
   return (
-    <div
-      className={`flex flex-col gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors ${
-        !hasValidCoordinates ? 'border-orange-200 bg-orange-50/50' : ''
-      }`}
-    >
-      {/* Main spot info */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-3 flex-1">
-          <div className={`p-2 rounded-lg mt-1 ${
-            hasValidCoordinates ? 'bg-primary/10' : 'bg-orange-100'
-          }`}>
-            {hasValidCoordinates ? (
-              <MapPin className="h-4 w-4 text-primary" />
-            ) : (
-              <AlertTriangle className="h-4 w-4 text-orange-600" />
-            )}
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <h4 className="font-medium text-base">{spot.name}</h4>
-              <Badge variant="outline" className="text-xs">
-                {spot.spotType.toString()}
-              </Badge>
-              {!hasValidCoordinates && (
-                <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
-                  No coordinates
+    <>
+      <Card className={isInvalid ? 'border-orange-300 bg-orange-50 dark:bg-orange-950/20' : ''}>
+        <CardContent className="pt-4">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h4 className="font-semibold">{spot.name}</h4>
+                <Badge variant="outline" className="text-xs">
+                  {spot.spotType}
                 </Badge>
+                {isInvalid && (
+                  <Badge variant="destructive" className="text-xs">
+                    Invalid Coords
+                  </Badge>
+                )}
+              </div>
+              {spot.description && (
+                <p className="text-sm text-muted-foreground mb-2">{spot.description}</p>
               )}
-            </div>
-            {/* Rating display */}
-            {spot.rating > 0 && (
-              <div className="flex items-center gap-2 mt-1 mb-2">
-                <HeartRating rating={spot.rating} readonly size="sm" />
-              </div>
-            )}
-            {spot.description && (
-              <div className="flex items-start gap-2 mt-2">
-                <FileText className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-muted-foreground">{spot.description}</p>
-              </div>
-            )}
-            <p className="text-xs text-muted-foreground mt-2">
-              Added {formatDate(spot.createdAt)}
-              {hasValidCoordinates && (
-                <span className="ml-2 text-green-600">
-                  • Coordinates: {spot.coordinates[0].toFixed(4)}, {spot.coordinates[1].toFixed(4)}
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  {spot.coordinates[0].toFixed(4)}, {spot.coordinates[1].toFixed(4)}
                 </span>
+                <HeartRating rating={spot.rating} readonly size="sm" />
+                {totalMediaCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowMediaGallery(true)}
+                    className="h-6 px-2"
+                  >
+                    <Camera className="h-3 w-3 mr-1" />
+                    {totalMediaCount} media
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onEdit}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onDelete}
+              >
+                <Trash2 className="h-4 w-4 text-red-500" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Media Gallery Dialog */}
+      {showMediaGallery && (
+        <Dialog open={showMediaGallery} onOpenChange={setShowMediaGallery}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto z-[3200]">
+            <DialogHeader>
+              <DialogTitle>{spot.name} - Media Gallery</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              {/* Media Files */}
+              {mediaFiles.length > 0 && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">
+                    Photos & Videos ({mediaFiles.length})
+                  </Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {mediaFiles.map((media, index) => (
+                      <MediaPreviewCard key={index} media={media} />
+                    ))}
+                  </div>
+                </div>
               )}
-            </p>
-            {/* Media and social media count display */}
-            <div className="flex items-center gap-4 mt-1">
-              {mediaCount > 0 ? (
-                <div className="flex items-center gap-1 text-xs text-blue-600">
-                  <Image className="h-3 w-3" />
-                  <span>{mediaCount} media file{mediaCount > 1 ? 's' : ''}</span>
-                </div>
-              ) : (
-                <div className="text-xs text-muted-foreground">
-                  No media files yet
-                </div>
-              )}
-              {socialMediaCount > 0 ? (
-                <div className="flex items-center gap-1 text-xs text-purple-600">
-                  <Link className="h-3 w-3" />
-                  <span>{socialMediaCount} social video{socialMediaCount > 1 ? 's' : ''}</span>
-                </div>
-              ) : (
-                <div className="text-xs text-muted-foreground">
-                  No social media videos yet
+
+              {/* Social Media Links */}
+              {socialMediaLinks.length > 0 && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">
+                    Social Media Videos ({socialMediaLinks.length})
+                  </Label>
+                  <div className="space-y-2">
+                    {socialMediaLinks.map((link, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-3 p-3 border rounded-lg"
+                      >
+                        {link.platform === 'youtube' ? (
+                          <Youtube className="h-4 w-4 text-red-500" />
+                        ) : (
+                          <Instagram className="h-4 w-4 text-pink-500" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{link.url}</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.open(link.url, '_blank')}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 ml-4">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onEdit}
-            type="button"
-          >
-            <Edit className="h-3 w-3" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onDelete}
-            className="text-destructive hover:text-destructive"
-            type="button"
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Media Preview Section */}
-      {(mediaFiles.length > 0 || socialMediaLinks.length > 0) && (
-        <div className="border-t pt-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Camera className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-muted-foreground">Media Preview</span>
-            <Badge variant="outline" className="text-xs">
-              {mediaFiles.length + socialMediaLinks.length} items
-            </Badge>
-          </div>
-          
-          <div className="space-y-3">
-            {/* Media Files Preview */}
-            {mediaFiles.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Image className="h-3 w-3 text-blue-500" />
-                  <span className="text-xs text-muted-foreground">Photos & Videos ({mediaFiles.length})</span>
-                </div>
-                <div className="grid grid-cols-4 gap-2">
-                  {mediaFiles.slice(0, 4).map((mediaFile, index) => (
-                    <MediaFilePreview key={index} mediaFile={mediaFile} />
-                  ))}
-                  {mediaFiles.length > 4 && (
-                    <div className="aspect-square bg-muted/50 rounded border flex items-center justify-center">
-                      <span className="text-xs text-muted-foreground">+{mediaFiles.length - 4}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Social Media Links Preview */}
-            {socialMediaLinks.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Link className="h-3 w-3 text-purple-500" />
-                  <span className="text-xs text-muted-foreground">Social Media ({socialMediaLinks.length})</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {socialMediaLinks.slice(0, 2).map((link, index) => (
-                    <SocialMediaLinkPreview key={index} socialMediaLink={link} />
-                  ))}
-                  {socialMediaLinks.length > 2 && (
-                    <div className="p-2 bg-muted/50 rounded border flex items-center justify-center">
-                      <span className="text-xs text-muted-foreground">+{socialMediaLinks.length - 2} more</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
-    </div>
+    </>
   );
 }
 
-interface MediaFilePreviewProps {
-  mediaFile: MediaFile;
+// Media Preview Card Component
+interface MediaPreviewCardProps {
+  media: MediaFile;
 }
 
-function MediaFilePreview({ mediaFile }: MediaFilePreviewProps) {
-  const { data: fileUrl, isLoading, error } = useFileUrl(mediaFile.path);
-
-  if (isLoading) {
-    return (
-      <div className="aspect-square bg-muted/50 rounded border flex items-center justify-center">
-        <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (error || !fileUrl) {
-    return (
-      <div className="aspect-square bg-red-50 rounded border border-red-200 flex items-center justify-center">
-        <AlertTriangle className="h-3 w-3 text-red-500" />
-      </div>
-    );
-  }
+function MediaPreviewCard({ media }: MediaPreviewCardProps) {
+  const { data: fileUrl } = useFileUrl(media.path);
 
   return (
-    <div className="aspect-square relative group">
-      {mediaFile.mediaType === MediaType.video ? (
-        <video
-          src={fileUrl}
-          className="w-full h-full object-cover rounded border"
-          preload="metadata"
-        />
-      ) : (
-        <img
-          src={fileUrl}
-          alt="Travel spot media"
-          className="w-full h-full object-cover rounded border"
-          loading="lazy"
-        />
-      )}
-      
-      {/* Media type indicator */}
-      <div className="absolute top-1 left-1">
-        <Badge variant="secondary" className="text-xs px-1 py-0">
-          {mediaFile.mediaType === MediaType.video ? (
-            <Video className="h-2 w-2" />
+    <div className="relative border rounded-lg overflow-hidden">
+      <div className="aspect-square bg-muted flex items-center justify-center">
+        {fileUrl ? (
+          media.mediaType === MediaType.image ? (
+            <img
+              src={fileUrl}
+              alt="Media"
+              className="w-full h-full object-cover"
+            />
           ) : (
-            <Image className="h-2 w-2" />
-          )}
+            <video
+              src={fileUrl}
+              className="w-full h-full object-cover"
+              controls
+            />
+          )
+        ) : (
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        )}
+      </div>
+      <div className="p-2">
+        <Badge variant="secondary" className="text-xs">
+          {media.mediaType === MediaType.image ? <Image className="h-3 w-3 mr-1" /> : <Video className="h-3 w-3 mr-1" />}
+          {media.format.toUpperCase()}
         </Badge>
       </div>
-    </div>
-  );
-}
-
-interface SocialMediaLinkPreviewProps {
-  socialMediaLink: SocialMediaLink;
-}
-
-function SocialMediaLinkPreview({ socialMediaLink }: SocialMediaLinkPreviewProps) {
-  const getSocialMediaIcon = (platform: string) => {
-    switch (platform.toLowerCase()) {
-      case 'youtube':
-        return <Youtube className="h-4 w-4 text-red-500" />;
-      case 'instagram':
-        return <Instagram className="h-4 w-4 text-pink-500" />;
-      default:
-        return <Link className="h-4 w-4 text-blue-500" />;
-    }
-  };
-
-  const getPlatformName = (platform: string) => {
-    switch (platform.toLowerCase()) {
-      case 'youtube':
-        return 'YouTube';
-      case 'instagram':
-        return 'Instagram';
-      default:
-        return 'Social Media';
-    }
-  };
-
-  return (
-    <div className="p-2 bg-muted/50 rounded border hover:bg-muted transition-colors">
-      <div className="flex items-center gap-2 mb-1">
-        {getSocialMediaIcon(socialMediaLink.platform)}
-        <span className="text-xs font-medium truncate">
-          {getPlatformName(socialMediaLink.platform)}
-        </span>
-      </div>
-      <a
-        href={socialMediaLink.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-xs text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
-      >
-        View Video
-        <ExternalLink className="h-2 w-2" />
-      </a>
     </div>
   );
 }

@@ -77,6 +77,7 @@ export interface ScheduleItem {
     createdAt: Time;
     time: string;
     updatedAt: Time;
+    journeyCity: string;
     location: string;
     activity: string;
 }
@@ -216,6 +217,7 @@ export interface backendInterface {
     getPreviousJourneys(): Promise<Array<Journey>>;
     getRippleSize(): Promise<number>;
     getScheduleItems(journeyCity: string): Promise<Array<ScheduleItem>>;
+    getScheduleItemsWithCoordinatesByJourney(journeyCity: string): Promise<Array<[ScheduleItem, [number, number]]>>;
     getTimezoneGeoJson(): Promise<string>;
     getTravelSpotMediaFiles(city: string, spotName: string): Promise<Array<MediaFile>>;
     getTravelSpotSocialMediaLinks(city: string, spotName: string): Promise<Array<SocialMediaLink>>;

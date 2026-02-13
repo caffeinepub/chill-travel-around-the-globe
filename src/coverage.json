@@ -1,46 +1,76 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T02:33:43.849Z",
+  "generatedAt": "2026-02-12T10:13:24.594Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 2,
+    "total": 3,
+    "implemented": 3,
     "items": [
       {
-        "id": "REQ-4",
-        "summary": "In the Travelogue journey action buttons area (selected elements context: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1] and /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]), add a new button labeled \"Map\" positioned directly next to the existing \"Flying\" button, and display a simple \"2D\" logo/icon on the button.",
+        "id": "REQ-1",
+        "summary": "Change the Travelogue \"Map\" button behavior so that clicking the Map button on a specific journey switches the app to the existing 2D Map view and targets that journey as the active context (i.e., the map view must know which journey was selected).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx"
+          "frontend/src/components/TraveloguePanel.tsx",
+          "frontend/src/pages/LocationMapExplorer.tsx",
+          "frontend/src/components/MapComponent.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx"
+          "frontend/src/components/TraveloguePanel.tsx",
+          "frontend/src/pages/LocationMapExplorer.tsx",
+          "frontend/src/components/MapComponent.tsx"
         ]
       },
       {
-        "id": "REQ-5",
-        "summary": "Do not implement any functionality for the new \"Map\" button yet (no navigation, no state changes, no toasts, no map updates, and no backend calls when clicked).",
+        "id": "REQ-2",
+        "summary": "When opening the 2D Map from a journey’s Map button, display all schedule items for that selected journey on the 2D map, using each schedule item’s saved location input to determine what is shown (only schedule items belonging to the selected journey should be rendered as schedule markers/popups).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx"
+          "frontend/src/pages/LocationMapExplorer.tsx",
+          "frontend/src/components/MapComponent.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx"
+          "frontend/src/pages/LocationMapExplorer.tsx",
+          "frontend/src/components/MapComponent.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Add/adjust backend query support (and corresponding React Query hook) to retrieve schedule items with coordinates filtered by journey, so the frontend can request \"schedule items with coordinates for journey X\" without having to fetch all journeys’ schedule items.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/MapComponent.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/MapComponent.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
-    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/CityAlbumManager.tsx",
+    "frontend/src/components/MapComponent.tsx",
+    "frontend/src/components/TravelSpotManager.tsx",
     "frontend/src/components/TraveloguePanel.tsx",
+    "frontend/src/components/WebsiteLayoutPanel.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/pages/LocationMapExplorer.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

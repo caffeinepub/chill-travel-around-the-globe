@@ -1,71 +1,82 @@
-import React, { useState, useEffect } from 'react';
-import { Settings, Monitor, Map, Info } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Settings, Music, Map, Loader2, Save, Clock } from 'lucide-react';
 import { toast } from 'sonner';
-import { useGetWebsiteLayoutPreferences, useSaveWebsiteLayoutPreferences } from '@/hooks/useQueries';
+import { useGetWebsiteLayoutPreferences, useAddWebsiteLayoutSettings, useUpdateWebsiteLayoutSettings } from '@/hooks/useQueries';
 
 export default function WebsiteLayoutPanel() {
   const [isOpen, setIsOpen] = useState(false);
-  const [localTime, setLocalTime] = useState<string>('');
+  const [showMusicPlayer, setShowMusicPlayer] = useState(false);
+  const [defaultSearchPlace, setDefaultSearchPlace] = useState('');
+  const [showAllTravelSpots, setShowAllTravelSpots] = useState(false);
+  const [rippleSize, setRippleSize] = useState(0.5);
+  const [cityFontSize, setCityFontSize] = useState(8);
+  const [localTime, setLocalTime] = useState('');
 
-  const { data: layoutPreferences } = useGetWebsiteLayoutPreferences();
-  const saveLayoutPreferences = useSaveWebsiteLayoutPreferences();
+  const { data: layoutPreferences, isLoading } = useGetWebsiteLayoutPreferences();
+  const addSettings = useAddWebsiteLayoutSettings();
+  const updateSettings = useUpdateWebsiteLayoutSettings();
+
+  // Load preferences when data is available
+  useEffect(() => {
+    if (layoutPreferences) {
+      setShowMusicPlayer(layoutPreferences.showMusicPlayer);
+      setDefaultSearchPlace(layoutPreferences.defaultSearchPlace);
+      setShowAllTravelSpots(layoutPreferences.showAllTravelSpots);
+      setRippleSize(layoutPreferences.rippleSize || 0.5);
+      setCityFontSize(layoutPreferences.cityFontSize || 8);
+    }
+  }, [layoutPreferences]);
 
   // Update local time every second
   useEffect(() => {
-    const updateLocalTime = () => {
+    const updateTime = () => {
       const now = new Date();
-      const formattedTime = now.toLocaleString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
+      setLocalTime(now.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
         minute: '2-digit',
-        hour12: true
-      });
-      setLocalTime(formattedTime);
+        second: '2-digit',
+        hour12: true 
+      }));
     };
 
-    updateLocalTime();
-    const interval = setInterval(updateLocalTime, 1000);
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
 
     return () => clearInterval(interval);
   }, []);
 
-  const handleMusicPlayerToggle = async (enabled: boolean) => {
-    try {
-      await saveLayoutPreferences.mutateAsync({
-        showMusicPlayer: enabled
-      });
-      toast.success(`Music player ${enabled ? 'enabled' : 'disabled'}`);
-    } catch (error) {
-      console.error('Error saving layout preferences:', error);
-      toast.error('Failed to save layout preferences');
-    }
-  };
-
-  const handleDefaultSearchPlaceChange = async (defaultSearchPlace: string) => {
+  const handleSave = async () => {
     if (!defaultSearchPlace.trim()) {
-      toast.error('Please enter a valid location');
+      toast.error('Please enter a default search place');
       return;
     }
 
     try {
-      await saveLayoutPreferences.mutateAsync({
-        defaultSearchPlace: defaultSearchPlace.trim()
-      });
-      
-      toast.success('Default search place updated successfully!');
+      const settings = {
+        showMusicPlayerBar: showMusicPlayer,
+        defaultSearchPlace: defaultSearchPlace.trim(),
+        showAllTravelSpots,
+        rippleSize,
+        cityFontSize
+      };
+
+      if (layoutPreferences) {
+        await updateSettings.mutateAsync(settings);
+        toast.success('Settings updated successfully');
+      } else {
+        await addSettings.mutateAsync(settings);
+        toast.success('Settings saved successfully');
+      }
     } catch (error) {
-      console.error('Error saving default search place:', error);
-      toast.error('Failed to save default search place');
+      console.error('Error saving settings:', error);
+      toast.error('Failed to save settings');
     }
   };
 
@@ -81,130 +92,176 @@ export default function WebsiteLayoutPanel() {
           <Settings className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto z-[3100]">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto z-[3100]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
-            Website Layout
+            Website Layout Settings
           </DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-6">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              Control the appearance and behavior of website features
-            </p>
-          </div>
 
-          {/* Website Layout Tabs - Theme removed, only Map Settings and Display Settings */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
           <Tabs defaultValue="map" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="map" className="flex items-center gap-2">
-                <Map className="h-4 w-4" />
+              <TabsTrigger value="map">
+                <Map className="h-4 w-4 mr-2" />
                 Map Settings
               </TabsTrigger>
-              <TabsTrigger value="display" className="flex items-center gap-2">
-                <Monitor className="h-4 w-4" />
+              <TabsTrigger value="display">
+                <Settings className="h-4 w-4 mr-2" />
                 Display Settings
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="map" className="space-y-6 mt-6">
+            <TabsContent value="map" className="space-y-6 mt-4">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Map className="h-5 w-5" />
-                    Map Settings
-                  </CardTitle>
+                  <CardTitle className="text-base">Default Search Location</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="space-y-1">
-                      <Label htmlFor="default-search-place" className="text-base font-medium">
-                        Default Search Place
-                      </Label>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Input
-                        id="default-search-place"
-                        type="text"
-                        placeholder="e.g., Hong Kong, New York, Tokyo"
-                        defaultValue={layoutPreferences?.defaultSearchPlace || 'Hong Kong'}
-                        disabled={saveLayoutPreferences.isPending}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            handleDefaultSearchPlaceChange(e.currentTarget.value);
-                          }
-                        }}
-                        className="flex-1"
-                      />
-                      <Button
-                        onClick={(e) => {
-                          const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                          if (input) {
-                            handleDefaultSearchPlaceChange(input.value);
-                          }
-                        }}
-                        disabled={saveLayoutPreferences.isPending}
-                      >
-                        {saveLayoutPreferences.isPending ? 'Saving...' : 'Save'}
-                      </Button>
-                    </div>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="defaultSearchPlace">City or Country</Label>
+                    <Input
+                      id="defaultSearchPlace"
+                      type="text"
+                      placeholder="e.g., Hong Kong, Paris, Tokyo"
+                      value={defaultSearchPlace}
+                      onChange={(e) => setDefaultSearchPlace(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      This location will be used as the starting point for 3D globe animations and as the default search when switching to 2D map view.
+                    </p>
                   </div>
 
-                  <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      Current default search place: <strong>{layoutPreferences?.defaultSearchPlace || 'Hong Kong'}</strong>
-                      <br />
-                      Local time: <strong>{localTime}</strong>
-                    </AlertDescription>
-                  </Alert>
+                  {defaultSearchPlace && (
+                    <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Local Time: {defaultSearchPlace}</p>
+                        <p className="text-xs text-muted-foreground">{localTime}</p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">3D Globe Settings</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="rippleSize">Ripple Effect Size</Label>
+                    <div className="flex items-center gap-4">
+                      <Input
+                        id="rippleSize"
+                        type="range"
+                        min="0.1"
+                        max="2"
+                        step="0.1"
+                        value={rippleSize}
+                        onChange={(e) => setRippleSize(parseFloat(e.target.value))}
+                        className="flex-1"
+                      />
+                      <span className="text-sm font-medium w-12 text-right">{rippleSize.toFixed(1)}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Adjust the size of the ripple effect that appears on cities in the 3D globe view.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="cityFontSize">City Label Font Size</Label>
+                    <div className="flex items-center gap-4">
+                      <Input
+                        id="cityFontSize"
+                        type="range"
+                        min="4"
+                        max="16"
+                        step="0.5"
+                        value={cityFontSize}
+                        onChange={(e) => setCityFontSize(parseFloat(e.target.value))}
+                        className="flex-1"
+                      />
+                      <span className="text-sm font-medium w-12 text-right">{cityFontSize.toFixed(1)}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Adjust the font size of city labels displayed on the 3D globe.
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            <TabsContent value="display" className="space-y-6 mt-6">
+            <TabsContent value="display" className="space-y-6 mt-4">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Monitor className="h-5 w-5" />
-                    Display Settings
-                  </CardTitle>
+                  <CardTitle className="text-base">Music Player</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent>
                   <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <Label htmlFor="music-player-toggle" className="text-base font-medium">
-                        Music Player Bar
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        Show or hide the music player bar at the bottom of the website
+                    <div className="space-y-0.5">
+                      <Label htmlFor="showMusicPlayer">Show Music Player Bar</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Display the music player bar at the bottom of the screen
                       </p>
                     </div>
                     <Switch
-                      id="music-player-toggle"
-                      checked={layoutPreferences?.showMusicPlayer !== false}
-                      onCheckedChange={handleMusicPlayerToggle}
-                      disabled={saveLayoutPreferences.isPending}
+                      id="showMusicPlayer"
+                      checked={showMusicPlayer}
+                      onCheckedChange={setShowMusicPlayer}
                     />
                   </div>
+                </CardContent>
+              </Card>
 
-                  <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      Changes take effect immediately. The music player bar will be {layoutPreferences?.showMusicPlayer !== false ? 'visible' : 'hidden'} 
-                      when you have uploaded songs to your Music Album.
-                    </AlertDescription>
-                  </Alert>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Travel Spots Display</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="showAllTravelSpots">Show All Travel Spots on Map</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Display travel spots from all cities on the 2D map view
+                      </p>
+                    </div>
+                    <Switch
+                      id="showAllTravelSpots"
+                      checked={showAllTravelSpots}
+                      onCheckedChange={setShowAllTravelSpots}
+                    />
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
+        )}
+
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={addSettings.isPending || updateSettings.isPending}>
+            {(addSettings.isPending || updateSettings.isPending) ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Save Settings
+              </>
+            )}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
-
