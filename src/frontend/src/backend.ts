@@ -166,7 +166,6 @@ export interface ScheduleItem {
     createdAt: Time;
     time: string;
     updatedAt: Time;
-    journeyCity: string;
     location: string;
     activity: string;
 }
@@ -315,7 +314,6 @@ export interface backendInterface {
     getPreviousJourneys(): Promise<Array<Journey>>;
     getRippleSize(): Promise<number>;
     getScheduleItems(journeyCity: string): Promise<Array<ScheduleItem>>;
-    getScheduleItemsWithCoordinatesByJourney(journeyCity: string): Promise<Array<[ScheduleItem, [number, number]]>>;
     getTimezoneGeoJson(): Promise<string>;
     getTravelSpotMediaFiles(city: string, spotName: string): Promise<Array<MediaFile>>;
     getTravelSpotSocialMediaLinks(city: string, spotName: string): Promise<Array<SocialMediaLink>>;
@@ -1545,20 +1543,6 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getScheduleItems(arg0);
-            return result;
-        }
-    }
-    async getScheduleItemsWithCoordinatesByJourney(arg0: string): Promise<Array<[ScheduleItem, [number, number]]>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getScheduleItemsWithCoordinatesByJourney(arg0);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getScheduleItemsWithCoordinatesByJourney(arg0);
             return result;
         }
     }

@@ -2,12 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-change-the-travelogue-map-button-behavior-so-that-clicking-the-map-button-on-a-specific-journey-switches-the-app-to-the-existing-2d-map-view-and-targets-that-journey-as-the-active-context-i-e-the-map-view-must-know-which-journey-was-selected",
-      "featureTitle": "Change the Travelogue \"Map\" button behavior so that clicking the Map button on a specific journey switches the app to the existing 2D Map view and targets that journey as the active context (i.e., the map view must know which journey was selected).",
+      "featureId": "feature-in-the-travelogue-journey-action-buttons-area-selected-elements-context-html-1-body-1-div-3-div-2-div-1-div-2-div-1-div-1-div-1-div-1-and-html-1-body-1-div-3-div-2-div-1-div-2-div-1-add-a-new-button-labeled-map-positioned-directly-next-to-the-existing-flying-button-and-display-a-simple-2d-logo-icon-on-the-button",
+      "featureTitle": "In the Travelogue journey action buttons area (selected elements context: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1] and /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]), add a new button labeled \"Map\" positioned directly next to the existing \"Flying\" button, and display a simple \"2D\" logo/icon on the button.",
       "files": [
-        "frontend/src/components/MapComponent.tsx",
-        "frontend/src/components/TraveloguePanel.tsx",
-        "frontend/src/pages/LocationMapExplorer.tsx"
+        "frontend/src/components/TraveloguePanel.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -19,16 +17,15 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-1"
+        "REQ-4"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-when-opening-the-2d-map-from-a-journey-s-map-button-display-all-schedule-items-for-that-selected-journey-on-the-2d-map-using-each-schedule-item-s-saved-location-input-to-determine-what-is-shown-only-schedule-items-belonging-to-the-selected-journey-should-be-rendered-as-schedule-markers-popups",
-      "featureTitle": "When opening the 2D Map from a journey’s Map button, display all schedule items for that selected journey on the 2D map, using each schedule item’s saved location input to determine what is shown (only schedule items belonging to the selected journey should be rendered as schedule markers/popups).",
+      "featureId": "feature-do-not-implement-any-functionality-for-the-new-map-button-yet-no-navigation-no-state-changes-no-toasts-no-map-updates-and-no-backend-calls-when-clicked",
+      "featureTitle": "Do not implement any functionality for the new \"Map\" button yet (no navigation, no state changes, no toasts, no map updates, and no backend calls when clicked).",
       "files": [
-        "frontend/src/components/MapComponent.tsx",
-        "frontend/src/pages/LocationMapExplorer.tsx"
+        "frontend/src/components/TraveloguePanel.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -40,28 +37,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-adjust-backend-query-support-and-corresponding-react-query-hook-to-retrieve-schedule-items-with-coordinates-filtered-by-journey-so-the-frontend-can-request-schedule-items-with-coordinates-for-journey-x-without-having-to-fetch-all-journeys-schedule-items",
-      "featureTitle": "Add/adjust backend query support (and corresponding React Query hook) to retrieve schedule items with coordinates filtered by journey, so the frontend can request \"schedule items with coordinates for journey X\" without having to fetch all journeys’ schedule items.",
-      "files": [
-        "frontend/src/components/MapComponent.tsx",
-        "frontend/src/hooks/useQueries.ts"
-      ],
-      "components": [
-        "authorization@1.0.1",
-        "blob-storage@1.1.2",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
+        "REQ-5"
       ],
       "confidence": "high"
     }

@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Wire the Travelogue journey “Map” button to open the existing 2D map in the context of the selected journey and show only that journey’s schedule items by location.
+**Goal:** Add a non-functional “Map” button with a simple 2D icon next to the existing “Flying” button in the Travelogue journey action buttons area.
 
 **Planned changes:**
-- Update the Travelogue journey card “Map” button to navigate to the existing Leaflet-based 2D Map view while passing/setting the clicked journey as the active map context.
-- Adjust the 2D Map view to fetch and render schedule markers/popups only for schedule items belonging to the selected journey, based on each item’s saved location input (handling empty/invalid locations without crashing).
-- Add backend query support and a corresponding React Query hook to retrieve schedule items (including location input and coordinates) filtered by a single journey identifier, avoiding fetching schedule items for all journeys.
+- Insert a new “Map” action button directly next to the existing “Flying” button within each Travelogue journey card’s action button area.
+- Display a simple “2D” logo/icon on the “Map” button alongside the “Map” label.
+- Ensure the “Map” button has no click behavior (no navigation, state changes, toasts, map updates, or backend calls).
 
-**User-visible outcome:** Clicking “Map” on a specific journey opens the existing 2D map and displays only that journey’s schedule items at their saved locations (with items that can’t be placed handled gracefully).
+**User-visible outcome:** Users see a new “Map” button (with a visible 2D icon) next to “Flying” in Travelogue journey cards, and clicking it does nothing.

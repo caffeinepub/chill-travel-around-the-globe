@@ -127,7 +127,6 @@ export const ScheduleItem = IDL.Record({
   'createdAt' : Time,
   'time' : IDL.Text,
   'updatedAt' : Time,
-  'journeyCity' : IDL.Text,
   'location' : IDL.Text,
   'activity' : IDL.Text,
 });
@@ -368,11 +367,6 @@ export const idlService = IDL.Service({
   'getPreviousJourneys' : IDL.Func([], [IDL.Vec(Journey)], ['query']),
   'getRippleSize' : IDL.Func([], [IDL.Float64], ['query']),
   'getScheduleItems' : IDL.Func([IDL.Text], [IDL.Vec(ScheduleItem)], ['query']),
-  'getScheduleItemsWithCoordinatesByJourney' : IDL.Func(
-      [IDL.Text],
-      [IDL.Vec(IDL.Tuple(ScheduleItem, IDL.Tuple(IDL.Float64, IDL.Float64)))],
-      ['query'],
-    ),
   'getTimezoneGeoJson' : IDL.Func([], [IDL.Text], ['query']),
   'getTravelSpotMediaFiles' : IDL.Func(
       [IDL.Text, IDL.Text],
@@ -630,7 +624,6 @@ export const idlFactory = ({ IDL }) => {
     'createdAt' : Time,
     'time' : IDL.Text,
     'updatedAt' : Time,
-    'journeyCity' : IDL.Text,
     'location' : IDL.Text,
     'activity' : IDL.Text,
   });
@@ -886,11 +879,6 @@ export const idlFactory = ({ IDL }) => {
     'getScheduleItems' : IDL.Func(
         [IDL.Text],
         [IDL.Vec(ScheduleItem)],
-        ['query'],
-      ),
-    'getScheduleItemsWithCoordinatesByJourney' : IDL.Func(
-        [IDL.Text],
-        [IDL.Vec(IDL.Tuple(ScheduleItem, IDL.Tuple(IDL.Float64, IDL.Float64)))],
         ['query'],
       ),
     'getTimezoneGeoJson' : IDL.Func([], [IDL.Text], ['query']),

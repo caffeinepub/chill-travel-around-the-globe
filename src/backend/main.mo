@@ -1,4 +1,5 @@
 import OrderedMap "mo:base/OrderedMap";
+import BlobStorage "blob-storage/Mixin";
 import Text "mo:base/Text";
 import Iter "mo:base/Iter";
 import Time "mo:base/Time";
@@ -10,10 +11,7 @@ import Debug "mo:base/Debug";
 import Float "mo:base/Float";
 import Array "mo:base/Array";
 import Int "mo:base/Int";
-import BlobStorage "blob-storage/Mixin";
-import Migration "migration";
 
-(with migration = Migration.run)
 actor {
   transient let textMap = OrderedMap.Make<Text>(Text.compare);
   transient let principalMap = OrderedMap.Make<Principal>(Principal.compare);
@@ -34,9 +32,6 @@ actor {
 
   let registry = Registry.new();
   let accessControlState = AccessControl.initState();
-
-  // Include blob storage functionality
-  include BlobStorage(registry);
 
   // Journey
   type Journey = {
@@ -150,7 +145,6 @@ actor {
     activity : Text;
     createdAt : Time.Time;
     updatedAt : Time.Time;
-    journeyCity : Text; // New field to track journey association
   };
 
   // Map Bookmark
@@ -1170,7 +1164,6 @@ actor {
       activity;
       createdAt = currentTime;
       updatedAt = currentTime;
-      journeyCity;
     };
 
     let existingItems = switch (textMap.get(journeySchedules, journeyCity)) {
@@ -1329,31 +1322,6 @@ actor {
           case (null) {};
           case (?info) {
             result := List.push((item, info.coordinates), result);
-          };
-        };
-      };
-    };
-
-    List.toArray(result);
-  };
-
-  // NEW: Query for schedule items with coordinates by journey
-  public query ({ caller }) func getScheduleItemsWithCoordinatesByJourney(journeyCity : Text) : async [(ScheduleItem, (Float, Float))] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Debug.trap("Unauthorized: Only users can view journey schedule items with coordinates");
-    };
-
-    var result = List.nil<(ScheduleItem, (Float, Float))>();
-
-    switch (textMap.get(journeySchedules, journeyCity)) {
-      case (null) {};
-      case (?items) {
-        for (item in Iter.fromArray(items)) {
-          switch (textMap.get(locationInfo, item.location)) {
-            case (null) {};
-            case (?info) {
-              result := List.push((item, info.coordinates), result);
-            };
           };
         };
       };
@@ -2003,4 +1971,7 @@ actor {
       case (_) { "other" };
     };
   };
+
+  include BlobStorage(registry);
 };
+

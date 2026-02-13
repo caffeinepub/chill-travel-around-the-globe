@@ -78,7 +78,6 @@ export interface ScheduleItem {
   'createdAt' : Time,
   'time' : string,
   'updatedAt' : Time,
-  'journeyCity' : string,
   'location' : string,
   'activity' : string,
 }
@@ -287,10 +286,6 @@ export interface _SERVICE {
   'getPreviousJourneys' : ActorMethod<[], Array<Journey>>,
   'getRippleSize' : ActorMethod<[], number>,
   'getScheduleItems' : ActorMethod<[string], Array<ScheduleItem>>,
-  'getScheduleItemsWithCoordinatesByJourney' : ActorMethod<
-    [string],
-    Array<[ScheduleItem, [number, number]]>
-  >,
   'getTimezoneGeoJson' : ActorMethod<[], string>,
   'getTravelSpotMediaFiles' : ActorMethod<[string, string], Array<MediaFile>>,
   'getTravelSpotSocialMediaLinks' : ActorMethod<

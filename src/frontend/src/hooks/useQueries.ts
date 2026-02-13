@@ -63,8 +63,8 @@ function normalizeCountryName(input: string): string | null {
   return COUNTRY_NAME_MAP[normalized] || null;
 }
 
-// Validate social media URLs - EXPORTED
-export function validateSocialMediaUrl(url: string): { isValid: boolean; platform: string; error?: string } {
+// Validate social media URLs
+function validateSocialMediaUrl(url: string): { isValid: boolean; platform: string; error?: string } {
   try {
     const urlObj = new URL(url);
     const hostname = urlObj.hostname.toLowerCase();
@@ -593,20 +593,6 @@ export function useGetAllScheduleItemsWithCoordinates() {
   });
 }
 
-// NEW: Hook for fetching schedule items with coordinates by journey
-export function useGetScheduleItemsWithCoordinatesByJourney(journeyCity: string) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<Array<[ScheduleItem, [number, number]]>>({
-    queryKey: ['scheduleItemsWithCoordinatesByJourney', journeyCity],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getScheduleItemsWithCoordinatesByJourney(journeyCity);
-    },
-    enabled: !!actor && !isFetching && !!journeyCity,
-  });
-}
-
 export function useAddScheduleItem() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
@@ -622,6 +608,7 @@ export function useAddScheduleItem() {
       if (!actor) {
         throw new Error('Backend actor not available');
       }
+      // Since location is now mandatory, we can pass it directly as a string
       await actor.addScheduleItem(journeyCity, date, time, location, activity);
     },
     onSuccess: (_, variables) => {
@@ -630,7 +617,6 @@ export function useAddScheduleItem() {
       queryClient.invalidateQueries({ queryKey: ['journeyScheduleWithDays', variables.journeyCity] });
       queryClient.invalidateQueries({ queryKey: ['allScheduleItems'] });
       queryClient.invalidateQueries({ queryKey: ['allScheduleItemsWithCoordinates'] });
-      queryClient.invalidateQueries({ queryKey: ['scheduleItemsWithCoordinatesByJourney', variables.journeyCity] });
     },
   });
 }
@@ -650,6 +636,7 @@ export function useUpdateScheduleItem() {
       if (!actor) {
         throw new Error('Backend actor not available');
       }
+      // Since location is now mandatory, we can pass it directly as a string
       return actor.updateScheduleItem(journeyCity, date, time, location, activity);
     },
     onSuccess: (_, variables) => {
@@ -658,7 +645,6 @@ export function useUpdateScheduleItem() {
       queryClient.invalidateQueries({ queryKey: ['journeyScheduleWithDays', variables.journeyCity] });
       queryClient.invalidateQueries({ queryKey: ['allScheduleItems'] });
       queryClient.invalidateQueries({ queryKey: ['allScheduleItemsWithCoordinates'] });
-      queryClient.invalidateQueries({ queryKey: ['scheduleItemsWithCoordinatesByJourney', variables.journeyCity] });
     },
   });
 }
@@ -684,7 +670,6 @@ export function useDeleteScheduleItem() {
       queryClient.invalidateQueries({ queryKey: ['journeyScheduleWithDays', variables.journeyCity] });
       queryClient.invalidateQueries({ queryKey: ['allScheduleItems'] });
       queryClient.invalidateQueries({ queryKey: ['allScheduleItemsWithCoordinates'] });
-      queryClient.invalidateQueries({ queryKey: ['scheduleItemsWithCoordinatesByJourney', variables.journeyCity] });
     },
   });
 }
@@ -709,12 +694,24 @@ export function useReorderScheduleItems() {
       queryClient.invalidateQueries({ queryKey: ['journeyScheduleWithDays', variables.journeyCity] });
       queryClient.invalidateQueries({ queryKey: ['allScheduleItems'] });
       queryClient.invalidateQueries({ queryKey: ['allScheduleItemsWithCoordinates'] });
-      queryClient.invalidateQueries({ queryKey: ['scheduleItemsWithCoordinatesByJourney', variables.journeyCity] });
     },
   });
 }
 
-// City Rating Hooks
+// City Rating Management Hooks
+export function useGetAllCityRatings() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<CityRating[]>({
+    queryKey: ['allCityRatings'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllCityRatings();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
 export function useGetCityRating(city: string) {
   const { actor, isFetching } = useActor();
 
@@ -741,16 +738,29 @@ export function useGetCityRatingForPopup(city: string) {
   });
 }
 
-export function useGetAllCityRatings() {
+export function useGetAverageCityRating(city: string) {
   const { actor, isFetching } = useActor();
 
-  return useQuery<CityRating[]>({
-    queryKey: ['allCityRatings'],
+  return useQuery<number>({
+    queryKey: ['averageCityRating', city],
+    queryFn: async () => {
+      if (!actor) return 0;
+      return actor.getAverageCityRating(city);
+    },
+    enabled: !!actor && !isFetching && !!city,
+  });
+}
+
+export function useGetCityComments(city: string) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<string[]>({
+    queryKey: ['cityComments', city],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getAllCityRatings();
+      return actor.getCityComments(city);
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !isFetching && !!city,
   });
 }
 
@@ -771,9 +781,11 @@ export function useAddCityRating() {
     },
     onSuccess: (_, variables) => {
       // Invalidate and refetch city rating queries
+      queryClient.invalidateQueries({ queryKey: ['allCityRatings'] });
       queryClient.invalidateQueries({ queryKey: ['cityRating', variables.city] });
       queryClient.invalidateQueries({ queryKey: ['cityRatingForPopup', variables.city] });
-      queryClient.invalidateQueries({ queryKey: ['allCityRatings'] });
+      queryClient.invalidateQueries({ queryKey: ['averageCityRating', variables.city] });
+      queryClient.invalidateQueries({ queryKey: ['cityComments', variables.city] });
     },
   });
 }
@@ -795,9 +807,11 @@ export function useUpdateCityRating() {
     },
     onSuccess: (_, variables) => {
       // Invalidate and refetch city rating queries
+      queryClient.invalidateQueries({ queryKey: ['allCityRatings'] });
       queryClient.invalidateQueries({ queryKey: ['cityRating', variables.city] });
       queryClient.invalidateQueries({ queryKey: ['cityRatingForPopup', variables.city] });
-      queryClient.invalidateQueries({ queryKey: ['allCityRatings'] });
+      queryClient.invalidateQueries({ queryKey: ['averageCityRating', variables.city] });
+      queryClient.invalidateQueries({ queryKey: ['cityComments', variables.city] });
     },
   });
 }
@@ -815,14 +829,29 @@ export function useDeleteCityRating() {
     },
     onSuccess: (_, city) => {
       // Invalidate and refetch city rating queries
+      queryClient.invalidateQueries({ queryKey: ['allCityRatings'] });
       queryClient.invalidateQueries({ queryKey: ['cityRating', city] });
       queryClient.invalidateQueries({ queryKey: ['cityRatingForPopup', city] });
-      queryClient.invalidateQueries({ queryKey: ['allCityRatings'] });
+      queryClient.invalidateQueries({ queryKey: ['averageCityRating', city] });
+      queryClient.invalidateQueries({ queryKey: ['cityComments', city] });
     },
   });
 }
 
-// City Album Hooks
+// City Album Management Hooks
+export function useGetAllCityAlbums() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<CityAlbum[]>({
+    queryKey: ['allCityAlbums'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllCityAlbums();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
 export function useGetCityAlbum(city: string) {
   const { actor, isFetching } = useActor();
 
@@ -836,16 +865,16 @@ export function useGetCityAlbum(city: string) {
   });
 }
 
-export function useGetAllCityAlbums() {
+export function useGetCityAlbumForPopup(city: string) {
   const { actor, isFetching } = useActor();
 
-  return useQuery<CityAlbum[]>({
-    queryKey: ['allCityAlbums'],
+  return useQuery<CityAlbum | null>({
+    queryKey: ['cityAlbumForPopup', city],
     queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllCityAlbums();
+      if (!actor) return null;
+      return actor.getCityAlbumForPopup(city);
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !isFetching && !!city,
   });
 }
 
@@ -866,8 +895,9 @@ export function useAddCityAlbum() {
     },
     onSuccess: (_, variables) => {
       // Invalidate and refetch city album queries
-      queryClient.invalidateQueries({ queryKey: ['cityAlbum', variables.city] });
       queryClient.invalidateQueries({ queryKey: ['allCityAlbums'] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbum', variables.city] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbumForPopup', variables.city] });
     },
   });
 }
@@ -889,8 +919,9 @@ export function useUpdateCityAlbum() {
     },
     onSuccess: (_, variables) => {
       // Invalidate and refetch city album queries
-      queryClient.invalidateQueries({ queryKey: ['cityAlbum', variables.city] });
       queryClient.invalidateQueries({ queryKey: ['allCityAlbums'] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbum', variables.city] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbumForPopup', variables.city] });
     },
   });
 }
@@ -908,8 +939,9 @@ export function useDeleteCityAlbum() {
     },
     onSuccess: (_, city) => {
       // Invalidate and refetch city album queries
-      queryClient.invalidateQueries({ queryKey: ['cityAlbum', city] });
       queryClient.invalidateQueries({ queryKey: ['allCityAlbums'] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbum', city] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbumForPopup', city] });
     },
   });
 }
@@ -930,8 +962,9 @@ export function useAddMediaToCityAlbum() {
     },
     onSuccess: (_, variables) => {
       // Invalidate and refetch city album queries
-      queryClient.invalidateQueries({ queryKey: ['cityAlbum', variables.city] });
       queryClient.invalidateQueries({ queryKey: ['allCityAlbums'] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbum', variables.city] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbumForPopup', variables.city] });
     },
   });
 }
@@ -952,37 +985,47 @@ export function useRemoveMediaFromCityAlbum() {
     },
     onSuccess: (_, variables) => {
       // Invalidate and refetch city album queries
-      queryClient.invalidateQueries({ queryKey: ['cityAlbum', variables.city] });
       queryClient.invalidateQueries({ queryKey: ['allCityAlbums'] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbum', variables.city] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbumForPopup', variables.city] });
     },
   });
 }
 
+// Social Media Link Management Hooks
 export function useAddSocialMediaLinkToCityAlbum() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation<boolean, Error, {
     city: string;
-    socialMediaLink: SocialMediaLink;
+    url: string;
   }>({
-    mutationFn: async ({ city, socialMediaLink }) => {
+    mutationFn: async ({ city, url }) => {
       if (!actor) {
         throw new Error('Backend actor not available');
       }
       
-      // Validate the URL before adding
-      const validation = validateSocialMediaUrl(socialMediaLink.url);
+      // Validate the URL
+      const validation = validateSocialMediaUrl(url);
       if (!validation.isValid) {
         throw new Error(validation.error || 'Invalid social media URL');
       }
+      
+      // Create social media link object
+      const socialMediaLink: SocialMediaLink = {
+        url,
+        platform: validation.platform,
+        addedAt: BigInt(Date.now() * 1000000) // Convert to nanoseconds
+      };
       
       return actor.addSocialMediaLinkToCityAlbum(city, socialMediaLink);
     },
     onSuccess: (_, variables) => {
       // Invalidate and refetch city album queries
-      queryClient.invalidateQueries({ queryKey: ['cityAlbum', variables.city] });
       queryClient.invalidateQueries({ queryKey: ['allCityAlbums'] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbum', variables.city] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbumForPopup', variables.city] });
     },
   });
 }
@@ -1003,13 +1046,14 @@ export function useRemoveSocialMediaLinkFromCityAlbum() {
     },
     onSuccess: (_, variables) => {
       // Invalidate and refetch city album queries
-      queryClient.invalidateQueries({ queryKey: ['cityAlbum', variables.city] });
       queryClient.invalidateQueries({ queryKey: ['allCityAlbums'] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbum', variables.city] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbumForPopup', variables.city] });
     },
   });
 }
 
-// Travel Spot Hooks
+// Travel Spot Management Hooks
 export function useGetTravelSpots(city: string) {
   const { actor, isFetching } = useActor();
 
@@ -1036,6 +1080,7 @@ export function useGetAllTravelSpots() {
   });
 }
 
+// New hook to get all travel spots for map display
 export function useGetAllTravelSpotsForMap() {
   const { actor, isFetching } = useActor();
 
@@ -1049,16 +1094,154 @@ export function useGetAllTravelSpotsForMap() {
   });
 }
 
-export function useGetTravelSpotTypes() {
+// New hooks for Vibes panel hierarchical navigation
+export function useGetTravelSpotSummaryByCity() {
   const { actor, isFetching } = useActor();
 
-  return useQuery<string[]>({
-    queryKey: ['travelSpotTypes'],
+  return useQuery<Array<[string, bigint]>>({
+    queryKey: ['travelSpotSummaryByCity'],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getTravelSpotTypes();
+      return actor.getTravelSpotSummaryByCity();
     },
     enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetTravelSpotTypeBreakdown(city: string) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<Array<[string, bigint]>>({
+    queryKey: ['travelSpotTypeBreakdown', city],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getTravelSpotTypeBreakdown(city);
+    },
+    enabled: !!actor && !isFetching && !!city,
+  });
+}
+
+export function useGetTravelSpotsByCityAndType(city: string, spotType: string) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<TravelSpot[]>({
+    queryKey: ['travelSpotsByCityAndType', city, spotType],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getTravelSpotsByCityAndType(city, spotType);
+    },
+    enabled: !!actor && !isFetching && !!city && !!spotType,
+  });
+}
+
+// New hook for getting all bookmarks and travel spots grouped by city
+export function useGetAllBookmarksAndTravelSpotsByCity() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<Array<[string, VibeItem[]]>>({
+    queryKey: ['allBookmarksAndTravelSpotsByCity'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllBookmarksAndTravelSpotsByCity();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+// Map Bookmark Management Hooks
+export function useGetMapBookmarks() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<MapBookmark[]>({
+    queryKey: ['mapBookmarks'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getMapBookmarks();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetMapBookmarksByCity(city: string) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<MapBookmark[]>({
+    queryKey: ['mapBookmarksByCity', city],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getMapBookmarksByCity(city);
+    },
+    enabled: !!actor && !isFetching && !!city,
+  });
+}
+
+export function useAddMapBookmark() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, {
+    coordinates: [number, number];
+    name: string;
+    description: string;
+    city: string;
+  }>({
+    mutationFn: async ({ coordinates, name, description, city }) => {
+      if (!actor) {
+        throw new Error('Backend actor not available');
+      }
+      await actor.addMapBookmark(coordinates, name, description, city);
+    },
+    onSuccess: () => {
+      // Invalidate and refetch bookmark queries
+      queryClient.invalidateQueries({ queryKey: ['mapBookmarks'] });
+      queryClient.invalidateQueries({ queryKey: ['mapBookmarksByCity'] });
+      queryClient.invalidateQueries({ queryKey: ['allBookmarksAndTravelSpotsByCity'] });
+    },
+  });
+}
+
+export function useUpdateMapBookmark() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation<boolean, Error, {
+    coordinates: [number, number];
+    name: string;
+    description: string;
+    city: string;
+  }>({
+    mutationFn: async ({ coordinates, name, description, city }) => {
+      if (!actor) {
+        throw new Error('Backend actor not available');
+      }
+      return actor.updateMapBookmark(coordinates, name, description, city);
+    },
+    onSuccess: () => {
+      // Invalidate and refetch bookmark queries
+      queryClient.invalidateQueries({ queryKey: ['mapBookmarks'] });
+      queryClient.invalidateQueries({ queryKey: ['mapBookmarksByCity'] });
+      queryClient.invalidateQueries({ queryKey: ['allBookmarksAndTravelSpotsByCity'] });
+    },
+  });
+}
+
+export function useDeleteMapBookmark() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation<boolean, Error, string>({
+    mutationFn: async (name: string) => {
+      if (!actor) {
+        throw new Error('Backend actor not available');
+      }
+      return actor.deleteMapBookmark(name);
+    },
+    onSuccess: () => {
+      // Invalidate and refetch bookmark queries
+      queryClient.invalidateQueries({ queryKey: ['mapBookmarks'] });
+      queryClient.invalidateQueries({ queryKey: ['mapBookmarksByCity'] });
+      queryClient.invalidateQueries({ queryKey: ['allBookmarksAndTravelSpotsByCity'] });
+    },
   });
 }
 
@@ -1069,22 +1252,33 @@ export function useAddTravelSpot() {
   return useMutation<void, Error, {
     city: string;
     name: string;
-    description: string | null;
-    coordinates: [number, number];
+    description?: string;
     spotType: string;
     rating: number;
   }>({
-    mutationFn: async ({ city, name, description, coordinates, spotType, rating }) => {
+    mutationFn: async ({ city, name, description, spotType, rating }) => {
       if (!actor) {
         throw new Error('Backend actor not available');
       }
-      await actor.addTravelSpot(city, name, description, coordinates, spotType, rating);
+      
+      // Geocode the travel spot to get real coordinates
+      const coordinates = await geocodeTravelSpot(name, city);
+      
+      if (!coordinates) {
+        throw new Error(`Could not find coordinates for "${name}" in ${city}. Please check the spelling or try a more specific location name.`);
+      }
+      
+      await actor.addTravelSpot(city, name, description || null, coordinates, spotType, rating);
     },
     onSuccess: (_, variables) => {
       // Invalidate and refetch travel spot queries
       queryClient.invalidateQueries({ queryKey: ['travelSpots', variables.city] });
       queryClient.invalidateQueries({ queryKey: ['allTravelSpots'] });
       queryClient.invalidateQueries({ queryKey: ['allTravelSpotsForMap'] });
+      queryClient.invalidateQueries({ queryKey: ['travelSpotSummaryByCity'] });
+      queryClient.invalidateQueries({ queryKey: ['travelSpotTypeBreakdown', variables.city] });
+      queryClient.invalidateQueries({ queryKey: ['travelSpotsByCityAndType', variables.city, variables.spotType] });
+      queryClient.invalidateQueries({ queryKey: ['allBookmarksAndTravelSpotsByCity'] });
     },
   });
 }
@@ -1096,8 +1290,8 @@ export function useUpdateTravelSpot() {
   return useMutation<boolean, Error, {
     city: string;
     name: string;
-    description: string | null;
-    coordinates: [number, number];
+    description?: string;
+    coordinates?: [number, number];
     spotType: string;
     rating: number;
   }>({
@@ -1105,13 +1299,32 @@ export function useUpdateTravelSpot() {
       if (!actor) {
         throw new Error('Backend actor not available');
       }
-      return actor.updateTravelSpot(city, name, description, coordinates, spotType, rating);
+      
+      // Use provided coordinates or keep existing ones (get from backend)
+      let finalCoordinates = coordinates;
+      if (!finalCoordinates) {
+        const existingSpots = await actor.getTravelSpots(city);
+        const existingSpot = existingSpots.find(spot => spot.name === name);
+        if (existingSpot) {
+          finalCoordinates = existingSpot.coordinates;
+        } else {
+          throw new Error('Travel spot not found');
+        }
+      }
+      
+      return actor.updateTravelSpot(city, name, description || null, finalCoordinates, spotType, rating);
     },
     onSuccess: (_, variables) => {
       // Invalidate and refetch travel spot queries
       queryClient.invalidateQueries({ queryKey: ['travelSpots', variables.city] });
       queryClient.invalidateQueries({ queryKey: ['allTravelSpots'] });
       queryClient.invalidateQueries({ queryKey: ['allTravelSpotsForMap'] });
+      queryClient.invalidateQueries({ queryKey: ['travelSpotMediaFiles', variables.city, variables.name] });
+      queryClient.invalidateQueries({ queryKey: ['travelSpotSocialMediaLinks', variables.city, variables.name] });
+      queryClient.invalidateQueries({ queryKey: ['travelSpotSummaryByCity'] });
+      queryClient.invalidateQueries({ queryKey: ['travelSpotTypeBreakdown', variables.city] });
+      queryClient.invalidateQueries({ queryKey: ['travelSpotsByCityAndType', variables.city, variables.spotType] });
+      queryClient.invalidateQueries({ queryKey: ['allBookmarksAndTravelSpotsByCity'] });
     },
   });
 }
@@ -1135,10 +1348,18 @@ export function useDeleteTravelSpot() {
       queryClient.invalidateQueries({ queryKey: ['travelSpots', variables.city] });
       queryClient.invalidateQueries({ queryKey: ['allTravelSpots'] });
       queryClient.invalidateQueries({ queryKey: ['allTravelSpotsForMap'] });
+      queryClient.invalidateQueries({ queryKey: ['travelSpotMediaFiles', variables.city, variables.name] });
+      queryClient.invalidateQueries({ queryKey: ['travelSpotSocialMediaLinks', variables.city, variables.name] });
+      queryClient.invalidateQueries({ queryKey: ['travelSpotSummaryByCity'] });
+      queryClient.invalidateQueries({ queryKey: ['travelSpotTypeBreakdown', variables.city] });
+      // Invalidate all city and type combinations since we don't know the spot type
+      queryClient.invalidateQueries({ queryKey: ['travelSpotsByCityAndType'] });
+      queryClient.invalidateQueries({ queryKey: ['allBookmarksAndTravelSpotsByCity'] });
     },
   });
 }
 
+// Travel Spot Media Management Hooks
 export function useGetTravelSpotMediaFiles(city: string, spotName: string) {
   const { actor, isFetching } = useActor();
 
@@ -1147,19 +1368,6 @@ export function useGetTravelSpotMediaFiles(city: string, spotName: string) {
     queryFn: async () => {
       if (!actor) return [];
       return actor.getTravelSpotMediaFiles(city, spotName);
-    },
-    enabled: !!actor && !isFetching && !!city && !!spotName,
-  });
-}
-
-export function useGetTravelSpotSocialMediaLinks(city: string, spotName: string) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<SocialMediaLink[]>({
-    queryKey: ['travelSpotSocialMediaLinks', city, spotName],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getTravelSpotSocialMediaLinks(city, spotName);
     },
     enabled: !!actor && !isFetching && !!city && !!spotName,
   });
@@ -1215,6 +1423,20 @@ export function useRemoveMediaFromTravelSpot() {
   });
 }
 
+// Travel Spot Social Media Link Management Hooks
+export function useGetTravelSpotSocialMediaLinks(city: string, spotName: string) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<SocialMediaLink[]>({
+    queryKey: ['travelSpotSocialMediaLinks', city, spotName],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getTravelSpotSocialMediaLinks(city, spotName);
+    },
+    enabled: !!actor && !isFetching && !!city && !!spotName,
+  });
+}
+
 export function useAddSocialMediaLinkToTravelSpot() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
@@ -1222,18 +1444,25 @@ export function useAddSocialMediaLinkToTravelSpot() {
   return useMutation<boolean, Error, {
     city: string;
     spotName: string;
-    socialMediaLink: SocialMediaLink;
+    url: string;
   }>({
-    mutationFn: async ({ city, spotName, socialMediaLink }) => {
+    mutationFn: async ({ city, spotName, url }) => {
       if (!actor) {
         throw new Error('Backend actor not available');
       }
       
-      // Validate the URL before adding
-      const validation = validateSocialMediaUrl(socialMediaLink.url);
+      // Validate the URL
+      const validation = validateSocialMediaUrl(url);
       if (!validation.isValid) {
         throw new Error(validation.error || 'Invalid social media URL');
       }
+      
+      // Create social media link object
+      const socialMediaLink: SocialMediaLink = {
+        url,
+        platform: validation.platform,
+        addedAt: BigInt(Date.now() * 1000000) // Convert to nanoseconds
+      };
       
       return actor.addSocialMediaLinkToTravelSpot(city, spotName, socialMediaLink);
     },
@@ -1272,7 +1501,7 @@ export function useRemoveSocialMediaLinkFromTravelSpot() {
   });
 }
 
-// Music Album Hooks
+// Music Album Management Hooks
 export function useGetAllMusicAlbums() {
   const { actor, isFetching } = useActor();
 
@@ -1336,9 +1565,8 @@ export function useUpdateMusicAlbum() {
       }
       return actor.updateMusicAlbum(title, description, songs);
     },
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       // Invalidate and refetch music album queries
-      queryClient.invalidateQueries({ queryKey: ['musicAlbum', variables.title] });
       queryClient.invalidateQueries({ queryKey: ['allMusicAlbums'] });
     },
   });
@@ -1376,9 +1604,8 @@ export function useAddSongToMusicAlbum() {
       }
       return actor.addSongToMusicAlbum(title, song);
     },
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       // Invalidate and refetch music album queries
-      queryClient.invalidateQueries({ queryKey: ['musicAlbum', variables.title] });
       queryClient.invalidateQueries({ queryKey: ['allMusicAlbums'] });
     },
   });
@@ -1398,227 +1625,179 @@ export function useRemoveSongFromMusicAlbum() {
       }
       return actor.removeSongFromMusicAlbum(title, songTitle);
     },
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       // Invalidate and refetch music album queries
-      queryClient.invalidateQueries({ queryKey: ['musicAlbum', variables.title] });
       queryClient.invalidateQueries({ queryKey: ['allMusicAlbums'] });
     },
   });
 }
 
-// Website Layout Hooks
+export function useGetMusicAlbumSongs(title: string) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<Song[]>({
+    queryKey: ['musicAlbumSongs', title],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getMusicAlbumSongs(title);
+    },
+    enabled: !!actor && !isFetching && !!title,
+  });
+}
+
+// Website Layout Preferences Hooks (now using backend)
 export function useGetWebsiteLayoutPreferences() {
   const { actor, isFetching } = useActor();
 
-  return useQuery<WebsiteLayoutPreferences | null>({
+  return useQuery<WebsiteLayoutPreferences>({
     queryKey: ['websiteLayoutPreferences'],
     queryFn: async () => {
-      if (!actor) return null;
-      const settings = await actor.getWebsiteLayoutSettings();
-      if (!settings) return null;
+      if (!actor) {
+        // Return default preferences if no backend
+        return { 
+          showMusicPlayer: true, 
+          defaultSearchPlace: 'Hong Kong', 
+          showAllTravelSpots: true,
+          rippleSize: 0.5,
+          cityFontSize: 8.0
+        };
+      }
       
-      return {
-        showMusicPlayer: settings.showMusicPlayerBar,
-        defaultSearchPlace: settings.defaultSearchPlace,
-        showAllTravelSpots: settings.showAllTravelSpots,
-        rippleSize: settings.rippleSize,
-        cityFontSize: settings.cityFontSize,
-      };
+      try {
+        const settings = await actor.getWebsiteLayoutSettings();
+        if (settings) {
+          return {
+            showMusicPlayer: settings.showMusicPlayerBar,
+            defaultSearchPlace: settings.defaultSearchPlace,
+            showAllTravelSpots: settings.showAllTravelSpots,
+            rippleSize: settings.rippleSize,
+            cityFontSize: settings.cityFontSize
+          };
+        }
+        
+        // Return default preferences if no settings found
+        return { 
+          showMusicPlayer: true, 
+          defaultSearchPlace: 'Hong Kong', 
+          showAllTravelSpots: true,
+          rippleSize: 0.5,
+          cityFontSize: 8.0
+        };
+      } catch (error) {
+        console.error('Error loading layout preferences:', error);
+        return { 
+          showMusicPlayer: true, 
+          defaultSearchPlace: 'Hong Kong', 
+          showAllTravelSpots: true,
+          rippleSize: 0.5,
+          cityFontSize: 8.0
+        };
+      }
     },
     enabled: !!actor && !isFetching,
   });
 }
 
-export function useAddWebsiteLayoutSettings() {
+export function useSaveWebsiteLayoutPreferences() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
-  return useMutation<void, Error, {
-    showMusicPlayerBar: boolean;
-    defaultSearchPlace: string;
-    showAllTravelSpots: boolean;
-    rippleSize: number;
-    cityFontSize: number;
-  }>({
-    mutationFn: async ({ showMusicPlayerBar, defaultSearchPlace, showAllTravelSpots, rippleSize, cityFontSize }) => {
+  return useMutation<void, Error, Partial<WebsiteLayoutPreferences>>({
+    mutationFn: async (preferences) => {
       if (!actor) {
         throw new Error('Backend actor not available');
       }
-      await actor.addWebsiteLayoutSettings(showMusicPlayerBar, defaultSearchPlace, showAllTravelSpots, rippleSize, cityFontSize);
+      
+      try {
+        // Get current preferences
+        const current = queryClient.getQueryData<WebsiteLayoutPreferences>(['websiteLayoutPreferences']) || { 
+          showMusicPlayer: true, 
+          defaultSearchPlace: 'Hong Kong',
+          showAllTravelSpots: true,
+          rippleSize: 0.5,
+          cityFontSize: 8.0
+        };
+        
+        // Merge with new preferences
+        const updated = { ...current, ...preferences };
+        
+        // Check if settings exist
+        const existingSettings = await actor.getWebsiteLayoutSettings();
+        
+        if (existingSettings) {
+          // Update existing settings - pass 5 parameters (no theme)
+          await actor.updateWebsiteLayoutSettings(
+            updated.showMusicPlayer, 
+            updated.defaultSearchPlace, 
+            updated.showAllTravelSpots,
+            updated.rippleSize || 0.5,
+            updated.cityFontSize || 8.0
+          );
+        } else {
+          // Add new settings - pass 5 parameters (no theme)
+          await actor.addWebsiteLayoutSettings(
+            updated.showMusicPlayer, 
+            updated.defaultSearchPlace, 
+            updated.showAllTravelSpots,
+            updated.rippleSize || 0.5,
+            updated.cityFontSize || 8.0
+          );
+        }
+      } catch (error) {
+        console.error('Error saving layout preferences:', error);
+        throw new Error('Failed to save layout preferences');
+      }
     },
     onSuccess: () => {
-      // Invalidate and refetch website layout queries
+      // Invalidate and refetch preferences
       queryClient.invalidateQueries({ queryKey: ['websiteLayoutPreferences'] });
     },
   });
 }
 
-export function useUpdateWebsiteLayoutSettings() {
+// New hook for getting display settings
+export function useGetDisplaySettings() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<boolean | null>({
+    queryKey: ['displaySettings'],
+    queryFn: async () => {
+      if (!actor) return true; // Default to showing all travel spots
+      return actor.getDisplaySettings();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+// Geoname City Management Hooks
+export function useImportCities() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
-  return useMutation<boolean, Error, {
-    showMusicPlayerBar: boolean;
-    defaultSearchPlace: string;
-    showAllTravelSpots: boolean;
-    rippleSize: number;
-    cityFontSize: number;
-  }>({
-    mutationFn: async ({ showMusicPlayerBar, defaultSearchPlace, showAllTravelSpots, rippleSize, cityFontSize }) => {
+  return useMutation<void, Error, GeonameCity[]>({
+    mutationFn: async (cities: GeonameCity[]) => {
       if (!actor) {
         throw new Error('Backend actor not available');
       }
-      return actor.updateWebsiteLayoutSettings(showMusicPlayerBar, defaultSearchPlace, showAllTravelSpots, rippleSize, cityFontSize);
+      await actor.importCities(cities);
     },
     onSuccess: () => {
-      // Invalidate and refetch website layout queries
-      queryClient.invalidateQueries({ queryKey: ['websiteLayoutPreferences'] });
+      queryClient.invalidateQueries({ queryKey: ['citiesPaginated'] });
+      queryClient.invalidateQueries({ queryKey: ['searchCities'] });
+      queryClient.invalidateQueries({ queryKey: ['allCities'] });
     },
   });
 }
 
-// Map Bookmark Hooks
-export function useGetMapBookmarks() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<MapBookmark[]>({
-    queryKey: ['mapBookmarks'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getMapBookmarks();
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-export function useAddMapBookmark() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation<void, Error, {
-    coordinates: [number, number];
-    name: string;
-    description: string;
-    city: string;
-  }>({
-    mutationFn: async ({ coordinates, name, description, city }) => {
-      if (!actor) {
-        throw new Error('Backend actor not available');
-      }
-      await actor.addMapBookmark(coordinates, name, description, city);
-    },
-    onSuccess: () => {
-      // Invalidate and refetch map bookmark queries
-      queryClient.invalidateQueries({ queryKey: ['mapBookmarks'] });
-    },
-  });
-}
-
-export function useUpdateMapBookmark() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation<boolean, Error, {
-    coordinates: [number, number];
-    name: string;
-    description: string;
-    city: string;
-  }>({
-    mutationFn: async ({ coordinates, name, description, city }) => {
-      if (!actor) {
-        throw new Error('Backend actor not available');
-      }
-      return actor.updateMapBookmark(coordinates, name, description, city);
-    },
-    onSuccess: () => {
-      // Invalidate and refetch map bookmark queries
-      queryClient.invalidateQueries({ queryKey: ['mapBookmarks'] });
-    },
-  });
-}
-
-export function useDeleteMapBookmark() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation<boolean, Error, string>({
-    mutationFn: async (name: string) => {
-      if (!actor) {
-        throw new Error('Backend actor not available');
-      }
-      return actor.deleteMapBookmark(name);
-    },
-    onSuccess: () => {
-      // Invalidate and refetch map bookmark queries
-      queryClient.invalidateQueries({ queryKey: ['mapBookmarks'] });
-    },
-  });
-}
-
-// Vibes Hooks
-export function useGetVibesByCity() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<Array<[string, VibeItem[]]>>({
-    queryKey: ['vibesByCity'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getVibesByCity();
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-export function useGetAllVibes() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<VibeItem[]>({
-    queryKey: ['allVibes'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllVibes();
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-// EXPORTED: Hook for getting all bookmarks and travel spots by city
-export function useGetAllBookmarksAndTravelSpotsByCity() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<Array<[string, VibeItem[]]>>({
-    queryKey: ['allBookmarksAndTravelSpotsByCity'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllBookmarksAndTravelSpotsByCity();
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-// EXPORTED: Hook for getting travel spot summary by city
-export function useGetTravelSpotSummaryByCity() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<Array<[string, bigint]>>({
-    queryKey: ['travelSpotSummaryByCity'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getTravelSpotSummaryByCity();
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-// Geoname City Hooks
-export function useGetAllCities() {
+// New hook for browsing all cities with pagination
+export function useGetCitiesPaginated(page: number, pageSize: number) {
   const { actor, isFetching } = useActor();
 
   return useQuery<GeonameCity[]>({
-    queryKey: ['allCities'],
+    queryKey: ['citiesPaginated', page, pageSize],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getAllCities();
+      return actor.getCitiesPaginated(BigInt(page), BigInt(pageSize));
     },
     enabled: !!actor && !isFetching,
   });
@@ -1633,40 +1812,7 @@ export function useSearchCities(searchTerm: string, page: number, pageSize: numb
       if (!actor) return [];
       return actor.searchCities(searchTerm, BigInt(page), BigInt(pageSize));
     },
-    enabled: !!actor && !isFetching && searchTerm.trim() !== '',
-  });
-}
-
-export function useGetCitiesPaginated(page: number, pageSize: number) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<GeonameCity[]>({
-    queryKey: ['citiesPaginated', page, pageSize],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getCitiesPaginated(BigInt(page), BigInt(pageSize));
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-export function useImportCities() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation<void, Error, GeonameCity[]>({
-    mutationFn: async (cities: GeonameCity[]) => {
-      if (!actor) {
-        throw new Error('Backend actor not available');
-      }
-      await actor.importCities(cities);
-    },
-    onSuccess: () => {
-      // Invalidate and refetch city queries
-      queryClient.invalidateQueries({ queryKey: ['allCities'] });
-      queryClient.invalidateQueries({ queryKey: ['searchCities'] });
-      queryClient.invalidateQueries({ queryKey: ['citiesPaginated'] });
-    },
+    enabled: !!actor && !isFetching && !!searchTerm.trim(),
   });
 }
 
@@ -1682,10 +1828,9 @@ export function useAddCity() {
       await actor.addCity(city);
     },
     onSuccess: () => {
-      // Invalidate and refetch city queries
-      queryClient.invalidateQueries({ queryKey: ['allCities'] });
-      queryClient.invalidateQueries({ queryKey: ['searchCities'] });
       queryClient.invalidateQueries({ queryKey: ['citiesPaginated'] });
+      queryClient.invalidateQueries({ queryKey: ['searchCities'] });
+      queryClient.invalidateQueries({ queryKey: ['allCities'] });
     },
   });
 }
@@ -1702,10 +1847,9 @@ export function useUpdateCity() {
       return actor.updateCity(name, city);
     },
     onSuccess: () => {
-      // Invalidate and refetch city queries
-      queryClient.invalidateQueries({ queryKey: ['allCities'] });
-      queryClient.invalidateQueries({ queryKey: ['searchCities'] });
       queryClient.invalidateQueries({ queryKey: ['citiesPaginated'] });
+      queryClient.invalidateQueries({ queryKey: ['searchCities'] });
+      queryClient.invalidateQueries({ queryKey: ['allCities'] });
     },
   });
 }
@@ -1722,45 +1866,40 @@ export function useDeleteCity() {
       return actor.deleteCity(name);
     },
     onSuccess: () => {
-      // Invalidate and refetch city queries
-      queryClient.invalidateQueries({ queryKey: ['allCities'] });
-      queryClient.invalidateQueries({ queryKey: ['searchCities'] });
       queryClient.invalidateQueries({ queryKey: ['citiesPaginated'] });
+      queryClient.invalidateQueries({ queryKey: ['searchCities'] });
+      queryClient.invalidateQueries({ queryKey: ['allCities'] });
     },
   });
 }
 
-// Timezone Hooks
-export function useGetTimezoneGeoJson() {
-  const { actor, isFetching } = useActor();
+// Export the list of supported countries for UI feedback
+export const SUPPORTED_COUNTRIES = [
+  'United States',
+  'Canada', 
+  'Brazil',
+  'United Kingdom',
+  'France',
+  'Germany',
+  'India',
+  'China',
+  'Australia',
+  'Japan'
+];
 
-  return useQuery<string>({
-    queryKey: ['timezoneGeoJson'],
-    queryFn: async () => {
-      if (!actor) return '';
-      return actor.getTimezoneGeoJson();
-    },
-    enabled: !!actor && !isFetching,
-  });
+// Export function to get alternative names for a country
+export function getCountryAlternatives(countryName: string): string[] {
+  const alternatives: string[] = [];
+  const normalizedInput = countryName.toLowerCase().trim();
+  
+  for (const [alt, canonical] of Object.entries(COUNTRY_NAME_MAP)) {
+    if (canonical.toLowerCase() === normalizedInput) {
+      alternatives.push(alt);
+    }
+  }
+  
+  return alternatives.filter(alt => alt !== normalizedInput);
 }
 
-export function useSetTimezoneGeoJson() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation<void, Error, string>({
-    mutationFn: async (json: string) => {
-      if (!actor) {
-        throw new Error('Backend actor not available');
-      }
-      await actor.setTimezoneGeoJson(json);
-    },
-    onSuccess: () => {
-      // Invalidate and refetch timezone queries
-      queryClient.invalidateQueries({ queryKey: ['timezoneGeoJson'] });
-    },
-  });
-}
-
-// Export supported countries list
-export const SUPPORTED_COUNTRIES = Object.values(COUNTRY_NAME_MAP).filter((value, index, self) => self.indexOf(value) === index);
+// Export validation function for use in components
+export { validateSocialMediaUrl };

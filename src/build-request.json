@@ -1,69 +1,53 @@
 {
   "kind": "build_request",
-  "title": "Wire Travelogue Map button to open existing 2D map and show selected journey schedule items by location",
+  "title": "Add non-functional 'Map' (2D logo) button next to 'Flying' in Travelogue",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-1",
-      "text": "Change the Travelogue \"Map\" button behavior so that clicking the Map button on a specific journey switches the app to the existing 2D Map view and targets that journey as the active context (i.e., the map view must know which journey was selected).",
+      "id": "REQ-4",
+      "text": "In the Travelogue journey action buttons area (selected elements context: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1] and /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]), add a new button labeled \"Map\" positioned directly next to the existing \"Flying\" button, and display a simple \"2D\" logo/icon on the button.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages-6"
+          "msg-1"
         ],
         "quotes": [
-          "when the Map button is clicked, it will direct us to the 2d Map (the existing one)"
+          "1) add a button with 2D as logo, namely \"Map\", next to the Flying button in the travelogue"
         ]
       },
       "acceptanceCriteria": [
-        "From the Travelogue journey card, clicking \"Map\" results in the 2D map view being shown (the existing Leaflet-based map).",
-        "The click is associated with the journey that the Map button was clicked on (not a generic/global map state)."
+        "A new \"Map\" button is visible next to the existing \"Flying\" button within each journey card in the Travelogue UI.",
+        "The \"Map\" button includes a clearly visible \"2D\" logo/icon alongside the \"Map\" label.",
+        "The existing \"Flying\" button remains present and in its original position relative to other Travelogue controls (no rearrangement)."
       ]
     },
     {
-      "id": "REQ-2",
-      "text": "When opening the 2D Map from a journey’s Map button, display all schedule items for that selected journey on the 2D map, using each schedule item’s saved location input to determine what is shown (only schedule items belonging to the selected journey should be rendered as schedule markers/popups).",
-      "target": "both",
+      "id": "REQ-5",
+      "text": "Do not implement any functionality for the new \"Map\" button yet (no navigation, no state changes, no toasts, no map updates, and no backend calls when clicked).",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages-6"
+          "msg-1"
         ],
         "quotes": [
-          "and all the schedule item of that journey will be displayed in accordance to the locations input."
+          "2) do not add anything in this \"Map\" button yet"
         ]
       },
       "acceptanceCriteria": [
-        "After clicking a journey’s Map button, schedule markers/popups visible in the 2D map correspond only to schedule items for that journey (no schedule items from other journeys are shown).",
-        "If the journey has N schedule items with non-empty location inputs, the map renders N schedule entries (markers and/or a list/popup UI) tied to those location strings.",
-        "If a schedule item has an empty/invalid location input and cannot be placed, the app does not crash; the item is either skipped or shown in a clear non-map way (e.g., not placed on the map)."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Add/adjust backend query support (and corresponding React Query hook) to retrieve schedule items with coordinates filtered by journey, so the frontend can request \"schedule items with coordinates for journey X\" without having to fetch all journeys’ schedule items.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "recent-messages-6"
-        ],
-        "quotes": [
-          "all the schedule item of that journey will be displayed"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Backend exposes a query method that returns schedule items (including their location input and coordinates) for a single journey identifier (e.g., journey city key).",
-        "Frontend uses a dedicated React Query hook to fetch schedule items with coordinates for the selected journey when the map is opened from the Map button.",
-        "No migration is introduced unless strictly required by a state schema change."
+        "Clicking the \"Map\" button produces no visible UI change and triggers no side effects (no route changes, no dialogs, no toasts, no data fetching).",
+        "No backend (Motoko) changes are introduced for this request."
       ]
     }
   ],
   "constraints": [
-    "Do not modify files under frontend/immutablePaths (e.g., frontend/src/hooks/useActor.ts and Internet Identity hooks).",
-    "Keep Motoko backend logic in the single actor (backend/main.mo); only add backend/migration.mo if an existing stable state schema must change."
+    "Apply changes ONLY within the UI represented by the selected elements in the prompt (Travelogue button area).",
+    "Do not modify any layout, styling, or content under the existing \"doodle\" and \"retro\" itinerary views.",
+    "Do not rearrange the Travelogue layout or the position of existing buttons; only insert the new \"Map\" button next to \"Flying\"."
   ],
   "nonGoals": [
-    "Do not create a new map implementation; reuse the existing 2D Map view already in the app.",
-    "Do not add third-party auth providers or real-time features."
+    "Implementing the 2D map view integration or displaying schedule items on the map.",
+    "Adding new routes/pages or deep-linking behavior for the \"Map\" button.",
+    "Changing backend data models or APIs."
   ],
   "imageRequirements": {
     "required": [],

@@ -1,72 +1,36 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Travelogue Map button: open existing 2D map with journey-scoped schedule markers",
+  "title": "Add non-functional Map (2D icon) button next to Flying in Travelogue",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Wire each Travelogue journey card “Map” button to switch to the existing 2D map view with the clicked journey as active context.",
+      "id": "REQ-4",
+      "summary": "Insert a new \"Map\" button with a simple \"2D\" icon directly next to the existing \"Flying\" button in each Travelogue journey card action area.",
       "acceptanceCriteria": [
-        "From the Travelogue journey card, clicking \"Map\" results in the 2D map view being shown (the existing Leaflet-based map).",
-        "The click is associated with the journey that the Map button was clicked on (not a generic/global map state)."
+        "A new \"Map\" button is visible next to the existing \"Flying\" button within each journey card in the Travelogue UI.",
+        "The \"Map\" button includes a clearly visible \"2D\" logo/icon alongside the \"Map\" label.",
+        "The existing \"Flying\" button remains present and in its original position relative to other Travelogue controls (no rearrangement)."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Replace the current no-op Map button handler to call a new prop callback (e.g., onOpenJourneyMap(journeyCity)) from the journey card’s Map button, ensuring the clicked journey’s identifier (journey.city) is passed as the active context."
-        },
-        {
-          "path": "frontend/src/pages/LocationMapExplorer.tsx",
-          "operation": "modify",
-          "description": "Add state for the active journey map context (e.g., activeJourneyCity). Pass an onOpenJourneyMap callback into TraveloguePanel that: (1) sets viewMode to '2D', (2) searches/targets the journey city to ensure the existing 2D Map view renders, and (3) stores the selected journey identifier so MapComponent can render journey-scoped schedule items."
-        },
-        {
-          "path": "frontend/src/components/MapComponent.tsx",
-          "operation": "modify",
-          "description": "Extend MapComponent props to accept an optional journey context identifier (e.g., journeyCityFilter) and use it to drive schedule rendering behavior when present (without changing the underlying Leaflet map implementation)."
+          "description": "Within the Travelogue journey action buttons UI (the same area where the \"Flying\" button is rendered in the JourneyCard), add a new sibling \"Map\" button placed immediately adjacent to \"Flying\". Render a simple inline \"2D\" icon/mark (e.g., small text badge) inside the button next to the \"Map\" label. Use the existing shadcn-ui Button component styling conventions already used in this area. Verify the component's usage instructions before implementing. Ensure no changes are made to the doodle/scrapbook and retro itinerary views, and do not alter existing button order beyond inserting this new button next to \"Flying\"."
         }
       ]
     },
     {
-      "id": "REQ-2",
-      "summary": "When opened from a journey’s Map button, render only that journey’s schedule items on the 2D map using their saved location and coordinates; handle unplaceable items safely.",
+      "id": "REQ-5",
+      "summary": "Ensure the new \"Map\" button is non-functional and triggers no UI or data side effects when clicked.",
       "acceptanceCriteria": [
-        "After clicking a journey’s Map button, schedule markers/popups visible in the 2D map correspond only to schedule items for that journey (no schedule items from other journeys are shown).",
-        "If the journey has N schedule items with non-empty location inputs, the map renders N schedule entries (markers and/or a list/popup UI) tied to those location strings.",
-        "If a schedule item has an empty/invalid location input and cannot be placed, the app does not crash; the item is either skipped or shown in a clear non-map way (e.g., not placed on the map)."
+        "Clicking the \"Map\" button produces no visible UI change and triggers no side effects (no route changes, no dialogs, no toasts, no data fetching).",
+        "No backend (Motoko) changes are introduced for this request."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/LocationMapExplorer.tsx",
+          "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Pass the selected journey identifier (activeJourneyCity) into MapComponent when the map is being opened via Travelogue Map, so schedule rendering can be filtered to the selected journey only."
-        },
-        {
-          "path": "frontend/src/components/MapComponent.tsx",
-          "operation": "modify",
-          "description": "Update schedule-item data flow and rendering so that when journeyCityFilter is provided, only schedule items for that journey are used to create schedule markers/popups. Add safe-guards so missing/invalid coordinates or empty location strings do not crash the map; skip those markers and optionally surface them in an on-map non-marker UI section (e.g., a small list/popup of unplaceable schedule items)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Add a dedicated React Query hook to fetch schedule items with coordinates filtered by journey and use it for the map-open-from-Travelogue flow.",
-      "acceptanceCriteria": [
-        "Backend exposes a query method that returns schedule items (including their location input and coordinates) for a single journey identifier (e.g., journey city key).",
-        "Frontend uses a dedicated React Query hook to fetch schedule items with coordinates for the selected journey when the map is opened from the Map button.",
-        "No migration is introduced unless strictly required by a state schema change."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add a dedicated React Query hook (e.g., useGetScheduleItemsWithCoordinatesByJourney(journeyCity)) that calls the existing backend capability getScheduleItemsWithCoordinatesByJourney and caches by a journey-specific queryKey. Ensure the hook is enabled only when actor is available and a non-empty journeyCity is provided."
-        },
-        {
-          "path": "frontend/src/components/MapComponent.tsx",
-          "operation": "modify",
-          "description": "Switch schedule fetching for the Travelogue-opened map context to use the new journey-filtered React Query hook; keep existing global schedule behavior unchanged for non-journey flows (if still needed elsewhere in the UI)."
+          "description": "Implement the \"Map\" button click behavior as a strict no-op: do not wire navigation, do not update React state, do not invoke toasts, and do not call any hooks or backend capabilities. If an onClick is required by the existing pattern, provide an empty handler that performs no actions (and avoid any side effects). Keep all changes constrained to the Travelogue journey action buttons area only."
         }
       ]
     }

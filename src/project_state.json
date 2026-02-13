@@ -1,34 +1,27 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project includes a Map button that navigates to an existing 2D map view and displays journey schedule items based on location inputs.",
+  "summary": "Project to add a non-functional 'Map' button (2D logo) next to the 'Flying' button in the Travelogue without changing existing layouts.",
   "architectural_notes": [
-    "Reuse the existing 2D Map view when navigating from the Map button."
+    "Do not change or rearrange the Travelogue layout when adding the new 'Map' button.",
+    "Do not change anything under the 'doodle' and 'retro' sections/styles."
   ],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-change-the-travelogue-map-button-behavior-so-that-clicking-the-map-button-on-a-specific-journey-switches-the-app-to-the-existing-2d-map-view-and-targets-that-journey-as-the-active-context-i-e-the-map-view-must-know-which-journey-was-selected",
-      "title": "Change the Travelogue \"Map\" button behavior so that clicking the Map button on a specific journey switches the app to the existing 2D Map view and targets that journey as the active context (i.e., the map view must know which journey was selected).",
+      "id": "feature-in-the-travelogue-journey-action-buttons-area-selected-elements-context-html-1-body-1-div-3-div-2-div-1-div-2-div-1-div-1-div-1-div-1-and-html-1-body-1-div-3-div-2-div-1-div-2-div-1-add-a-new-button-labeled-map-positioned-directly-next-to-the-existing-flying-button-and-display-a-simple-2d-logo-icon-on-the-button",
+      "title": "In the Travelogue journey action buttons area (selected elements context: /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1] and /html[1]/body[1]/div[3]/div[2]/div[1]/div[2]/div[1]), add a new button labeled \"Map\" positioned directly next to the existing \"Flying\" button, and display a simple \"2D\" logo/icon on the button.",
       "reqIds": [
-        "REQ-1"
+        "REQ-4"
       ],
       "version": 1
     },
     {
-      "id": "feature-when-opening-the-2d-map-from-a-journey-s-map-button-display-all-schedule-items-for-that-selected-journey-on-the-2d-map-using-each-schedule-item-s-saved-location-input-to-determine-what-is-shown-only-schedule-items-belonging-to-the-selected-journey-should-be-rendered-as-schedule-markers-popups",
-      "title": "When opening the 2D Map from a journey’s Map button, display all schedule items for that selected journey on the 2D map, using each schedule item’s saved location input to determine what is shown (only schedule items belonging to the selected journey should be rendered as schedule markers/popups).",
+      "id": "feature-do-not-implement-any-functionality-for-the-new-map-button-yet-no-navigation-no-state-changes-no-toasts-no-map-updates-and-no-backend-calls-when-clicked",
+      "title": "Do not implement any functionality for the new \"Map\" button yet (no navigation, no state changes, no toasts, no map updates, and no backend calls when clicked).",
       "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-adjust-backend-query-support-and-corresponding-react-query-hook-to-retrieve-schedule-items-with-coordinates-filtered-by-journey-so-the-frontend-can-request-schedule-items-with-coordinates-for-journey-x-without-having-to-fetch-all-journeys-schedule-items",
-      "title": "Add/adjust backend query support (and corresponding React Query hook) to retrieve schedule items with coordinates filtered by journey, so the frontend can request \"schedule items with coordinates for journey X\" without having to fetch all journeys’ schedule items.",
-      "reqIds": [
-        "REQ-3"
+        "REQ-5"
       ],
       "version": 1
     }
@@ -36,13 +29,12 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Map button should open the existing 2D Map view and display all schedule items for the selected journey according to the provided location inputs.",
+      "summary": "Add a 'Map' button with a 2D logo next to the 'Flying' button in the Travelogue (no functionality yet)",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "gameProjectType": "none",
-  "projectName": "Wire Travelogue Map button to open existing 2D map and show selected journey schedule items by location",
+  "projectName": "Add non-functional 'Map' (2D logo) button next to 'Flying' in Travelogue",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

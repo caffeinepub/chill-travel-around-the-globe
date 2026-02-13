@@ -53,7 +53,6 @@ export default function LocationMapExplorer() {
   const [rotationSpeed, setRotationSpeed] = useState<number>(0.0005);
   const [countryFontSize, setCountryFontSize] = useState<number>(8);
   const [flightAnimation, setFlightAnimation] = useState<FlightAnimationData | null>(null);
-  const [activeJourneyCity, setActiveJourneyCity] = useState<string | null>(null);
 
   const { mutate: searchLocation, isPending } = useSearchLocation();
   const { data: layoutPreferences } = useGetWebsiteLayoutPreferences();
@@ -172,21 +171,6 @@ export default function LocationMapExplorer() {
     // Switch to 3D mode to show the animation
     setViewMode('3D');
     toast.info(`Flying from ${fromCity} to ${toCity}...`);
-  }, []);
-
-  // Handle journey map open from Travelogue panel
-  const handleOpenJourneyMap = useCallback((journeyCity: string) => {
-    // Set the active journey context
-    setActiveJourneyCity(journeyCity);
-    
-    // Switch to 2D mode
-    setViewMode('2D');
-    
-    // Search for the journey city
-    setSearchQuery(journeyCity);
-    performSearch(journeyCity);
-    
-    toast.info(`Opening map for ${journeyCity} journey`);
   }, []);
 
   const shouldShowGlobe = viewMode === '3D';
@@ -315,8 +299,6 @@ export default function LocationMapExplorer() {
             focusedBookmark={focusedBookmark}
             onTravelSpotFocused={() => setFocusedTravelSpot(null)}
             onBookmarkFocused={() => setFocusedBookmark(null)}
-            journeyCityFilter={activeJourneyCity}
-            onJourneyMapClosed={() => setActiveJourneyCity(null)}
           />
         ) : (
           <div className="h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900">
@@ -341,10 +323,7 @@ export default function LocationMapExplorer() {
               <AdminPanel />
               
               {/* Travelogue Panel - Icon Only */}
-              <TraveloguePanel 
-                onFlightAnimation={handleFlightAnimation}
-                onOpenJourneyMap={handleOpenJourneyMap}
-              />
+              <TraveloguePanel onFlightAnimation={handleFlightAnimation} />
 
               {/* Vibes Panel - Icon Only */}
               <VibesPanel onTravelSpotFocus={handleTravelSpotFocus} onBookmarkFocus={handleBookmarkFocus} />
@@ -461,13 +440,26 @@ export default function LocationMapExplorer() {
                             </ToggleGroupItem>
                           </TooltipTrigger>
                           <TooltipContent side="bottom" className="max-w-sm p-4 glass-morphism">
-                            <div className="space-y-2">
-                              <p className="font-medium text-gray-400">Interactive 2D Map with Travel Spots & Bookmarks</p>
+                            <div className="space-y-3">
+                              <p className="font-medium text-gray-400">2D Interactive Map View</p>
                               <p className="text-sm leading-relaxed text-gray-400">
-                                Drag to pan • Scroll to zoom • Click markers for details • Click map to add bookmarks
+                                Search for any location worldwide to view it on the interactive map.
                               </p>
-                              <p className="text-sm text-green-400">
-                                View city ratings, albums, travel spots, and schedule items on the map
+                              <p className="text-sm text-yellow-400">
+                                Clicking this button will automatically search for {layoutPreferences?.defaultSearchPlace || 'Hong Kong'}.
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                <Badge variant="outline" className="text-xs bg-white/60 dark:bg-slate-800/60">
+                                  <Globe className="h-3 w-3 mr-1" />
+                                  Countries
+                                </Badge>
+                                <Badge variant="outline" className="text-xs bg-white/60 dark:bg-slate-800/60">
+                                  <Building className="h-3 w-3 mr-1" />
+                                  Cities & Towns
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-sky-400">
+                                Pan and zoom freely to explore. Click anywhere on the map to add bookmarks.
                               </p>
                             </div>
                           </TooltipContent>
@@ -480,13 +472,145 @@ export default function LocationMapExplorer() {
             </div>
           </header>
 
-          {/* Music Player Bar - positioned at bottom */}
-          {layoutPreferences?.showMusicPlayer && (
-            <div className="absolute bottom-0 left-0 right-0 z-[10000] pointer-events-auto">
-              <MusicPlayerBar currentSong={currentSong} onSongChange={setCurrentSong} />
+          {/* Bottom panels - All panels repositioned to bottom of UI page - INCREASED Z-INDEX */}
+          {/* World Travel Hotspot Panel - Fixed at bottom, reduced by 1/3 */}
+          {worldHotspotOpen && (
+            <div 
+              id="world-hotspot-panel"
+              className="fixed bottom-4 left-4 z-[10004] bg-black/80 backdrop-blur-sm rounded-lg px-2.5 py-2 border border-white/20 w-36 pointer-events-auto"
+            >
+              <div className="text-white text-[10px] font-semibold mb-1.5">World Travel Hotspot</div>
+              <div className="flex flex-col gap-1.5">
+                <button
+                  onClick={() => setShowCapitals(prev => !prev)}
+                  className={`px-2 py-1.5 text-white text-[10px] font-medium rounded-md transition-colors duration-200 border ${
+                    showCapitals 
+                      ? 'bg-yellow-500/80 hover:bg-yellow-600/80 border-yellow-400/30' 
+                      : 'bg-gray-500/50 hover:bg-gray-600/50 border-gray-400/30'
+                  }`}
+                  title="Toggle capital city markers (yellow dots)"
+                >
+                  Capitals
+                </button>
+                
+                <button
+                  onClick={() => setShowGlobalCities(prev => !prev)}
+                  className={`px-2 py-1.5 text-[10px] font-medium rounded-md transition-colors duration-200 border ${
+                    showGlobalCities 
+                      ? 'bg-sky-400/80 hover:bg-sky-500/80 border-sky-300/30 text-white' 
+                      : 'bg-gray-500/50 hover:bg-gray-600/50 border-gray-400/30 text-white'
+                  }`}
+                  title="Toggle global city markers (light blue stars)"
+                >
+                  Global Cities
+                </button>
+                
+                <button
+                  onClick={() => setShowMajorCities(prev => !prev)}
+                  className={`px-2 py-1.5 text-white text-[10px] font-medium rounded-md transition-colors duration-200 border ${
+                    showMajorCities 
+                      ? 'bg-white/80 hover:bg-white/90 border-white/30 text-black' 
+                      : 'bg-gray-500/50 hover:bg-gray-600/50 border-gray-400/30'
+                  }`}
+                  title="Toggle major city markers (small white dots)"
+                >
+                  Major Cities
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* World Controls Panel (3D Rotation Speed and Country Font Size) - Fixed at bottom, reduced by 1/3 */}
+          {worldControlsOpen && (
+            <div 
+              id="world-controls-panel"
+              className="fixed bottom-4 left-4 z-[10004] bg-black/80 backdrop-blur-sm rounded-lg px-2.5 py-2 border border-white/20 w-40 pointer-events-auto"
+            >
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-0.5">
+                  <label htmlFor="rotationSpeed" className="text-white text-[10px] font-medium">
+                    3D Rotation Speed
+                  </label>
+                  <input
+                    type="range"
+                    id="rotationSpeed"
+                    min={0}
+                    max="0.006"
+                    step="0.0001"
+                    value={rotationSpeed}
+                    onChange={(e) => setRotationSpeed(Number(e.target.value))}
+                    className="w-full h-1.5 bg-blue-500/30 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-400 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-blue-300 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue-400 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-blue-300"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-0.5">
+                  <label htmlFor="countryFontSize" className="text-white text-[10px] font-medium whitespace-nowrap">
+                    3D Country Font Size
+                  </label>
+                  <input
+                    type="range"
+                    id="countryFontSize"
+                    min="5"
+                    max="20"
+                    step="1"
+                    value={countryFontSize}
+                    onChange={(e) => setCountryFontSize(Number(e.target.value))}
+                    className="w-full h-1.5 bg-blue-500/30 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-400 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-blue-300 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue-400 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-blue-300"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* UTC Offset Panel - Fixed at bottom, reduced by 1/3 */}
+          {showTimeZones && (
+            <div 
+              id="utc-offset-panel"
+              className="fixed bottom-4 left-4 z-[10004] bg-black/80 backdrop-blur-sm rounded-lg px-2.5 py-2 border border-white/20 w-36 pointer-events-auto"
+            >
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="utcOffsetSlider" className="text-white text-[10px] font-medium">
+                  UTC Offset: <span className="text-blue-300">{formatUtcOffsetLabel(offsets[activeOffsetIndex])}</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="range"
+                    id="utcOffsetSlider"
+                    min="0"
+                    max={offsets.length - 1}
+                    step="1"
+                    value={activeOffsetIndex}
+                    onChange={(e) => setActiveOffsetIndex(Number(e.target.value))}
+                    className="w-full h-1.5 bg-blue-500/30 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-400 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-blue-300 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue-400 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-blue-300"
+                    title={`UTC${formatUtcOffsetLabel(offsets[activeOffsetIndex])}`}
+                  />
+                </div>
+                <div className="text-white text-[9px] text-center opacity-70">
+                  Drag to select UTC offset
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Location Info Overlay - only show when map is active */}
+          {shouldShowMap && (
+            <div className="absolute top-20 left-4 z-[200] pointer-events-auto">
+              <div className="p-3 glass-morphism shadow-xl rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  <div className="flex flex-col">
+                    <span className="font-medium text-sm">{selectedLocation.searchQuery}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
+      </div>
+
+      {/* Music Player Bar - positioned absolutely with pointer-events: auto */}
+      <div className="fixed bottom-0 left-0 right-0 z-[2500] pointer-events-auto">
+        <MusicPlayerBar currentSong={currentSong} onSongChange={setCurrentSong} />
       </div>
     </TooltipProvider>
   );
