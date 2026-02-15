@@ -1,67 +1,75 @@
 {
   "kind": "build_request",
-  "title": "Add placeholder Map (2D) button next to Flying in Travelogue",
+  "title": "Make Travelogue “2D Map” button open existing 2D map and show that journey’s schedule items by location",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "In the Travelogue UI, add a new button labeled \"Map\" positioned immediately to the right of the existing \"Flying\" button wherever the Flying button is rendered (i.e., within each journey card’s action controls). The Map button must display a clear \"2D\" logo/icon (text-based is acceptable, e.g., a compact “2D” mark) alongside the \"Map\" label.",
+      "text": "Wire the Travelogue journey “2D Map” button (currently a no-op) so that clicking it switches the main explorer view to the existing 2D Map view (the 2D view toggle next to the 3D one) and centers the map on the selected journey’s area (using the journey’s city / primary location as the search query).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-6"
         ],
         "quotes": [
-          "1) add a button with 2D as logo, namely \"Map\", right next to the Flying button in the travelogue"
+          "when the 2d Map button is clicked, it will direct us to the 2d Map (the existing one next to the 3d one)"
         ]
       },
       "acceptanceCriteria": [
-        "In the Travelogue panel, each journey card that shows the Flying button also shows a new Map button immediately to its right.",
-        "The Map button’s visible label text is exactly \"Map\".",
-        "The Map button includes a visible \"2D\" logo/icon mark."
+        "From the Travelogue panel, clicking the journey’s 2D Map button switches the app to the existing 2D map view (not a new page).",
+        "After the click, the Leaflet 2D map is visible and centered based on the selected journey’s city/primary location search.",
+        "The 3D globe is not shown while the 2D map is active."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Ensure the new \"Map\" button is a no-op placeholder: clicking/tapping it must not navigate, open dialogs, trigger toasts, call backend APIs, or otherwise change application state or UI beyond standard button press visuals.",
+      "text": "When the Travelogue journey “2D Map” button is clicked, display all schedule items belonging to that specific journey on the 2D map, placing markers according to the schedule items’ location inputs (i.e., use each schedule item’s location field to determine where it appears on the map). Only that journey’s schedule items should be shown for this action (not schedule items from other journeys).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-6"
         ],
         "quotes": [
-          "2) do not add anything in this \"Map\" button yet"
+          "and all the schedule item of that journey will be displayed in accordance to the locations input."
         ]
       },
       "acceptanceCriteria": [
-        "Clicking the Map button produces no navigation or panel/dialog changes.",
-        "No toast/notification is shown as a result of clicking the Map button.",
-        "No backend calls are initiated by clicking the Map button."
+        "After clicking a journey’s 2D Map button, schedule markers for that journey appear on the 2D map.",
+        "Schedule markers correspond to each schedule item’s location input (the map placement matches the item’s location-derived coordinates used by the app).",
+        "Schedule items from other journeys do not appear as schedule markers when a specific journey’s 2D Map button was used.",
+        "If a schedule item cannot be located/geocoded by the existing app logic, the UI handles it gracefully (e.g., skips the marker and logs/shows a non-blocking message) without breaking the map."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Add the necessary parent-to-child plumbing between TraveloguePanel and LocationMapExplorer so that the journey context (at minimum: journey identifier/city used by the app) is passed when the Travelogue “2D Map” button is clicked, without modifying any files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-6"
+        ],
+        "quotes": [
+          "when the 2d Map button is clicked, it will direct us to the 2d Map (the existing one next to the 3d one)"
+        ]
+      },
+      "acceptanceCriteria": [
+        "TraveloguePanel emits an explicit callback/event on 2D Map button click that includes the selected journey context.",
+        "LocationMapExplorer receives that event and updates its existing view state (2D/3D mode + selected location) accordingly.",
+        "No changes are made to the immutable paths listed in SYSTEM_CONTEXT.frontend.immutablePaths."
       ]
     }
   ],
   "constraints": [
-    "Do not modify any backend canister code for this change.",
-    "Do not add any functional behavior to the new Map button beyond rendering it in the UI.",
-    "Do not edit files under frontend/src/components/ui or other immutable paths listed in SYSTEM_CONTEXT."
+    "Frontend immutable paths must not be edited: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui/*.",
+    "Keep backend as a single Motoko actor (backend/main.mo); only add migration.mo if an upgrade requires state migration."
   ],
   "nonGoals": [
-    "Implementing a 2D map view or connecting the Map button to the existing Leaflet/2D explorer.",
-    "Adding routing/deep-links for the Map button.",
-    "Changing the existing Flying button behavior."
+    "Do not create a new 2D map implementation or a new route/page; use the existing 2D map view already present alongside the 3D toggle.",
+    "Do not add third-party auth providers or real-time features (WebSockets/chat).",
+    "Do not add external databases or non-Motoko backend services."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

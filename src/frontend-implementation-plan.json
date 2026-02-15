@@ -1,37 +1,69 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Add no-op Map (2D) button next to Flying in Travelogue journey cards",
+  "title": "Travelogue 2D Map button: switch to existing 2D view, center on journey city, and show journey schedule markers",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Render a new \"Map\" button with a visible \"2D\" mark immediately to the right of the existing \"Flying\" button in each Travelogue journey card action area.",
+      "summary": "Make Travelogue journey “2D Map” button switch the explorer into the existing 2D Leaflet map view and center it on the selected journey’s city/primary location search.",
       "acceptanceCriteria": [
-        "In the Travelogue panel, each journey card that shows the Flying button also shows a new Map button immediately to its right.",
-        "The Map button’s visible label text is exactly \"Map\".",
-        "The Map button includes a visible \"2D\" logo/icon mark."
+        "From the Travelogue panel, clicking the journey’s 2D Map button switches the app to the existing 2D map view (not a new page).",
+        "After the click, the Leaflet 2D map is visible and centered based on the selected journey’s city/primary location search.",
+        "The 3D globe is not shown while the 2D map is active."
       ],
       "file_operations": [
         {
+          "path": "frontend/src/pages/LocationMapExplorer.tsx",
+          "operation": "modify",
+          "description": "Add a Travelogue-driven handler that (1) switches viewMode to '2D' and (2) triggers the existing location search using the selected journey’s city as the search query, ensuring the existing 2D map view is shown (not a new route/page)."
+        },
+        {
           "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Locate the journey card action controls where the existing \"Flying\" button is rendered (within the JourneyCard UI), and add a new adjacent button immediately to its right labeled exactly \"Map\" with a compact visible \"2D\" mark/icon alongside the label (text-based is acceptable). Ensure the new button is rendered everywhere the Flying button appears (for live/upcoming/past journey cards). Do not edit any files under frontend/src/components/ui."
+          "description": "Replace the current journey “2D Map” button no-op with a call into a new prop callback (emitted from TraveloguePanel) so LocationMapExplorer can switch to 2D mode and run the city search for centering."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Make the new \"Map\" button a pure no-op placeholder that only shows standard press visuals and does not change state, navigate, or trigger side effects.",
+      "summary": "When Travelogue “2D Map” is clicked for a journey, show only that journey’s schedule items as markers on the 2D map, using the app’s existing location-to-coordinates logic and handling unlocatable items gracefully.",
       "acceptanceCriteria": [
-        "Clicking the Map button produces no navigation or panel/dialog changes.",
-        "No toast/notification is shown as a result of clicking the Map button.",
-        "No backend calls are initiated by clicking the Map button."
+        "After clicking a journey’s 2D Map button, schedule markers for that journey appear on the 2D map.",
+        "Schedule markers correspond to each schedule item’s location input (the map placement matches the item’s location-derived coordinates used by the app).",
+        "Schedule items from other journeys do not appear as schedule markers when a specific journey’s 2D Map button was used.",
+        "If a schedule item cannot be located/geocoded by the existing app logic, the UI handles it gracefully (e.g., skips the marker and logs/shows a non-blocking message) without breaking the map."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/MapComponent.tsx",
+          "operation": "modify",
+          "description": "Add an optional prop (e.g., journeyCity filter) and update schedule-marker rendering to only include schedule items associated with that journey when the filter is provided; when no filter is provided, preserve current behavior. Also add graceful handling/reporting for schedule items that exist for the journey but have no coordinates returned by existing logic (skip markers and show/log a non-blocking message)."
+        },
+        {
+          "path": "frontend/src/pages/LocationMapExplorer.tsx",
+          "operation": "modify",
+          "description": "Track the active Travelogue journey context (e.g., selectedJourneyCity) and pass it down to MapComponent so the 2D map can filter schedule markers to only the selected journey after clicking Travelogue’s 2D Map button."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Add parent-to-child plumbing from TraveloguePanel to LocationMapExplorer to pass journey context on “2D Map” clicks, without editing immutable auth/entry/UI-library paths.",
+      "acceptanceCriteria": [
+        "TraveloguePanel emits an explicit callback/event on 2D Map button click that includes the selected journey context.",
+        "LocationMapExplorer receives that event and updates its existing view state (2D/3D mode + selected location) accordingly.",
+        "No changes are made to the immutable paths listed in SYSTEM_CONTEXT.frontend.immutablePaths."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Implement the \"Map\" button click handler as a no-op placeholder (e.g., prevent default/stop propagation if needed) and ensure it does not call any hooks/mutations, does not set React state, does not open dialogs, does not trigger toasts, and does not initiate network/backend calls. Keep existing Flying behavior unchanged."
+          "description": "Extend TraveloguePanel props to accept a new explicit callback (e.g., onJourney2DMap) and invoke it with journey context (at minimum journey city) when the journey “2D Map” button is clicked."
+        },
+        {
+          "path": "frontend/src/pages/LocationMapExplorer.tsx",
+          "operation": "modify",
+          "description": "Pass a new onJourney2DMap callback into TraveloguePanel that updates LocationMapExplorer state (selected journey context + set viewMode to '2D' + performSearch using journey city) and clears/adjusts any conflicting focus state as needed for the existing 2D/3D toggle flow."
         }
       ]
     }

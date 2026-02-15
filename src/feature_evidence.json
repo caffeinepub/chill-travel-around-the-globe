@@ -2,10 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-in-the-travelogue-ui-add-a-new-button-labeled-map-positioned-immediately-to-the-right-of-the-existing-flying-button-wherever-the-flying-button-is-rendered-i-e-within-each-journey-card-s-action-controls-the-map-button-must-display-a-clear-2d-logo-icon-text-based-is-acceptable-e-g-a-compact-2d-mark-alongside-the-map-label",
-      "featureTitle": "In the Travelogue UI, add a new button labeled \"Map\" positioned immediately to the right of the existing \"Flying\" button wherever the Flying button is rendered (i.e., within each journey card’s action controls). The Map button must display a clear \"2D\" logo/icon (text-based is acceptable, e.g., a compact “2D” mark) alongside the \"Map\" label.",
+      "featureId": "feature-wire-the-travelogue-journey-2d-map-button-currently-a-no-op-so-that-clicking-it-switches-the-main-explorer-view-to-the-existing-2d-map-view-the-2d-view-toggle-next-to-the-3d-one-and-centers-the-map-on-the-selected-journey-s-area-using-the-journey-s-city-primary-location-as-the-search-query",
+      "featureTitle": "Wire the Travelogue journey “2D Map” button (currently a no-op) so that clicking it switches the main explorer view to the existing 2D Map view (the 2D view toggle next to the 3D one) and centers the map on the selected journey’s area (using the journey’s city / primary location as the search query).",
       "files": [
-        "frontend/src/components/TraveloguePanel.tsx"
+        "frontend/src/components/TraveloguePanel.tsx",
+        "frontend/src/pages/LocationMapExplorer.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -22,10 +23,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-ensure-the-new-map-button-is-a-no-op-placeholder-clicking-tapping-it-must-not-navigate-open-dialogs-trigger-toasts-call-backend-apis-or-otherwise-change-application-state-or-ui-beyond-standard-button-press-visuals",
-      "featureTitle": "Ensure the new \"Map\" button is a no-op placeholder: clicking/tapping it must not navigate, open dialogs, trigger toasts, call backend APIs, or otherwise change application state or UI beyond standard button press visuals.",
+      "featureId": "feature-when-the-travelogue-journey-2d-map-button-is-clicked-display-all-schedule-items-belonging-to-that-specific-journey-on-the-2d-map-placing-markers-according-to-the-schedule-items-location-inputs-i-e-use-each-schedule-item-s-location-field-to-determine-where-it-appears-on-the-map-only-that-journey-s-schedule-items-should-be-shown-for-this-action-not-schedule-items-from-other-journeys",
+      "featureTitle": "When the Travelogue journey “2D Map” button is clicked, display all schedule items belonging to that specific journey on the 2D map, placing markers according to the schedule items’ location inputs (i.e., use each schedule item’s location field to determine where it appears on the map). Only that journey’s schedule items should be shown for this action (not schedule items from other journeys).",
       "files": [
-        "frontend/src/components/TraveloguePanel.tsx"
+        "frontend/src/components/MapComponent.tsx",
+        "frontend/src/pages/LocationMapExplorer.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -38,6 +40,27 @@
       ],
       "testIds": [
         "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-the-necessary-parent-to-child-plumbing-between-traveloguepanel-and-locationmapexplorer-so-that-the-journey-context-at-minimum-journey-identifier-city-used-by-the-app-is-passed-when-the-travelogue-2d-map-button-is-clicked-without-modifying-any-files-under-frontend-src-hooks-useinternetidentity-ts-frontend-src-hooks-useinternetidentity-tsx-frontend-src-hooks-useactor-ts-frontend-src-main-tsx-or-frontend-src-components-ui",
+      "featureTitle": "Add the necessary parent-to-child plumbing between TraveloguePanel and LocationMapExplorer so that the journey context (at minimum: journey identifier/city used by the app) is passed when the Travelogue “2D Map” button is clicked, without modifying any files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui.",
+      "files": [
+        "frontend/src/components/TraveloguePanel.tsx",
+        "frontend/src/pages/LocationMapExplorer.tsx"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@1.1.2",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
       ],
       "confidence": "high"
     }
