@@ -1,75 +1,68 @@
 {
   "kind": "build_request",
-  "title": "Make Travelogue “2D Map” button open existing 2D map and show that journey’s schedule items by location",
+  "title": "Draw same-day route lines between schedule items on the map (chronological order)",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Wire the Travelogue journey “2D Map” button (currently a no-op) so that clicking it switches the main explorer view to the existing 2D Map view (the 2D view toggle next to the 3D one) and centers the map on the selected journey’s area (using the journey’s city / primary location as the search query).",
+      "text": "In the 2D map schedule-item rendering (the schedule item SVG/text marker elements identified by the user’s selected XPaths), draw a visible route line that links all schedule items occurring on the same calendar day.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-user-1"
         ],
         "quotes": [
-          "when the 2d Map button is clicked, it will direct us to the 2d Map (the existing one next to the 3d one)"
+          "1) Link the same day schedule items with a route line (same color as the logo)"
         ]
       },
       "acceptanceCriteria": [
-        "From the Travelogue panel, clicking the journey’s 2D Map button switches the app to the existing 2D map view (not a new page).",
-        "After the click, the Leaflet 2D map is visible and centered based on the selected journey’s city/primary location search.",
-        "The 3D globe is not shown while the 2D map is active."
+        "When viewing schedule items on the 2D map, schedule items that share the same date are connected by a continuous line.",
+        "The route line is only applied to the schedule-item map elements in scope (the selected schedule SVG/text marker elements), and does not change unrelated map layers (travel spots, bookmarks, etc.).",
+        "If a day has fewer than 2 schedule items with valid coordinates, no route line is drawn for that day.",
+        "Route lines are removed/updated correctly when the underlying schedule items change (no duplicate/stacked old polylines after re-render)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "When the Travelogue journey “2D Map” button is clicked, display all schedule items belonging to that specific journey on the 2D map, placing markers according to the schedule items’ location inputs (i.e., use each schedule item’s location field to determine where it appears on the map). Only that journey’s schedule items should be shown for this action (not schedule items from other journeys).",
+      "text": "For each day’s route line, order the connected schedule items chronologically starting from the earliest item of that day, and use a stroke color that matches the schedule item logo/day color used for that same day.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-user-1"
         ],
         "quotes": [
-          "and all the schedule item of that journey will be displayed in accordance to the locations input."
+          "2) starting the route line with the earliest,  in chronological order, of each day",
+          "1) Link the same day schedule items with a route line (same color as the logo)"
         ]
       },
       "acceptanceCriteria": [
-        "After clicking a journey’s 2D Map button, schedule markers for that journey appear on the 2D map.",
-        "Schedule markers correspond to each schedule item’s location input (the map placement matches the item’s location-derived coordinates used by the app).",
-        "Schedule items from other journeys do not appear as schedule markers when a specific journey’s 2D Map button was used.",
-        "If a schedule item cannot be located/geocoded by the existing app logic, the UI handles it gracefully (e.g., skips the marker and logs/shows a non-blocking message) without breaking the map."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Add the necessary parent-to-child plumbing between TraveloguePanel and LocationMapExplorer so that the journey context (at minimum: journey identifier/city used by the app) is passed when the Travelogue “2D Map” button is clicked, without modifying any files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-6"
-        ],
-        "quotes": [
-          "when the 2d Map button is clicked, it will direct us to the 2d Map (the existing one next to the 3d one)"
-        ]
-      },
-      "acceptanceCriteria": [
-        "TraveloguePanel emits an explicit callback/event on 2D Map button click that includes the selected journey context.",
-        "LocationMapExplorer receives that event and updates its existing view state (2D/3D mode + selected location) accordingly.",
-        "No changes are made to the immutable paths listed in SYSTEM_CONTEXT.frontend.immutablePaths."
+        "Within each day group, the polyline path connects schedule items sorted by their time (earliest to latest) for that day.",
+        "The route line stroke color for a given day matches the day color used by that day’s schedule item logo/label styling (i.e., consistent with the existing day-based color logic).",
+        "Different days render as separate lines (no cross-day connections)."
       ]
     }
   ],
   "constraints": [
     "Frontend immutable paths must not be edited: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui/*.",
-    "Keep backend as a single Motoko actor (backend/main.mo); only add migration.mo if an upgrade requires state migration."
+    "Respect the existing Leaflet-based map architecture (no new backend services, no external databases, no real-time sockets)."
   ],
   "nonGoals": [
-    "Do not create a new 2D map implementation or a new route/page; use the existing 2D map view already present alongside the 3D toggle.",
-    "Do not add third-party auth providers or real-time features (WebSockets/chat).",
-    "Do not add external databases or non-Motoko backend services."
+    "Do not change backend data models or persistence for schedule items.",
+    "Do not add new scheduling features (editing, reordering, or new filters) beyond drawing the route line and enforcing chronological connection order.",
+    "Do not redesign the overall map UI beyond adding the route-line visualization."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

@@ -11,6 +11,8 @@ import { useGetCityRatingForPopup, useGetCityAlbum, useGetTravelSpots, useGetTra
 import { MediaGalleryPopup } from './MediaGalleryPopup';
 import { MediaType, TravelSpot, ScheduleItem, MapBookmark } from '@/backend';
 import { toast } from 'sonner';
+import { getDayColor, getDayLabel, computeDayIndex } from '@/utils/scheduleDayStyling';
+import { buildDayRoutes } from '@/utils/scheduleRouteUtils';
 
 interface MapComponentProps {
   coordinates: [number, number];
@@ -138,9 +140,11 @@ const getTravelSpotColor = (spotType: string): string => {
 };
 
 // Geocode a location to get coordinates
-async function geocodeLocation(locationName: string): Promise<[number, number] | null> {
+async function geocodeLocation(locationName: string, cityBias?: string): Promise<[number, number] | null> {
   try {
-    const encodedQuery = encodeURIComponent(locationName);
+    // If we have a city bias, try searching with city context first
+    const searchQuery = cityBias ? `${locationName}, ${cityBias}` : locationName;
+    const encodedQuery = encodeURIComponent(searchQuery);
     const response = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodedQuery}&limit=1&addressdetails=1`,
       {
@@ -187,6 +191,7 @@ export default function MapComponent({
   const mapInstanceRef = useRef<any>(null);
   const textMarkerRef = useRef<any>(null);
   const globalMarkersRef = useRef<MarkerData[]>([]); // Global marker array
+  const routeLayerRef = useRef<any>(null); // Layer for schedule route polylines
   const bookmarkButtonRef = useRef<any>(null);
   const popupRef = useRef<any>(null);
   const hasInitializedRef = useRef(false);
@@ -430,161 +435,138 @@ export default function MapComponent({
       setBookmarkDescription('');
     } catch (error) {
       console.error('Error creating bookmark:', error);
-      toast.error('Failed to create bookmark. Please try again.');
+      toast.error('Failed to create bookmark');
     }
-  }, [bookmarkCoordinates, bookmarkCity, bookmarkName, bookmarkDescription, addBookmarkMutation, updateDashboard]);
-
-  // Handle bookmark dialog close
-  const handleCloseBookmarkDialog = useCallback(() => {
-    setShowBookmarkDialog(false);
-    setBookmarkCoordinates(null);
-    setBookmarkCity('');
-    setBookmarkName('');
-    setBookmarkDescription('');
-  }, []);
-
-  // Handle travel spot marker click
-  const handleTravelSpotMarkerClick = useCallback((e: any, spot: TravelSpot) => {
-    const { x, y } = e.containerPoint;
-    setSelectedTravelSpot(spot);
-    setTravelSpotPopupPosition({ x, y });
-    setShowTravelSpotPopup(true);
-  }, []);
-
-  // Handle schedule marker click
-  const handleScheduleMarkerClick = useCallback((e: any, item: ScheduleItem) => {
-    const { x, y } = e.containerPoint;
-    setSelectedScheduleItem(item);
-    setSchedulePopupPosition({ x, y });
-    setShowSchedulePopup(true);
-  }, []);
+  }, [bookmarkCoordinates, bookmarkName, bookmarkDescription, bookmarkCity, addBookmarkMutation, updateDashboard]);
 
   // Handle bookmark marker click
   const handleBookmarkMarkerClick = useCallback((e: any, bookmark: MapBookmark) => {
-    const { x, y } = e.containerPoint;
+    if (!mapRef.current) return;
+
+    const mapRect = mapRef.current.getBoundingClientRect();
+    const clickX = e.originalEvent.clientX - mapRect.left;
+    const clickY = e.originalEvent.clientY - mapRect.top;
+
     setSelectedBookmark(bookmark);
-    setBookmarkPopupPosition({ x, y });
+    setBookmarkPopupPosition({ x: clickX, y: clickY });
     setShowBookmarkPopup(true);
+
+    // Notify parent that bookmark was focused
+    if (onBookmarkFocused) {
+      onBookmarkFocused();
+    }
+  }, [onBookmarkFocused]);
+
+  // Handle travel spot marker click
+  const handleTravelSpotMarkerClick = useCallback((e: any, spot: TravelSpot) => {
+    if (!mapRef.current) return;
+
+    const mapRect = mapRef.current.getBoundingClientRect();
+    const clickX = e.originalEvent.clientX - mapRect.left;
+    const clickY = e.originalEvent.clientY - mapRect.top;
+
+    setSelectedTravelSpot(spot);
+    setTravelSpotPopupPosition({ x: clickX, y: clickY });
+    setShowTravelSpotPopup(true);
+
+    // Notify parent that travel spot was focused
+    if (onTravelSpotFocused) {
+      onTravelSpotFocused();
+    }
+  }, [onTravelSpotFocused]);
+
+  // Handle schedule marker click
+  const handleScheduleMarkerClick = useCallback((e: any, item: ScheduleItem) => {
+    if (!mapRef.current) return;
+
+    const mapRect = mapRef.current.getBoundingClientRect();
+    const clickX = e.originalEvent.clientX - mapRect.left;
+    const clickY = e.originalEvent.clientY - mapRect.top;
+
+    setSelectedScheduleItem(item);
+    setSchedulePopupPosition({ x: clickX, y: clickY });
+    setShowSchedulePopup(true);
   }, []);
 
-  // Load Leaflet dynamically
+  // Load Leaflet library
   useEffect(() => {
-    const loadLeaflet = async () => {
-      if (window.L) {
+    if (typeof window !== 'undefined' && !window.L) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = () => {
         setLeafletLoaded(true);
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        // Load CSS
-        const cssLink = document.createElement('link');
-        cssLink.rel = 'stylesheet';
-        cssLink.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-        cssLink.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
-        cssLink.crossOrigin = '';
-        document.head.appendChild(cssLink);
-
-        // Load JS
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-        script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
-        script.crossOrigin = '';
-        
-        script.onload = () => {
-          // Fix for default markers
-          if (window.L) {
-            delete (window.L.Icon.Default.prototype as any)._getIconUrl;
-            window.L.Icon.Default.mergeOptions({
-              iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-              iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-              shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-            });
-          }
-          setLeafletLoaded(true);
-          setIsLoading(false);
-        };
-
-        script.onerror = () => {
-          console.error('Failed to load Leaflet');
-          setIsLoading(false);
-        };
-
-        document.head.appendChild(script);
-      } catch (error) {
-        console.error('Error loading Leaflet:', error);
-        setIsLoading(false);
-      }
-    };
-
-    loadLeaflet();
+      };
+      document.head.appendChild(script);
+    } else if (window.L) {
+      setLeafletLoaded(true);
+    }
   }, []);
 
   // Initialize map
   useEffect(() => {
-    if (!leafletLoaded || !mapRef.current || !window.L || hasInitializedRef.current) return;
+    if (!leafletLoaded || !mapRef.current || mapInstanceRef.current) return;
 
     const map = window.L.map(mapRef.current, {
-      center: coordinates,
-      zoom: getInitialZoom(),
       zoomControl: false,
-    });
+    }).setView(coordinates, getInitialZoom());
 
     window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      attribution: '© OpenStreetMap contributors',
       maxZoom: 19,
     }).addTo(map);
 
-    // Add map click handler for bookmarking
+    // Add click handler for bookmark creation
     map.on('click', handleMapClick);
 
-    // Track user interaction
-    map.on('zoomstart', () => {
-      userHasInteractedRef.current = true;
-    });
-    map.on('movestart', () => {
-      userHasInteractedRef.current = true;
+    // Track zoom changes
+    map.on('zoomend', () => {
+      setZoom(map.getZoom());
     });
 
     mapInstanceRef.current = map;
     hasInitializedRef.current = true;
-    lastSearchLocationRef.current = locationName;
+    setIsLoading(false);
 
     return () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
-        hasInitializedRef.current = false;
       }
     };
-  }, [leafletLoaded, coordinates, handleMapClick, locationName]);
+  }, [leafletLoaded, coordinates, handleMapClick]);
 
   // Update map view when coordinates change
   useEffect(() => {
-    if (!mapInstanceRef.current || !leafletLoaded) return;
+    if (!mapInstanceRef.current || !hasInitializedRef.current) return;
 
     const map = mapInstanceRef.current;
+    const currentLocationKey = `${locationName}-${coordinates[0]}-${coordinates[1]}`;
 
-    // Only update if location name has changed (new search)
-    if (lastSearchLocationRef.current !== locationName) {
-      // Reset user interaction flag on new search
+    // Only update if this is a new search (different location)
+    if (lastSearchLocationRef.current !== currentLocationKey) {
+      lastSearchLocationRef.current = currentLocationKey;
       userHasInteractedRef.current = false;
-      lastSearchLocationRef.current = locationName;
-    }
 
-    // Only auto-center if user hasn't interacted with the map
-    if (!userHasInteractedRef.current) {
-      map.setView(coordinates, getInitialZoom());
+      // Fly to new coordinates with zoom level 15
+      map.flyTo(coordinates, 15, {
+        duration: 1.5,
+        easeLinearity: 0.25,
+      });
     }
-  }, [coordinates, leafletLoaded, locationName]);
+  }, [coordinates, locationName]);
 
-  // Add schedule markers when journey city filter is active
+  // Render schedule markers with day labels and route lines
   useEffect(() => {
-    if (!mapInstanceRef.current || !window.L || !journeyCityFilter || journeyScheduleItems.length === 0) return;
+    if (!mapInstanceRef.current || !window.L || !journeyCityFilter) return;
 
     const map = mapInstanceRef.current;
 
-    // Remove existing schedule markers
+    // Clear existing schedule markers
     globalMarkersRef.current = globalMarkersRef.current.filter(markerData => {
       if (markerData.type === 'Schedule') {
         map.removeLayer(markerData.marker);
@@ -593,117 +575,290 @@ export default function MapComponent({
       return true;
     });
 
-    // Add schedule markers for the filtered journey
-    const addScheduleMarkers = async () => {
+    // Clear existing route layer
+    if (routeLayerRef.current) {
+      map.removeLayer(routeLayerRef.current);
+      routeLayerRef.current = null;
+    }
+
+    // Create a new layer group for routes
+    const routeLayer = window.L.layerGroup().addTo(map);
+    routeLayerRef.current = routeLayer;
+
+    // Geocode and render schedule items
+    const geocodeAndRenderSchedule = async () => {
+      const geocodedItems: Array<[ScheduleItem, [number, number]]> = [];
+
       for (const item of journeyScheduleItems) {
-        try {
-          // Geocode the schedule item location
-          const coords = await geocodeLocation(item.location);
-          
-          if (coords) {
-            const [lat, lng] = coords;
-
-            // Create a purple schedule marker icon
-            const scheduleIcon = window.L.divIcon({
-              className: 'custom-schedule-marker',
-              html: `
-                <div style="
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  width: 32px;
-                  height: 32px;
-                  background: linear-gradient(135deg, #a855f7, #9333ea);
-                  border: 2px solid white;
-                  border-radius: 50%;
-                  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                  cursor: pointer;
-                ">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                    <line x1="16" y1="2" x2="16" y2="6"/>
-                    <line x1="8" y1="2" x2="8" y2="6"/>
-                    <line x1="3" y1="10" x2="21" y2="10"/>
-                  </svg>
-                </div>
-              `,
-              iconSize: [32, 32],
-              iconAnchor: [16, 16],
-            });
-
-            // Create the marker
-            const scheduleMarker = window.L.marker([lat, lng], { icon: scheduleIcon }).addTo(map);
-
-            // Add click handler
-            scheduleMarker.on('click', (e: any) => handleScheduleMarkerClick(e, item));
-
-            // Store in global markers array
-            globalMarkersRef.current.push({
-              marker: scheduleMarker,
-              type: 'Schedule',
-              city: journeyCityFilter,
-              name: item.location,
-            });
-          } else {
-            console.warn(`Could not geocode schedule location: ${item.location}`);
-          }
-        } catch (error) {
-          console.error(`Error adding schedule marker for ${item.location}:`, error);
+        const coords = await geocodeLocation(item.location, journeyCityFilter);
+        if (coords) {
+          geocodedItems.push([item, coords]);
+        } else {
+          console.warn(`Failed to geocode schedule location: ${item.location}`);
         }
       }
 
-      // Update dashboard after adding all markers
-      updateDashboard();
+      // Build route data grouped by day
+      const dayRoutes = buildDayRoutes(geocodedItems);
+
+      // Render markers for each schedule item
+      geocodedItems.forEach(([item, coords]) => {
+        const dayIndex = computeDayIndex(item, geocodedItems.map(([i]) => i));
+        const dayLabel = getDayLabel(dayIndex);
+        const dayColor = getDayColor(dayIndex);
+
+        // Create custom marker with day label
+        const scheduleIcon = window.L.divIcon({
+          className: 'custom-schedule-marker',
+          html: `
+            <div style="
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 4px;
+            ">
+              <div style="
+                padding: 4px 8px;
+                background: ${dayColor};
+                color: white;
+                border-radius: 12px;
+                font-size: 11px;
+                font-weight: 700;
+                white-space: nowrap;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+              ">${dayLabel}</div>
+              <div style="
+                width: 0;
+                height: 0;
+                border-left: 6px solid transparent;
+                border-right: 6px solid transparent;
+                border-top: 8px solid ${dayColor};
+              "></div>
+            </div>
+          `,
+          iconSize: [0, 0],
+          iconAnchor: [0, 32],
+        });
+
+        const marker = window.L.marker(coords, { icon: scheduleIcon }).addTo(map);
+        marker.on('click', (e: any) => handleScheduleMarkerClick(e, item));
+
+        globalMarkersRef.current.push({
+          marker,
+          type: 'Schedule',
+          city: journeyCityFilter,
+          name: item.location,
+        });
+      });
+
+      // Draw route lines for each day
+      dayRoutes.forEach(({ dayKey, coordinates: routeCoords, items }) => {
+        if (routeCoords.length < 2) return;
+
+        // Get day color from the first item in the route
+        const firstItem = items[0][0];
+        const dayIndex = computeDayIndex(firstItem, geocodedItems.map(([i]) => i));
+        const dayColor = getDayColor(dayIndex);
+
+        // Create polyline with day color
+        const polyline = window.L.polyline(routeCoords, {
+          color: dayColor,
+          weight: 3,
+          opacity: 0.7,
+          smoothFactor: 1,
+        }).addTo(routeLayer);
+      });
+
+      // Fit map to show all schedule markers
+      if (geocodedItems.length > 0) {
+        const bounds = window.L.latLngBounds(geocodedItems.map(([_, coords]) => coords));
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+      }
     };
 
-    addScheduleMarkers();
-  }, [journeyCityFilter, journeyScheduleItems, handleScheduleMarkerClick, updateDashboard]);
+    geocodeAndRenderSchedule();
 
-  // Zoom controls
-  const handleZoomIn = useCallback(() => {
+    // Cleanup on unmount or when journeyCityFilter changes
+    return () => {
+      if (routeLayerRef.current && mapInstanceRef.current) {
+        mapInstanceRef.current.removeLayer(routeLayerRef.current);
+        routeLayerRef.current = null;
+      }
+    };
+  }, [journeyCityFilter, journeyScheduleItems, handleScheduleMarkerClick]);
+
+  // Render travel spots
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.L) return;
+
+    const map = mapInstanceRef.current;
+    const spotsToDisplay = layoutPreferences?.showAllTravelSpots ? allTravelSpots : travelSpots;
+
+    // Clear existing travel spot markers
+    globalMarkersRef.current = globalMarkersRef.current.filter(markerData => {
+      if (markerData.type === 'TravelSpot') {
+        map.removeLayer(markerData.marker);
+        return false;
+      }
+      return true;
+    });
+
+    // Add travel spot markers
+    spotsToDisplay.forEach(spot => {
+      const iconUrl = getTravelSpotIcon(spot.spotType);
+      const icon = window.L.icon({
+        iconUrl,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      });
+
+      const marker = window.L.marker(spot.coordinates, { icon }).addTo(map);
+      marker.on('click', (e: any) => handleTravelSpotMarkerClick(e, spot));
+
+      globalMarkersRef.current.push({
+        marker,
+        type: 'TravelSpot',
+        city: spot.city,
+        name: spot.name,
+      });
+    });
+
+    updateDashboard();
+  }, [travelSpots, allTravelSpots, layoutPreferences, handleTravelSpotMarkerClick, updateDashboard]);
+
+  // Render bookmarks
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.L) return;
+
+    const map = mapInstanceRef.current;
+
+    // Clear existing bookmark markers
+    globalMarkersRef.current = globalMarkersRef.current.filter(markerData => {
+      if (markerData.type === 'Bookmark') {
+        map.removeLayer(markerData.marker);
+        return false;
+      }
+      return true;
+    });
+
+    // Add bookmark markers
+    allBookmarks.forEach(bookmark => {
+      const bookmarkIcon = window.L.divIcon({
+        className: 'custom-bookmark-marker',
+        html: `
+          <div style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            cursor: pointer;
+          ">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
+              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+            </svg>
+          </div>
+        `,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+      });
+
+      const marker = window.L.marker(bookmark.coordinates, { icon: bookmarkIcon }).addTo(map);
+      marker.on('click', (e: any) => handleBookmarkMarkerClick(e, bookmark));
+
+      globalMarkersRef.current.push({
+        marker,
+        type: 'Bookmark',
+        city: bookmark.city,
+        name: bookmark.name,
+        bookmarkData: bookmark,
+      });
+    });
+
+    updateDashboard();
+  }, [allBookmarks, handleBookmarkMarkerClick, updateDashboard]);
+
+  // Focus on travel spot when prop changes
+  useEffect(() => {
+    if (!mapInstanceRef.current || !focusedTravelSpot) return;
+
+    const map = mapInstanceRef.current;
+    map.flyTo(focusedTravelSpot.coordinates, 16, {
+      duration: 1,
+    });
+
+    // Simulate click on the marker
+    const markerData = globalMarkersRef.current.find(
+      m => m.type === 'TravelSpot' && m.name === focusedTravelSpot.name
+    );
+    if (markerData) {
+      markerData.marker.fire('click');
+    }
+  }, [focusedTravelSpot]);
+
+  // Focus on bookmark when prop changes
+  useEffect(() => {
+    if (!mapInstanceRef.current || !focusedBookmark) return;
+
+    const map = mapInstanceRef.current;
+    map.flyTo(focusedBookmark.coordinates, 16, {
+      duration: 1,
+    });
+
+    // Simulate click on the marker
+    const markerData = globalMarkersRef.current.find(
+      m => m.type === 'Bookmark' && m.name === focusedBookmark.name
+    );
+    if (markerData) {
+      markerData.marker.fire('click');
+    }
+  }, [focusedBookmark]);
+
+  // Map controls
+  const handleZoomIn = () => {
     if (mapInstanceRef.current) {
       mapInstanceRef.current.zoomIn();
       userHasInteractedRef.current = true;
     }
-  }, []);
+  };
 
-  const handleZoomOut = useCallback(() => {
+  const handleZoomOut = () => {
     if (mapInstanceRef.current) {
       mapInstanceRef.current.zoomOut();
       userHasInteractedRef.current = true;
     }
-  }, []);
+  };
 
-  const handleResetView = useCallback(() => {
+  const handleResetView = () => {
     if (mapInstanceRef.current) {
-      mapInstanceRef.current.setView(coordinates, getInitialZoom());
+      mapInstanceRef.current.flyTo(coordinates, getInitialZoom(), {
+        duration: 1,
+      });
       userHasInteractedRef.current = false;
     }
-  }, [coordinates]);
-
-  if (isLoading) {
-    return (
-      <div className="h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Loading map...</p>
-        </div>
-      </div>
-    );
-  }
+  };
 
   return (
-    <div className="relative h-full w-full">
-      <div ref={mapRef} className="h-full w-full" />
+    <div className="relative w-full h-full">
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      )}
       
+      <div ref={mapRef} className="w-full h-full rounded-lg overflow-hidden" />
+
       {/* Map Controls */}
-      <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
+      <div className="absolute top-4 right-4 flex flex-col gap-2 z-[1000]">
         <Button
           size="icon"
           variant="secondary"
           onClick={handleZoomIn}
-          className="bg-white/90 hover:bg-white shadow-lg"
-          title="Zoom In"
+          className="bg-background/95 backdrop-blur-sm shadow-lg hover:bg-background"
         >
           <ZoomIn className="h-4 w-4" />
         </Button>
@@ -711,8 +866,7 @@ export default function MapComponent({
           size="icon"
           variant="secondary"
           onClick={handleZoomOut}
-          className="bg-white/90 hover:bg-white shadow-lg"
-          title="Zoom Out"
+          className="bg-background/95 backdrop-blur-sm shadow-lg hover:bg-background"
         >
           <ZoomOut className="h-4 w-4" />
         </Button>
@@ -720,25 +874,138 @@ export default function MapComponent({
           size="icon"
           variant="secondary"
           onClick={handleResetView}
-          className="bg-white/90 hover:bg-white shadow-lg"
-          title="Reset View"
+          className="bg-background/95 backdrop-blur-sm shadow-lg hover:bg-background"
         >
           <RotateCcw className="h-4 w-4" />
         </Button>
       </div>
 
-      {/* Journey filter indicator */}
-      {journeyCityFilter && (
-        <div className="absolute top-4 left-4 z-[1000]">
-          <Badge className="bg-purple-500 text-white shadow-lg">
-            Showing schedule for {journeyCityFilter}
-          </Badge>
-        </div>
+      {/* Travel Spot Popup */}
+      {showTravelSpotPopup && selectedTravelSpot && travelSpotPopupPosition && (
+        <Card
+          className="absolute z-[1001] w-80 shadow-2xl"
+          style={{
+            left: `${travelSpotPopupPosition.x}px`,
+            top: `${travelSpotPopupPosition.y}px`,
+            transform: 'translate(-50%, -100%) translateY(-10px)',
+          }}
+        >
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <CardTitle className="text-lg">{selectedTravelSpot.name}</CardTitle>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge
+                    style={{
+                      backgroundColor: getTravelSpotColor(selectedTravelSpot.spotType),
+                      color: 'white',
+                    }}
+                  >
+                    {selectedTravelSpot.spotType}
+                  </Badge>
+                  <div className="flex items-center gap-1">
+                    <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+                    <span className="text-sm font-medium">{selectedTravelSpot.rating.toFixed(1)}</span>
+                  </div>
+                </div>
+              </div>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setShowTravelSpotPopup(false)}
+                className="h-6 w-6"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {selectedTravelSpot.description && (
+              <p className="text-sm text-muted-foreground">{selectedTravelSpot.description}</p>
+            )}
+            {(spotMediaLoading || spotSocialMediaLoading) ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <MediaGalleryPopup
+                mediaFiles={selectedSpotMediaFiles}
+                socialMediaLinks={selectedSpotSocialMediaLinks}
+              />
+            )}
+          </CardContent>
+        </Card>
       )}
 
-      {/* Bookmark Dialog */}
-      <Dialog open={showBookmarkDialog} onOpenChange={handleCloseBookmarkDialog}>
-        <DialogContent className="z-[10000]">
+      {/* Schedule Popup */}
+      {showSchedulePopup && selectedScheduleItem && schedulePopupPosition && (
+        <Card
+          className="absolute z-[1001] w-80 shadow-2xl"
+          style={{
+            left: `${schedulePopupPosition.x}px`,
+            top: `${schedulePopupPosition.y}px`,
+            transform: 'translate(-50%, -100%) translateY(-10px)',
+          }}
+        >
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <CardTitle className="text-lg">{selectedScheduleItem.location}</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {new Date(Number(selectedScheduleItem.date) / 1_000_000).toLocaleDateString()} at {selectedScheduleItem.time}
+                </p>
+              </div>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setShowSchedulePopup(false)}
+                className="h-6 w-6"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm">{selectedScheduleItem.activity}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Bookmark Popup */}
+      {showBookmarkPopup && selectedBookmark && bookmarkPopupPosition && (
+        <Card
+          className="absolute z-[1001] w-80 shadow-2xl"
+          style={{
+            left: `${bookmarkPopupPosition.x}px`,
+            top: `${bookmarkPopupPosition.y}px`,
+            transform: 'translate(-50%, -100%) translateY(-10px)',
+          }}
+        >
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <CardTitle className="text-lg">{selectedBookmark.name}</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">{selectedBookmark.city}</p>
+              </div>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setShowBookmarkPopup(false)}
+                className="h-6 w-6"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm">{selectedBookmark.description}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Bookmark Creation Dialog */}
+      <Dialog open={showBookmarkDialog} onOpenChange={setShowBookmarkDialog}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Create Bookmark</DialogTitle>
           </DialogHeader>
@@ -773,42 +1040,25 @@ export default function MapComponent({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={handleCloseBookmarkDialog}>
+            <Button variant="outline" onClick={() => setShowBookmarkDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateBookmark}>
-              Create Bookmark
+            <Button
+              onClick={handleCreateBookmark}
+              disabled={!bookmarkCity || !bookmarkName || addBookmarkMutation.isPending}
+            >
+              {addBookmarkMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Bookmark'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Schedule Item Popup */}
-      {showSchedulePopup && selectedScheduleItem && schedulePopupPosition && (
-        <div
-          className="absolute z-[2000] bg-white dark:bg-slate-800 rounded-lg shadow-xl p-4 max-w-sm"
-          style={{
-            left: `${schedulePopupPosition.x}px`,
-            top: `${schedulePopupPosition.y}px`,
-            transform: 'translate(-50%, -100%)',
-            marginTop: '-10px',
-          }}
-        >
-          <div className="flex items-start justify-between mb-2">
-            <h3 className="font-semibold text-lg">{selectedScheduleItem.location}</h3>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => setShowSchedulePopup(false)}
-              className="h-6 w-6"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground mb-2">{selectedScheduleItem.activity}</p>
-          <p className="text-xs text-muted-foreground">{selectedScheduleItem.time}</p>
-        </div>
-      )}
     </div>
   );
 }

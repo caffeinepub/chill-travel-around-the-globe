@@ -1,12 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Make the Travelogue journey “2D Map” button switch to the existing 2D map view, center on the journey’s primary location, and show only that journey’s schedule items as map markers.
+**Goal:** Visually connect same-day schedule items on the 2D map with route lines, ordered chronologically and styled consistently with each day’s existing color.
 
 **Planned changes:**
-- Wire the Travelogue journey “2D Map” button to toggle the main explorer into the existing Leaflet 2D map view (replacing the 3D globe while active).
-- On click, center the 2D map using the selected journey’s city/primary location as the existing search query input.
-- Pass journey context from TraveloguePanel to LocationMapExplorer via an explicit callback/event (parent-to-child plumbing) without modifying the listed immutable frontend paths.
-- When opened via a journey’s 2D Map button, render markers for that journey’s schedule items only, using each item’s location field for placement; handle unlocatable items gracefully without breaking the map.
+- Group schedule-item map markers by calendar day and draw a continuous route line for each day connecting that day’s schedule items.
+- Sort each day’s schedule items by time (earliest to latest) to determine the connection order of the route line.
+- Style each day’s route line stroke color to match the existing day-based schedule item logo/label color logic.
+- Ensure route lines update/replace correctly when schedule items change, and draw no line for days with fewer than two schedule items with valid coordinates.
 
-**User-visible outcome:** Clicking a journey’s “2D Map” button in Travelogue switches the explorer to the existing 2D map, centers on that journey’s area, and displays markers for that journey’s schedule items (and not others).
+**User-visible outcome:** On the 2D map, schedule items that occur on the same date are connected by a clearly visible line in that day’s color, following the day’s timeline from earliest to latest, without affecting other map layers.

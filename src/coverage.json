@@ -1,52 +1,39 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-14T13:16:30.709Z",
+  "generatedAt": "2026-02-15T13:24:17.227Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Wire the Travelogue journey “2D Map” button (currently a no-op) so that clicking it switches the main explorer view to the existing 2D Map view (the 2D view toggle next to the 3D one) and centers the map on the selected journey’s area (using the journey’s city / primary location as the search query).",
+        "summary": "In the 2D map schedule-item rendering (the schedule item SVG/text marker elements identified by the user’s selected XPaths), draw a visible route line that links all schedule items occurring on the same calendar day.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/LocationMapExplorer.tsx",
-          "frontend/src/components/TraveloguePanel.tsx"
+          "frontend/src/utils/scheduleRouteUtils.ts",
+          "frontend/src/components/MapComponent.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/LocationMapExplorer.tsx",
-          "frontend/src/components/TraveloguePanel.tsx"
+          "frontend/src/utils/scheduleRouteUtils.ts",
+          "frontend/src/components/MapComponent.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "When the Travelogue journey “2D Map” button is clicked, display all schedule items belonging to that specific journey on the 2D map, placing markers according to the schedule items’ location inputs (i.e., use each schedule item’s location field to determine where it appears on the map). Only that journey’s schedule items should be shown for this action (not schedule items from other journeys).",
+        "summary": "For each day’s route line, order the connected schedule items chronologically starting from the earliest item of that day, and use a stroke color that matches the schedule item logo/day color used for that same day.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/MapComponent.tsx",
-          "frontend/src/pages/LocationMapExplorer.tsx"
+          "frontend/src/utils/scheduleRouteUtils.ts",
+          "frontend/src/components/MapComponent.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/MapComponent.tsx",
-          "frontend/src/pages/LocationMapExplorer.tsx"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Add the necessary parent-to-child plumbing between TraveloguePanel and LocationMapExplorer so that the journey context (at minimum: journey identifier/city used by the app) is passed when the Travelogue “2D Map” button is clicked, without modifying any files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx",
-          "frontend/src/pages/LocationMapExplorer.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx",
-          "frontend/src/pages/LocationMapExplorer.tsx"
+          "frontend/src/utils/scheduleRouteUtils.ts",
+          "frontend/src/components/MapComponent.tsx"
         ]
       }
     ]
@@ -57,8 +44,7 @@
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/components/MapComponent.tsx",
-    "frontend/src/components/TraveloguePanel.tsx",
-    "frontend/src/pages/LocationMapExplorer.tsx",
+    "frontend/src/utils/scheduleRouteUtils.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

@@ -11,6 +11,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useGetAllJourneys, useGetJourneyScheduleWithDays, useUpdateScheduleItem, useDeleteScheduleItem, useAddScheduleItem, useGetWebsiteLayoutPreferences } from '@/hooks/useQueries';
 import { Journey, ScheduleItem } from '@/backend';
 import { toast } from 'sonner';
+import DoodleItineraryDialogContent from './itinerary/DoodleItineraryDialogContent';
+import RetroItineraryDialogContent from './itinerary/RetroItineraryDialogContent';
 
 interface TraveloguePanelProps {
   onFlightAnimation?: (fromCity: string, toCity: string, fromCoords: { lat: number; lon: number }, toCoords: { lat: number; lon: number }) => void;
@@ -285,6 +287,114 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
     }
   };
 
+  // Journey Card Component
+  const JourneyCard = ({ journey, isExpanded, onToggle, onViewFullItinerary, onViewRetroItinerary, onFlyingClick, onMapClick, isFlying, formatDate, formatScheduleDate, formatTime, onSixDotClick, badgeColor, defaultSearchPlace }: any) => {
+    const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.city);
+
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1">
+              <Collapsible open={isExpanded} onOpenChange={onToggle}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </Button>
+                </CollapsibleTrigger>
+              </Collapsible>
+              <div className="flex-1">
+                <CardTitle className="text-lg">{journey.city}</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {formatDate(journey.startDate)} - {formatDate(journey.endDate)}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" style={{ backgroundColor: badgeColor === 'orange' ? '#fb923c' : badgeColor === 'green' ? '#4ade80' : '#60a5fa' }}>
+                {badgeColor === 'orange' ? 'Live' : badgeColor === 'green' ? 'Upcoming' : 'Past'}
+              </Badge>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onFlyingClick()}
+                className={isFlying ? 'bg-blue-100 dark:bg-blue-900' : ''}
+                title={isFlying ? 'Stop Flying' : 'Fly to Journey'}
+              >
+                <Plane className={`h-4 w-4 ${isFlying ? 'text-blue-600 dark:text-blue-400' : ''}`} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => onMapClick(e)}
+                title="View on 2D Map"
+              >
+                <MapIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <Collapsible open={isExpanded}>
+          <CollapsibleContent>
+            <CardContent className="space-y-4">
+              {scheduleWithDays.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No schedule items yet
+                </p>
+              ) : (
+                scheduleWithDays.map(([dayLabel, items]: [string, ScheduleItem[]], dayIndex: number) => (
+                  <div key={dayIndex} className="space-y-2">
+                    <h4 className="font-semibold text-sm">{dayLabel}</h4>
+                    {items.length > 0 && (
+                      <p className="text-xs text-muted-foreground">{formatScheduleDate(items[0].date)}</p>
+                    )}
+                    <div className="space-y-2 ml-4">
+                      {items.map((item: ScheduleItem, itemIndex: number) => (
+                        <div key={itemIndex} className="flex items-start gap-2 text-sm">
+                          <span className="font-medium text-primary">{formatTime(item.time)}</span>
+                          <span className="text-muted-foreground">•</span>
+                          <span className="flex-1">{item.activity}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => onSixDotClick(item, journey)}
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onViewFullItinerary}
+                  className="flex-1"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Doodle
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onViewRetroItinerary}
+                  className="flex-1"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Retro
+                </Button>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
+    );
+  };
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -350,7 +460,7 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
                       onViewFullItinerary={() => setFullItineraryJourney(journey)}
                       onViewRetroItinerary={() => setRetroItineraryJourney(journey)}
                       onFlyingClick={() => handleFlyingClick(journey)}
-                      onMapClick={(e) => handleMapClick(e, journey)}
+                      onMapClick={(e: React.MouseEvent) => handleMapClick(e, journey)}
                       isFlying={flyingJourneys.has(journey.city)}
                       formatDate={formatDate}
                       formatScheduleDate={formatScheduleDate}
@@ -380,7 +490,7 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
                       onViewFullItinerary={() => setFullItineraryJourney(journey)}
                       onViewRetroItinerary={() => setRetroItineraryJourney(journey)}
                       onFlyingClick={() => handleFlyingClick(journey)}
-                      onMapClick={(e) => handleMapClick(e, journey)}
+                      onMapClick={(e: React.MouseEvent) => handleMapClick(e, journey)}
                       isFlying={flyingJourneys.has(journey.city)}
                       formatDate={formatDate}
                       formatScheduleDate={formatScheduleDate}
@@ -410,7 +520,7 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
                       onViewFullItinerary={() => setFullItineraryJourney(journey)}
                       onViewRetroItinerary={() => setRetroItineraryJourney(journey)}
                       onFlyingClick={() => handleFlyingClick(journey)}
-                      onMapClick={(e) => handleMapClick(e, journey)}
+                      onMapClick={(e: React.MouseEvent) => handleMapClick(e, journey)}
                       isFlying={flyingJourneys.has(journey.city)}
                       formatDate={formatDate}
                       formatScheduleDate={formatScheduleDate}
@@ -427,11 +537,11 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
         </DialogContent>
       </Dialog>
 
-      {/* Full Itinerary Popup - Cute Illustrated Travel Diary/Scrapbook Poster */}
+      {/* Full Itinerary Popup - Doodle/Scrapbook Style */}
       <Dialog open={!!fullItineraryJourney} onOpenChange={() => setFullItineraryJourney(null)}>
         <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden z-[3200] p-0 bg-[#fef9f3] border-none">
           {fullItineraryJourney && (
-            <ScrapbookItineraryView 
+            <DoodleItineraryDialogContent 
               journey={fullItineraryJourney}
               formatDate={formatDate}
               formatDateRange={formatDateRange}
@@ -442,11 +552,11 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
         </DialogContent>
       </Dialog>
 
-      {/* Retro Itinerary Popup - Vintage Postcard Theme */}
+      {/* Retro Itinerary Popup - Vintage Postcard Style */}
       <Dialog open={!!retroItineraryJourney} onOpenChange={() => setRetroItineraryJourney(null)}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden z-[3200] p-0 bg-[#f5e6d3] border-none">
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden z-[3200] p-0 border-none">
           {retroItineraryJourney && (
-            <RetroItineraryView 
+            <RetroItineraryDialogContent 
               journey={retroItineraryJourney}
               formatDate={formatDate}
               formatDateRange={formatDateRange}
@@ -457,14 +567,14 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
         </DialogContent>
       </Dialog>
 
-      {/* Edit Schedule Item Popup */}
+      {/* Edit Schedule Item Dialog */}
       <Dialog open={editPopupOpen} onOpenChange={setEditPopupOpen}>
-        <DialogContent className="max-w-md z-[3300]">
+        <DialogContent className="z-[3300]">
           <DialogHeader>
             <DialogTitle>Edit Schedule Item</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleEditSubmit} className="space-y-4">
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="edit-date">Date</Label>
               <Input
                 id="edit-date"
@@ -474,7 +584,7 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
                 required
               />
             </div>
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="edit-time">Time</Label>
               <Input
                 id="edit-time"
@@ -484,22 +594,20 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-location">Location *</Label>
+            <div>
+              <Label htmlFor="edit-location">Location</Label>
               <Input
                 id="edit-location"
-                type="text"
                 value={editForm.location}
                 onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
                 placeholder="Enter location"
                 required
               />
             </div>
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="edit-activity">Activity</Label>
               <Input
                 id="edit-activity"
-                type="text"
                 value={editForm.activity}
                 onChange={(e) => setEditForm({ ...editForm, activity: e.target.value })}
                 placeholder="Enter activity"
@@ -519,149 +627,4 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
       </Dialog>
     </>
   );
-}
-
-// Journey Card Component
-interface JourneyCardProps {
-  journey: Journey;
-  isExpanded: boolean;
-  onToggle: () => void;
-  onViewFullItinerary: () => void;
-  onViewRetroItinerary: () => void;
-  onFlyingClick: () => void;
-  onMapClick: (e: React.MouseEvent) => void;
-  isFlying: boolean;
-  formatDate: (timestamp: bigint) => string;
-  formatScheduleDate: (timestamp: bigint) => string;
-  formatTime: (timeString: string) => string;
-  onSixDotClick: (item: ScheduleItem, journey: Journey) => void;
-  badgeColor: 'orange' | 'green' | 'blue';
-  defaultSearchPlace: string;
-}
-
-function JourneyCard({
-  journey,
-  isExpanded,
-  onToggle,
-  onViewFullItinerary,
-  onViewRetroItinerary,
-  onFlyingClick,
-  onMapClick,
-  isFlying,
-  formatDate,
-  formatScheduleDate,
-  formatTime,
-  onSixDotClick,
-  badgeColor,
-  defaultSearchPlace
-}: JourneyCardProps) {
-  const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.city);
-
-  const badgeColorClass = {
-    orange: 'bg-orange-500 hover:bg-orange-600',
-    green: 'bg-green-500 hover:bg-green-600',
-    blue: 'bg-blue-500 hover:bg-blue-600'
-  }[badgeColor];
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <CardTitle className="text-lg">{journey.city}</CardTitle>
-              <Badge className={badgeColorClass}>
-                {badgeColor === 'orange' ? 'Live' : badgeColor === 'green' ? 'Upcoming' : 'Past'}
-              </Badge>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {formatDate(journey.startDate)} - {formatDate(journey.endDate)}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onFlyingClick}
-              className={isFlying ? 'bg-blue-100 dark:bg-blue-900' : ''}
-              title={isFlying ? `Stop flying to ${journey.city}` : `Fly from ${defaultSearchPlace} to ${journey.city}`}
-            >
-              <Plane className={`h-4 w-4 ${isFlying ? 'animate-pulse' : ''}`} />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onMapClick}
-              title="View on 2D Map"
-            >
-              <MapIcon className="h-4 w-4" />
-              <span className="ml-1 text-xs">2D</span>
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={onToggle}
-            >
-              {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <Collapsible open={isExpanded}>
-        <CollapsibleContent>
-          <CardContent className="pt-0">
-            {scheduleWithDays.length > 0 ? (
-              <div className="space-y-4">
-                {scheduleWithDays.map(([dayLabel, items]) => (
-                  <div key={dayLabel} className="space-y-2">
-                    <h4 className="font-semibold text-sm">{dayLabel}</h4>
-                    <div className="space-y-2">
-                      {items.map((item, idx) => (
-                        <div key={idx} className="flex items-start gap-2 text-sm p-2 bg-muted/50 rounded">
-                          <div className="flex-1">
-                            <div className="font-medium">{formatTime(item.time)} - {item.location}</div>
-                            <div className="text-muted-foreground">{item.activity}</div>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => onSixDotClick(item, journey)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-                <div className="flex gap-2 pt-2">
-                  <Button size="sm" variant="outline" onClick={onViewFullItinerary} className="flex-1">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Doodle View
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={onViewRetroItinerary} className="flex-1">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Retro View
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No schedule items yet</p>
-            )}
-          </CardContent>
-        </CollapsibleContent>
-      </Collapsible>
-    </Card>
-  );
-}
-
-// Scrapbook Itinerary View Component (placeholder - keeping existing implementation)
-function ScrapbookItineraryView({ journey, formatDate, formatDateRange, formatScheduleDate, formatTime }: any) {
-  return <div className="p-8">Scrapbook view for {journey.city}</div>;
-}
-
-// Retro Itinerary View Component (placeholder - keeping existing implementation)
-function RetroItineraryView({ journey, formatDate, formatDateRange, formatScheduleDate, formatTime }: any) {
-  return <div className="p-8">Retro view for {journey.city}</div>;
 }

@@ -1,26 +1,41 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-14T13:16:30.706Z",
-  "summary": "Diff wires a new TraveloguePanel -> LocationMapExplorer callback (onJourney2DMap) and adds a journeyCityFilter prop to MapComponent to show schedule markers on the 2D map. However, based on the available evidence, it is unclear whether schedule markers are filtered to a specific journey (vs. city-wide), and the map-centering behavior via journey city search is not fully evidenced due to truncation.",
+  "generatedAt": "2026-02-15T13:24:17.224Z",
+  "summary": "A new utility module for grouping schedule items by day and sorting them chronologically was added, and MapComponent.tsx now imports it along with existing day-color helpers. However, the provided diff snippet does not contain the actual Leaflet polyline creation/removal/rendering logic, so the core map visualization requirements (drawing per-day lines, using day color, cleanup on re-render, and scoping to schedule markers only) cannot be verified from the evidence shown. The diff summary also indicates multiple unrelated UI/admin/search enhancements that were not requested.",
   "missing_requirements": [
     {
-      "id": "REQ-2",
-      "requirement": "Ensure that only schedule items belonging to the specific selected journey are shown as markers (not schedule items from other journeys).",
-      "reason": "The implemented plumbing appears to pass only a journey city string (onJourney2DMap?: (journeyCity: string) => void) and MapComponent adds a journeyCityFilter. Filtering by city does not necessarily guarantee filtering to a single journey, and the diff summary does not show use of a journey identifier to filter schedule items strictly to that journey.",
+      "id": "REQ-1",
+      "requirement": "Draw a visible route line on the 2D map linking all schedule items occurring on the same calendar day (only for the schedule SVG/text marker elements in scope), and ensure lines update/remove cleanly when schedule items change (no duplicated/stacked polylines).",
+      "reason": "The diff shows route-building utilities and an import into MapComponent, but does not show any Leaflet polyline creation, layer scoping, or cleanup/removal logic in the provided MapComponent.tsx excerpt. Therefore the actual on-map rendering and correct update/removal behavior cannot be confirmed.",
       "evidence": [
-        "frontend/src/components/TraveloguePanel.tsx",
-        "frontend/src/components/MapComponent.tsx",
-        "frontend/src/pages/LocationMapExplorer.tsx"
+        "frontend/src/components/MapComponent.tsx (truncated; only shows imports incl. buildDayRoutes, no polyline rendering shown)",
+        "frontend/src/utils/scheduleRouteUtils.ts (builds day routes but does not render/remove polylines)"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "For each day’s route line, connect schedule items in chronological order and set the route stroke color to match the existing day color used for that day’s schedule item logo/label; ensure different days render as separate lines.",
+      "reason": "Chronological ordering is implemented in the utility (sort by HH:mm), but the diff does not show polyline rendering or applying stroke colors via getDayColor/computeDayIndex, nor does it show explicit separation into per-day Leaflet polylines. Thus the per-day colored line rendering cannot be verified from the provided snippet.",
+      "evidence": [
+        "frontend/src/utils/scheduleRouteUtils.ts (sortScheduleItemsByTime, buildDayRoutes)",
+        "frontend/src/components/MapComponent.tsx (truncated; imports getDayColor/getDayLabel/computeDayIndex and buildDayRoutes, but no usage shown)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Changed/added a custom black SVG icon for TravelSpot type \"City\" (and other travel spot icon handling changes).",
-      "reason": "The BuildRequest is focused on wiring the Travelogue 2D Map button and showing journey schedule items; it does not request changes to travel spot iconography.",
+      "description": "Changed/added a custom black 'City' travel-spot SVG icon (and related travel spot icon mapping adjustments).",
+      "reason": "The BuildRequest is limited to drawing same-day schedule route lines; modifying travel spot icons is unrelated and not requested.",
       "evidence": [
-        "frontend/src/components/MapComponent.tsx"
+        "frontend/src/components/MapComponent.tsx (truncated; getTravelSpotIcon 'city' case uses a new inline SVG)"
+      ]
+    },
+    {
+      "description": "Additional unrelated frontend features described in the diff summary (e.g., BackendDebugger in App, enhanced country search UX, paginated city browsing hook, index.css search bar width change, admin calendar popover with drag-select date range, media gallery tabbed enhancements, etc.).",
+      "reason": "These items go beyond the stated non-goals (no redesign/additional scheduling features beyond route line visualization; no unrelated map/UI changes). The summary indicates scope expansion not requested in the BuildRequest.",
+      "evidence": [
+        "frontend-file-summaries.txt (describes multiple enhancements unrelated to route-line visualization)"
       ]
     }
   ],
@@ -28,8 +43,7 @@
   "changed_files": [
     "frontend-file-summaries.txt",
     "frontend/src/components/MapComponent.tsx",
-    "frontend/src/components/TraveloguePanel.tsx",
-    "frontend/src/pages/LocationMapExplorer.tsx",
+    "frontend/src/utils/scheduleRouteUtils.ts",
     "project_state.json"
   ]
 }
