@@ -1,49 +1,56 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T13:24:17.224Z",
-  "summary": "A new utility module for grouping schedule items by day and sorting them chronologically was added, and MapComponent.tsx now imports it along with existing day-color helpers. However, the provided diff snippet does not contain the actual Leaflet polyline creation/removal/rendering logic, so the core map visualization requirements (drawing per-day lines, using day color, cleanup on re-render, and scoping to schedule markers only) cannot be verified from the evidence shown. The diff summary also indicates multiple unrelated UI/admin/search enhancements that were not requested.",
+  "generatedAt": "2026-02-16T02:04:45.471Z",
+  "summary": "The diff does not provide direct code evidence that the three requested map/schedule fixes (auto-refresh of journey schedule overlays, stronger route arrows, richer schedule popup content) were implemented. The only clearly evidenced changes are an unrequested TravelSpot 'city' icon change in MapComponent and the addition of day-color/label/context helper utilities.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Draw a visible route line on the 2D map linking all schedule items occurring on the same calendar day (only for the schedule SVG/text marker elements in scope), and ensure lines update/remove cleanly when schedule items change (no duplicated/stacked polylines).",
-      "reason": "The diff shows route-building utilities and an import into MapComponent, but does not show any Leaflet polyline creation, layer scoping, or cleanup/removal logic in the provided MapComponent.tsx excerpt. Therefore the actual on-map rendering and correct update/removal behavior cannot be confirmed.",
+      "requirement": "Fix the 2D map journey schedule overlay so that schedule items/markers and route lines appear immediately after the user clicks the Map button in the Travelogue (without needing a page refresh). Ensure MapComponent re-renders schedule markers and route overlays whenever the Travelogue-provided journey city filter changes and/or the corresponding schedule query returns data.",
+      "reason": "No diff evidence shows logic that re-renders schedule markers/routes on journeyCityFilter changes or schedule-query completion. The provided MapComponent snippet only shows imports and a TravelSpot icon change; no overlay refresh behavior is shown.",
       "evidence": [
-        "frontend/src/components/MapComponent.tsx (truncated; only shows imports incl. buildDayRoutes, no polyline rendering shown)",
-        "frontend/src/utils/scheduleRouteUtils.ts (builds day routes but does not render/remove polylines)"
+        "frontend/src/components/MapComponent.tsx (truncated snippet shows icon mapping change but no schedule overlay refresh logic)"
       ]
     },
     {
       "id": "REQ-2",
-      "requirement": "For each day’s route line, connect schedule items in chronological order and set the route stroke color to match the existing day color used for that day’s schedule item logo/label; ensure different days render as separate lines.",
-      "reason": "Chronological ordering is implemented in the utility (sort by HH:mm), but the diff does not show polyline rendering or applying stroke colors via getDayColor/computeDayIndex, nor does it show explicit separation into per-day Leaflet polylines. Thus the per-day colored line rendering cannot be verified from the provided snippet.",
+      "requirement": "Make the route line arrow effect stronger on the 2D map by increasing arrow frequency and increasing arrow size slightly, while keeping arrow direction aligned with the route’s travel order.",
+      "reason": "No diff evidence shows any adjustments to route arrow rendering parameters (frequency/spacing/size) or polyline decorator logic. The visible snippet does not include any route-arrow-related code.",
       "evidence": [
-        "frontend/src/utils/scheduleRouteUtils.ts (sortScheduleItemsByTime, buildDayRoutes)",
-        "frontend/src/components/MapComponent.tsx (truncated; imports getDayColor/getDayLabel/computeDayIndex and buildDayRoutes, but no usage shown)"
+        "frontend/src/components/MapComponent.tsx (truncated; no arrow rendering changes visible)"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Enhance the schedule item popup box on the 2D map to display richer details: show time in 12-hour format with AM/PM, show day context, and show subject titles (activity as primary, location as secondary when available), with English user-facing text.",
+      "reason": "Although a new helper getDayContextString() is added, the diff does not show any popup rendering changes in MapComponent (time formatting, day label/context display, activity/location lines).",
+      "evidence": [
+        "frontend/src/utils/scheduleDayStyling.ts (adds getDayContextString but no popup usage shown)",
+        "frontend/src/components/MapComponent.tsx (truncated; popup content changes not visible)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Changed/added a custom black 'City' travel-spot SVG icon (and related travel spot icon mapping adjustments).",
-      "reason": "The BuildRequest is limited to drawing same-day schedule route lines; modifying travel spot icons is unrelated and not requested.",
+      "description": "Changed the TravelSpot icon mapping for spot type 'city' to a custom black SVG (and associated comment about using a black city icon instead of three dots).",
+      "reason": "Not requested by any requirement; BuildRequest constraints explicitly discourage redesigning unrelated parts of the map UI beyond what is needed for the three fixes.",
       "evidence": [
-        "frontend/src/components/MapComponent.tsx (truncated; getTravelSpotIcon 'city' case uses a new inline SVG)"
+        "frontend/src/components/MapComponent.tsx (getTravelSpotIcon: new 'city' SVG icon and comment)"
       ]
     },
     {
-      "description": "Additional unrelated frontend features described in the diff summary (e.g., BackendDebugger in App, enhanced country search UX, paginated city browsing hook, index.css search bar width change, admin calendar popover with drag-select date range, media gallery tabbed enhancements, etc.).",
-      "reason": "These items go beyond the stated non-goals (no redesign/additional scheduling features beyond route line visualization; no unrelated map/UI changes). The summary indicates scope expansion not requested in the BuildRequest.",
+      "description": "Introduced/modified day label color palette utilities and added getDayLabel()/getDayColor()/computeDayIndex()/getDayContextString() helpers.",
+      "reason": "REQ-3 asks for day context in the schedule popup, but the diff does not show these being used in the popup; the broader day-label color system (vibrant palette, D1/D2 labels) is not explicitly requested.",
       "evidence": [
-        "frontend-file-summaries.txt (describes multiple enhancements unrelated to route-line visualization)"
+        "frontend/src/utils/scheduleDayStyling.ts"
       ]
     }
   ],
-  "confidence": 0.62,
+  "confidence": 0.68,
   "changed_files": [
     "frontend-file-summaries.txt",
     "frontend/src/components/MapComponent.tsx",
-    "frontend/src/utils/scheduleRouteUtils.ts",
+    "frontend/src/utils/scheduleDayStyling.ts",
     "project_state.json"
   ]
 }

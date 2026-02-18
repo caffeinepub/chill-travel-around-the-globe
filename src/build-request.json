@@ -1,68 +1,76 @@
 {
   "kind": "build_request",
-  "title": "Draw same-day route lines between schedule items on the map (chronological order)",
+  "title": "Fix journey schedule markers auto-render on 2D map, strengthen route arrows, and enrich schedule popup details",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "In the 2D map schedule-item rendering (the schedule item SVG/text marker elements identified by the user’s selected XPaths), draw a visible route line that links all schedule items occurring on the same calendar day.",
+      "text": "Fix the 2D map journey schedule overlay so that schedule items/markers and route lines appear immediately after the user clicks the Map button in the Travelogue (without needing a page refresh). Ensure MapComponent re-renders schedule markers and route overlays whenever the Travelogue-provided journey city filter changes and/or the corresponding schedule query returns data.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-user-1"
         ],
         "quotes": [
-          "1) Link the same day schedule items with a route line (same color as the logo)"
+          "The schedule items doesn't show up automatically when clicking map button under the travelogue and has to refresh the page for it to pop up, could you solve it?"
         ]
       },
       "acceptanceCriteria": [
-        "When viewing schedule items on the 2D map, schedule items that share the same date are connected by a continuous line.",
-        "The route line is only applied to the schedule-item map elements in scope (the selected schedule SVG/text marker elements), and does not change unrelated map layers (travel spots, bookmarks, etc.).",
-        "If a day has fewer than 2 schedule items with valid coordinates, no route line is drawn for that day.",
-        "Route lines are removed/updated correctly when the underlying schedule items change (no duplicate/stacked old polylines after re-render)."
+        "From the Travelogue panel, clicking the Map (2D) button for a journey shows that journey’s schedule markers/route on the map without a manual browser refresh.",
+        "Switching between different journeys via the Travelogue Map button updates the schedule markers/route to match the newly selected journey.",
+        "No regression: existing travel spot markers and bookmark markers still load and remain interactive as before."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "For each day’s route line, order the connected schedule items chronologically starting from the earliest item of that day, and use a stroke color that matches the schedule item logo/day color used for that same day.",
+      "text": "Make the route line arrow effect stronger on the 2D map by increasing arrow frequency (more arrows along each route segment) and increasing arrow size slightly, while keeping arrow direction aligned with the route’s travel order.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-user-1"
         ],
         "quotes": [
-          "2) starting the route line with the earliest,  in chronological order, of each day",
-          "1) Link the same day schedule items with a route line (same color as the logo)"
+          "Could you make the arrow effect in the route line stronger (more arrows and the arrow a bit larger)"
         ]
       },
       "acceptanceCriteria": [
-        "Within each day group, the polyline path connects schedule items sorted by their time (earliest to latest) for that day.",
-        "The route line stroke color for a given day matches the day color used by that day’s schedule item logo/label styling (i.e., consistent with the existing day-based color logic).",
-        "Different days render as separate lines (no cross-day connections)."
+        "Route arrows are visibly more frequent along the route line than before.",
+        "Route arrows are visibly larger than before and remain readable at typical zoom levels.",
+        "Arrow direction continues to correctly indicate travel direction along the route."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Enhance the schedule item popup box on the 2D map to display richer details: show time in 12-hour format with AM/PM, show the day context (e.g., the schedule day label and/or weekday + date derived from the schedule item date), and show subject titles (use the schedule item’s activity as the primary title and include location as a secondary line when available).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-user-1"
+        ],
+        "quotes": [
+          "Enhance the details of the schedule item popup box, for example: add AM/PM to the time, add the Day, add subject titles"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When clicking a schedule marker, the popup shows the time with AM/PM (e.g., “3:05 PM”).",
+        "The popup shows the day context (day label and/or weekday/date) for the clicked schedule item.",
+        "The popup shows a clear subject/title line for the schedule item (activity), and includes location as a secondary detail when present.",
+        "User-facing text in the popup is in English."
       ]
     }
   ],
   "constraints": [
-    "Frontend immutable paths must not be edited: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui/*.",
-    "Respect the existing Leaflet-based map architecture (no new backend services, no external databases, no real-time sockets)."
+    "Apply changes only to the selected UI areas related to: (1) Travelogue Map button -> 2D map schedule overlay refresh behavior, (2) the map route line arrow rendering, and (3) the schedule item popup content.",
+    "Do not edit files under frontend/src/components/ui (shadcn components are read-only).",
+    "Do not edit frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, or frontend/src/main.tsx."
   ],
   "nonGoals": [
-    "Do not change backend data models or persistence for schedule items.",
-    "Do not add new scheduling features (editing, reordering, or new filters) beyond drawing the route line and enforcing chronological connection order.",
-    "Do not redesign the overall map UI beyond adding the route-line visualization."
+    "Do not add new authentication methods or third-party auth providers.",
+    "Do not introduce new backend services or external databases.",
+    "Do not redesign unrelated parts of the map UI (travel spots, bookmarks, media popups) beyond what is needed to satisfy the three requested fixes."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

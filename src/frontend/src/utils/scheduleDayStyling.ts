@@ -1,60 +1,79 @@
-/**
- * Utility functions for schedule day-based styling (labels and colors)
- */
+import { ScheduleItem } from '@/backend';
 
-// Day color palette - each day gets a distinct color
+/**
+ * Color palette for day labels (D1, D2, D3, etc.)
+ * Using vibrant, distinct colors for better visibility
+ */
 const DAY_COLORS = [
-  '#3b82f6', // Day 1: Blue
-  '#10b981', // Day 2: Green
-  '#f59e0b', // Day 3: Amber
-  '#ef4444', // Day 4: Red
-  '#8b5cf6', // Day 5: Purple
-  '#ec4899', // Day 6: Pink
-  '#06b6d4', // Day 7: Cyan
-  '#f97316', // Day 8: Orange
-  '#14b8a6', // Day 9: Teal
-  '#a855f7', // Day 10: Violet
+  '#ef4444', // Red (Day 1)
+  '#f97316', // Orange (Day 2)
+  '#eab308', // Yellow (Day 3)
+  '#22c55e', // Green (Day 4)
+  '#06b6d4', // Cyan (Day 5)
+  '#3b82f6', // Blue (Day 6)
+  '#8b5cf6', // Purple (Day 7)
+  '#ec4899', // Pink (Day 8)
+  '#f43f5e', // Rose (Day 9)
+  '#14b8a6', // Teal (Day 10)
 ];
 
 /**
- * Get color for a specific day index (0-based)
- * Uses modulo to cycle through colors if there are more days than colors
+ * Get color for a given day index
+ * Cycles through the color palette if there are more than 10 days
  */
 export function getDayColor(dayIndex: number): string {
   return DAY_COLORS[dayIndex % DAY_COLORS.length];
 }
 
 /**
- * Convert 0-based day index to day label (e.g., 0 -> "D1", 1 -> "D2")
+ * Get day label (D1, D2, D3, etc.) for a given day index
  */
 export function getDayLabel(dayIndex: number): string {
   return `D${dayIndex + 1}`;
 }
 
 /**
- * Compute day index for a schedule item within a journey's schedule
- * Groups schedule items by date and returns the day index (0-based)
+ * Compute day index for a schedule item based on its date
+ * Returns the zero-based day index within the journey
+ * 
+ * @param itemDate - The date of the schedule item (nanoseconds)
+ * @param allItems - All schedule items in the journey (for determining day sequence)
+ * @returns Zero-based day index (0 for first day, 1 for second day, etc.)
  */
-export function computeDayIndex(
-  scheduleItem: { date: bigint },
-  allScheduleItems: { date: bigint }[]
-): number {
-  // Sort all items by date
-  const sortedItems = [...allScheduleItems].sort((a, b) => {
-    if (a.date < b.date) return -1;
-    if (a.date > b.date) return 1;
-    return 0;
-  });
+export function computeDayIndex(itemDate: bigint, allItems: ScheduleItem[]): number {
+  // Convert all dates to calendar days (YYYY-MM-DD)
+  const itemDateMs = Number(itemDate) / 1_000_000;
+  const itemDay = new Date(itemDateMs).toISOString().split('T')[0];
 
-  // Find unique dates to determine day groupings
-  const uniqueDates: bigint[] = [];
-  sortedItems.forEach(item => {
-    if (!uniqueDates.some(d => d === item.date)) {
-      uniqueDates.push(item.date);
-    }
-  });
+  // Get unique days sorted chronologically
+  const uniqueDays = Array.from(
+    new Set(
+      allItems.map(item => {
+        const dateMs = Number(item.date) / 1_000_000;
+        return new Date(dateMs).toISOString().split('T')[0];
+      })
+    )
+  ).sort();
 
-  // Find which day index this schedule item belongs to
-  const dayIndex = uniqueDates.findIndex(d => d === scheduleItem.date);
+  // Find the index of the current item's day
+  const dayIndex = uniqueDays.indexOf(itemDay);
   return dayIndex >= 0 ? dayIndex : 0;
+}
+
+/**
+ * Get a human-readable day context string (weekday + date)
+ * 
+ * @param dateNs - Date in nanoseconds
+ * @returns Formatted string like "Monday, Jan 15"
+ */
+export function getDayContextString(dateNs: bigint): string {
+  try {
+    const dateMs = Number(dateNs) / 1_000_000;
+    const date = new Date(dateMs);
+    const weekday = date.toLocaleDateString('en-US', { weekday: 'long' });
+    const monthDay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `${weekday}, ${monthDay}`;
+  } catch {
+    return '';
+  }
 }

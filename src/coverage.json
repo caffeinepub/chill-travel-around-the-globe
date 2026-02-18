@@ -1,39 +1,50 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T13:24:17.227Z",
+  "generatedAt": "2026-02-16T02:04:45.473Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 2,
+    "total": 3,
+    "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "In the 2D map schedule-item rendering (the schedule item SVG/text marker elements identified by the user’s selected XPaths), draw a visible route line that links all schedule items occurring on the same calendar day.",
+        "summary": "Fix the 2D map journey schedule overlay so that schedule items/markers and route lines appear immediately after the user clicks the Map button in the Travelogue (without needing a page refresh). Ensure MapComponent re-renders schedule markers and route overlays whenever the Travelogue-provided journey city filter changes and/or the corresponding schedule query returns data.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/scheduleRouteUtils.ts",
-          "frontend/src/components/MapComponent.tsx"
+          "frontend/src/components/MapComponent.tsx",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/LocationMapExplorer.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/utils/scheduleRouteUtils.ts",
           "frontend/src/components/MapComponent.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "For each day’s route line, order the connected schedule items chronologically starting from the earliest item of that day, and use a stroke color that matches the schedule item logo/day color used for that same day.",
+        "summary": "Make the route line arrow effect stronger on the 2D map by increasing arrow frequency (more arrows along each route segment) and increasing arrow size slightly, while keeping arrow direction aligned with the route’s travel order.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/scheduleRouteUtils.ts",
           "frontend/src/components/MapComponent.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/utils/scheduleRouteUtils.ts",
           "frontend/src/components/MapComponent.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Enhance the schedule item popup box on the 2D map to display richer details: show time in 12-hour format with AM/PM, show the day context (e.g., the schedule day label and/or weekday + date derived from the schedule item date), and show subject titles (use the schedule item’s activity as the primary title and include location as a secondary line when available).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/MapComponent.tsx",
+          "frontend/src/utils/scheduleDayStyling.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/MapComponent.tsx",
+          "frontend/src/utils/scheduleDayStyling.ts"
         ]
       }
     ]
@@ -44,7 +55,7 @@
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/components/MapComponent.tsx",
-    "frontend/src/utils/scheduleRouteUtils.ts",
+    "frontend/src/utils/scheduleDayStyling.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

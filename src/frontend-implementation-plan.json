@@ -1,48 +1,69 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Same-day chronological route polylines between schedule items on the 2D Leaflet map",
+  "title": "2D map schedule overlay refresh, stronger route arrows, and richer schedule popups",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Draw a visible route line on the 2D Leaflet map that links schedule-item marker elements occurring on the same calendar day, scoped only to schedule items.",
+      "summary": "Ensure the 2D map immediately renders and refreshes journey schedule markers/routes when the Travelogue Map (2D) selection changes and when schedule data arrives.",
       "acceptanceCriteria": [
-        "When viewing schedule items on the 2D map, schedule items that share the same date are connected by a continuous line.",
-        "The route line is only applied to the schedule-item map elements in scope (the selected schedule SVG/text marker elements), and does not change unrelated map layers (travel spots, bookmarks, etc.).",
-        "If a day has fewer than 2 schedule items with valid coordinates, no route line is drawn for that day.",
-        "Route lines are removed/updated correctly when the underlying schedule items change (no duplicate/stacked old polylines after re-render)."
+        "From the Travelogue panel, clicking the Map (2D) button for a journey shows that journey’s schedule markers/route on the map without a manual browser refresh.",
+        "Switching between different journeys via the Travelogue Map button updates the schedule markers/route to match the newly selected journey.",
+        "No regression: existing travel spot markers and bookmark markers still load and remain interactive as before."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/scheduleRouteUtils.ts",
-          "operation": "create",
-          "description": "Add frontend-only helpers to: (1) group schedule items by calendar day using the ScheduleItem.date value, (2) filter to items with valid coordinates, and (3) build per-day ordered coordinate sequences suitable for Leaflet polyline rendering."
-        },
-        {
           "path": "frontend/src/components/MapComponent.tsx",
           "operation": "modify",
-          "description": "Add a dedicated Leaflet layer (e.g., a layerGroup stored in a ref) for schedule-item route polylines, and render one polyline per day group derived from the same schedule items used for schedule marker rendering (to keep scope limited to the selected schedule SVG/text marker elements). Ensure the layer is cleared/replaced on relevant data changes and removed on unmount to prevent duplicate/stacked polylines and to avoid impacting travel spot/bookmark layers."
+          "description": "Refactor the Leaflet schedule overlay lifecycle to be data-driven: maintain dedicated Leaflet layer group(s) for schedule markers and schedule route lines, and rebuild/clear them in a useEffect that depends on (a) Leaflet/map readiness, (b) journeyCityFilter, and (c) the journey schedule query result (journeyScheduleItems / scheduleItemsWithCoords as applicable). Ensure previous journey overlays are removed when the filter changes, and ensure overlay render runs when data arrives after the Map view is shown (no refresh needed)."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Adjust the schedule-query hook used by MapComponent (e.g., useGetScheduleItems) so it refetches correctly when the journey city changes and avoids stale/disabled states when switching from empty -> selected journey city. Ensure the query key includes the journey city input and that the query is enabled only when the journey city is non-empty."
+        },
+        {
+          "path": "frontend/src/pages/LocationMapExplorer.tsx",
+          "operation": "modify",
+          "description": "Ensure the Travelogue Map (2D) action reliably triggers a map update when switching journeys by wiring MapComponent re-initialization only if needed (e.g., via a stable prop change strategy such as a key tied to selectedLocation + selectedJourneyCity) while preserving existing behaviors for focused travel spots and bookmarks."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Within each day, connect schedule items in chronological order and color each day’s route line to match the existing day-based schedule styling.",
+      "summary": "Increase route arrow frequency and slightly increase arrow size for the 2D schedule route lines while preserving correct direction.",
       "acceptanceCriteria": [
-        "Within each day group, the polyline path connects schedule items sorted by their time (earliest to latest) for that day.",
-        "The route line stroke color for a given day matches the day color used by that day’s schedule item logo/label styling (i.e., consistent with the existing day-based color logic).",
-        "Different days render as separate lines (no cross-day connections)."
+        "Route arrows are visibly more frequent along the route line than before.",
+        "Route arrows are visibly larger than before and remain readable at typical zoom levels.",
+        "Arrow direction continues to correctly indicate travel direction along the route."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/scheduleRouteUtils.ts",
+          "path": "frontend/src/components/MapComponent.tsx",
           "operation": "modify",
-          "description": "Implement robust chronological sorting within each day group based on ScheduleItem.time (e.g., parse HH:mm; push invalid/missing times to the end deterministically). Return per-day groups that preserve day separation and provide stable ordering for polyline point connection."
-        },
+          "description": "Update the schedule route polyline arrow styling parameters (the pattern spacing/repeat and arrowhead size) to produce more arrows per segment and a slightly larger arrow. Keep arrow placement aligned to the route’s coordinate order so direction remains correct."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Enrich the 2D map schedule marker popup with AM/PM time, day context (label and/or weekday/date), and clear subject titles (activity + optional location).",
+      "acceptanceCriteria": [
+        "When clicking a schedule marker, the popup shows the time with AM/PM (e.g., “3:05 PM”).",
+        "The popup shows the day context (day label and/or weekday/date) for the clicked schedule item.",
+        "The popup shows a clear subject/title line for the schedule item (activity), and includes location as a secondary detail when present.",
+        "User-facing text in the popup is in English."
+      ],
+      "file_operations": [
         {
           "path": "frontend/src/components/MapComponent.tsx",
           "operation": "modify",
-          "description": "When creating each day’s Leaflet polyline, apply a stroke color derived from the same day-based color logic already used for schedule item styling (use computeDayIndex + getDayColor from frontend/src/utils/scheduleDayStyling.ts against the same schedule item set). Ensure each day renders as its own distinct polyline with no cross-day points connected."
+          "description": "Enhance the schedule marker click handling and popup rendering to format time using 12-hour time with AM/PM, derive a day context string in English from the schedule item date (weekday + date), and display activity as the primary title with location as a secondary line when present. Where available, incorporate existing schedule day helpers (getDayLabel/computeDayIndex) to show a day label consistently."
+        },
+        {
+          "path": "frontend/src/utils/scheduleDayStyling.ts",
+          "operation": "modify",
+          "description": "Add/adjust a small utility (or exported helper) to support deriving a stable day label/day index for map popups from the currently displayed journey’s schedule items (without changing unrelated styling). Keep outputs English-friendly and consistent with existing day label conventions."
         }
       ]
     }

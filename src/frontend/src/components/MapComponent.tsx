@@ -177,6 +177,33 @@ async function geocodeLocation(locationName: string, cityBias?: string): Promise
   }
 }
 
+// Format time to 12-hour format with AM/PM
+function formatTime12Hour(time24: string): string {
+  try {
+    const [hours, minutes] = time24.split(':').map(Number);
+    if (isNaN(hours) || isNaN(minutes)) return time24;
+    
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const hours12 = hours % 12 || 12;
+    return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
+  } catch {
+    return time24;
+  }
+}
+
+// Get day context string (weekday and date)
+function getDayContext(dateNs: bigint): string {
+  try {
+    const dateMs = Number(dateNs) / 1_000_000;
+    const date = new Date(dateMs);
+    const weekday = date.toLocaleDateString('en-US', { weekday: 'long' });
+    const monthDay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `${weekday}, ${monthDay}`;
+  } catch {
+    return '';
+  }
+}
+
 export default function MapComponent({ 
   coordinates, 
   locationName, 
@@ -191,6 +218,7 @@ export default function MapComponent({
   const mapInstanceRef = useRef<any>(null);
   const textMarkerRef = useRef<any>(null);
   const globalMarkersRef = useRef<MarkerData[]>([]); // Global marker array
+  const scheduleLayerGroupRef = useRef<any>(null); // Layer group for schedule markers
   const routeLayerRef = useRef<any>(null); // Layer for schedule route polylines
   const bookmarkButtonRef = useRef<any>(null);
   const popupRef = useRef<any>(null);
@@ -225,7 +253,7 @@ export default function MapComponent({
   const { data: allBookmarks = [], isLoading: bookmarksLoading } = useGetMapBookmarks();
   
   // Get schedule items for the filtered journey city
-  const { data: journeyScheduleItems = [] } = useGetScheduleItems(journeyCityFilter || '');
+  const { data: journeyScheduleItems = [], isLoading: journeyScheduleLoading, isFetched: journeyScheduleFetched } = useGetScheduleItems(journeyCityFilter || '');
   
   // Get all travel spots for map display and layout preferences
   const { data: allTravelSpots = [], isLoading: allSpotsLoading } = useGetAllTravelSpotsForMap();
@@ -439,53 +467,30 @@ export default function MapComponent({
     }
   }, [bookmarkCoordinates, bookmarkName, bookmarkDescription, bookmarkCity, addBookmarkMutation, updateDashboard]);
 
+  // Handle schedule marker click
+  const handleScheduleMarkerClick = useCallback((e: any, item: ScheduleItem, dayLabel: string) => {
+    if (!mapRef.current) return;
+
+    const mapRect = mapRef.current.getBoundingClientRect();
+    const x = e.originalEvent.clientX - mapRect.left;
+    const y = e.originalEvent.clientY - mapRect.top;
+
+    setSelectedScheduleItem(item);
+    setSchedulePopupPosition({ x, y });
+    setShowSchedulePopup(true);
+  }, []);
+
   // Handle bookmark marker click
   const handleBookmarkMarkerClick = useCallback((e: any, bookmark: MapBookmark) => {
     if (!mapRef.current) return;
 
     const mapRect = mapRef.current.getBoundingClientRect();
-    const clickX = e.originalEvent.clientX - mapRect.left;
-    const clickY = e.originalEvent.clientY - mapRect.top;
+    const x = e.originalEvent.clientX - mapRect.left;
+    const y = e.originalEvent.clientY - mapRect.top;
 
     setSelectedBookmark(bookmark);
-    setBookmarkPopupPosition({ x: clickX, y: clickY });
+    setBookmarkPopupPosition({ x, y });
     setShowBookmarkPopup(true);
-
-    // Notify parent that bookmark was focused
-    if (onBookmarkFocused) {
-      onBookmarkFocused();
-    }
-  }, [onBookmarkFocused]);
-
-  // Handle travel spot marker click
-  const handleTravelSpotMarkerClick = useCallback((e: any, spot: TravelSpot) => {
-    if (!mapRef.current) return;
-
-    const mapRect = mapRef.current.getBoundingClientRect();
-    const clickX = e.originalEvent.clientX - mapRect.left;
-    const clickY = e.originalEvent.clientY - mapRect.top;
-
-    setSelectedTravelSpot(spot);
-    setTravelSpotPopupPosition({ x: clickX, y: clickY });
-    setShowTravelSpotPopup(true);
-
-    // Notify parent that travel spot was focused
-    if (onTravelSpotFocused) {
-      onTravelSpotFocused();
-    }
-  }, [onTravelSpotFocused]);
-
-  // Handle schedule marker click
-  const handleScheduleMarkerClick = useCallback((e: any, item: ScheduleItem) => {
-    if (!mapRef.current) return;
-
-    const mapRect = mapRef.current.getBoundingClientRect();
-    const clickX = e.originalEvent.clientX - mapRect.left;
-    const clickY = e.originalEvent.clientY - mapRect.top;
-
-    setSelectedScheduleItem(item);
-    setSchedulePopupPosition({ x: clickX, y: clickY });
-    setShowSchedulePopup(true);
   }, []);
 
   // Load Leaflet library
@@ -499,7 +504,13 @@ export default function MapComponent({
       const script = document.createElement('script');
       script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
       script.onload = () => {
-        setLeafletLoaded(true);
+        // Load Leaflet.PolylineDecorator plugin
+        const decoratorScript = document.createElement('script');
+        decoratorScript.src = 'https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js';
+        decoratorScript.onload = () => {
+          setLeafletLoaded(true);
+        };
+        document.head.appendChild(decoratorScript);
       };
       document.head.appendChild(script);
     } else if (window.L) {
@@ -511,22 +522,18 @@ export default function MapComponent({
   useEffect(() => {
     if (!leafletLoaded || !mapRef.current || mapInstanceRef.current) return;
 
-    const map = window.L.map(mapRef.current, {
+    const L = window.L;
+    const map = L.map(mapRef.current, {
       zoomControl: false,
     }).setView(coordinates, getInitialZoom());
 
-    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
       maxZoom: 19,
     }).addTo(map);
 
     // Add click handler for bookmark creation
     map.on('click', handleMapClick);
-
-    // Track zoom changes
-    map.on('zoomend', () => {
-      setZoom(map.getZoom());
-    });
 
     mapInstanceRef.current = map;
     hasInitializedRef.current = true;
@@ -542,159 +549,82 @@ export default function MapComponent({
 
   // Update map view when coordinates change
   useEffect(() => {
-    if (!mapInstanceRef.current || !hasInitializedRef.current) return;
+    if (!mapInstanceRef.current || !leafletLoaded) return;
 
     const map = mapInstanceRef.current;
-    const currentLocationKey = `${locationName}-${coordinates[0]}-${coordinates[1]}`;
+    const L = window.L;
 
     // Only update if this is a new search (different location)
-    if (lastSearchLocationRef.current !== currentLocationKey) {
-      lastSearchLocationRef.current = currentLocationKey;
+    if (lastSearchLocationRef.current !== locationName) {
+      lastSearchLocationRef.current = locationName;
       userHasInteractedRef.current = false;
+    }
 
-      // Fly to new coordinates with zoom level 15
-      map.flyTo(coordinates, 15, {
-        duration: 1.5,
-        easeLinearity: 0.25,
+    // Only auto-pan if user hasn't interacted with the map
+    if (!userHasInteractedRef.current) {
+      map.setView(coordinates, getInitialZoom(), {
+        animate: true,
+        duration: 1,
       });
     }
-  }, [coordinates, locationName]);
 
-  // Render schedule markers with day labels and route lines
-  useEffect(() => {
-    if (!mapInstanceRef.current || !window.L || !journeyCityFilter) return;
+    // Remove existing text marker if any
+    if (textMarkerRef.current) {
+      map.removeLayer(textMarkerRef.current);
+    }
 
-    const map = mapInstanceRef.current;
-
-    // Clear existing schedule markers
-    globalMarkersRef.current = globalMarkersRef.current.filter(markerData => {
-      if (markerData.type === 'Schedule') {
-        map.removeLayer(markerData.marker);
-        return false;
-      }
-      return true;
+    // Create a custom text marker for the location name
+    const textIcon = L.divIcon({
+      className: 'custom-text-marker',
+      html: `
+        <div style="
+          background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(37, 99, 235, 0.95));
+          color: white;
+          padding: 8px 16px;
+          border-radius: 20px;
+          font-weight: 600;
+          font-size: 14px;
+          white-space: nowrap;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+          border: 2px solid white;
+          text-align: center;
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+        ">
+          ${locationName}
+        </div>
+      `,
+      iconSize: [0, 0],
+      iconAnchor: [0, -10],
     });
 
-    // Clear existing route layer
-    if (routeLayerRef.current) {
-      map.removeLayer(routeLayerRef.current);
-      routeLayerRef.current = null;
-    }
+    textMarkerRef.current = L.marker(coordinates, { icon: textIcon }).addTo(map);
 
-    // Create a new layer group for routes
-    const routeLayer = window.L.layerGroup().addTo(map);
-    routeLayerRef.current = routeLayer;
-
-    // Geocode and render schedule items
-    const geocodeAndRenderSchedule = async () => {
-      const geocodedItems: Array<[ScheduleItem, [number, number]]> = [];
-
-      for (const item of journeyScheduleItems) {
-        const coords = await geocodeLocation(item.location, journeyCityFilter);
-        if (coords) {
-          geocodedItems.push([item, coords]);
-        } else {
-          console.warn(`Failed to geocode schedule location: ${item.location}`);
-        }
-      }
-
-      // Build route data grouped by day
-      const dayRoutes = buildDayRoutes(geocodedItems);
-
-      // Render markers for each schedule item
-      geocodedItems.forEach(([item, coords]) => {
-        const dayIndex = computeDayIndex(item, geocodedItems.map(([i]) => i));
-        const dayLabel = getDayLabel(dayIndex);
-        const dayColor = getDayColor(dayIndex);
-
-        // Create custom marker with day label
-        const scheduleIcon = window.L.divIcon({
-          className: 'custom-schedule-marker',
-          html: `
-            <div style="
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              gap: 4px;
-            ">
-              <div style="
-                padding: 4px 8px;
-                background: ${dayColor};
-                color: white;
-                border-radius: 12px;
-                font-size: 11px;
-                font-weight: 700;
-                white-space: nowrap;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-              ">${dayLabel}</div>
-              <div style="
-                width: 0;
-                height: 0;
-                border-left: 6px solid transparent;
-                border-right: 6px solid transparent;
-                border-top: 8px solid ${dayColor};
-              "></div>
-            </div>
-          `,
-          iconSize: [0, 0],
-          iconAnchor: [0, 32],
-        });
-
-        const marker = window.L.marker(coords, { icon: scheduleIcon }).addTo(map);
-        marker.on('click', (e: any) => handleScheduleMarkerClick(e, item));
-
-        globalMarkersRef.current.push({
-          marker,
-          type: 'Schedule',
-          city: journeyCityFilter,
-          name: item.location,
-        });
-      });
-
-      // Draw route lines for each day
-      dayRoutes.forEach(({ dayKey, coordinates: routeCoords, items }) => {
-        if (routeCoords.length < 2) return;
-
-        // Get day color from the first item in the route
-        const firstItem = items[0][0];
-        const dayIndex = computeDayIndex(firstItem, geocodedItems.map(([i]) => i));
-        const dayColor = getDayColor(dayIndex);
-
-        // Create polyline with day color
-        const polyline = window.L.polyline(routeCoords, {
-          color: dayColor,
-          weight: 3,
-          opacity: 0.7,
-          smoothFactor: 1,
-        }).addTo(routeLayer);
-      });
-
-      // Fit map to show all schedule markers
-      if (geocodedItems.length > 0) {
-        const bounds = window.L.latLngBounds(geocodedItems.map(([_, coords]) => coords));
-        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
-      }
+    // Track user interaction
+    const handleUserInteraction = () => {
+      userHasInteractedRef.current = true;
     };
 
-    geocodeAndRenderSchedule();
+    map.on('drag', handleUserInteraction);
+    map.on('zoom', handleUserInteraction);
 
-    // Cleanup on unmount or when journeyCityFilter changes
     return () => {
-      if (routeLayerRef.current && mapInstanceRef.current) {
-        mapInstanceRef.current.removeLayer(routeLayerRef.current);
-        routeLayerRef.current = null;
-      }
+      map.off('drag', handleUserInteraction);
+      map.off('zoom', handleUserInteraction);
     };
-  }, [journeyCityFilter, journeyScheduleItems, handleScheduleMarkerClick]);
+  }, [coordinates, locationName, leafletLoaded]);
 
-  // Render travel spots
+  // Render travel spot markers
   useEffect(() => {
-    if (!mapInstanceRef.current || !window.L) return;
+    if (!mapInstanceRef.current || !leafletLoaded || !window.L) return;
 
     const map = mapInstanceRef.current;
+    const L = window.L;
+
+    // Determine which travel spots to display
     const spotsToDisplay = layoutPreferences?.showAllTravelSpots ? allTravelSpots : travelSpots;
 
-    // Clear existing travel spot markers
+    // Remove existing travel spot markers from global array
     globalMarkersRef.current = globalMarkersRef.current.filter(markerData => {
       if (markerData.type === 'TravelSpot') {
         map.removeLayer(markerData.marker);
@@ -703,18 +633,31 @@ export default function MapComponent({
       return true;
     });
 
-    // Add travel spot markers
+    // Add new travel spot markers
     spotsToDisplay.forEach(spot => {
       const iconUrl = getTravelSpotIcon(spot.spotType);
-      const icon = window.L.icon({
+      const icon = L.icon({
         iconUrl,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32],
       });
 
-      const marker = window.L.marker(spot.coordinates, { icon }).addTo(map);
-      marker.on('click', (e: any) => handleTravelSpotMarkerClick(e, spot));
+      const marker = L.marker(spot.coordinates, { icon }).addTo(map);
 
+      marker.on('click', (e: any) => {
+        if (!mapRef.current) return;
+
+        const mapRect = mapRef.current.getBoundingClientRect();
+        const x = e.originalEvent.clientX - mapRect.left;
+        const y = e.originalEvent.clientY - mapRect.top;
+
+        setSelectedTravelSpot(spot);
+        setTravelSpotPopupPosition({ x, y });
+        setShowTravelSpotPopup(true);
+      });
+
+      // Store marker in global array
       globalMarkersRef.current.push({
         marker,
         type: 'TravelSpot',
@@ -723,16 +666,18 @@ export default function MapComponent({
       });
     });
 
+    // Update dashboard after adding markers
     updateDashboard();
-  }, [travelSpots, allTravelSpots, layoutPreferences, handleTravelSpotMarkerClick, updateDashboard]);
+  }, [travelSpots, allTravelSpots, layoutPreferences, leafletLoaded, updateDashboard]);
 
-  // Render bookmarks
+  // Render bookmark markers
   useEffect(() => {
-    if (!mapInstanceRef.current || !window.L) return;
+    if (!mapInstanceRef.current || !leafletLoaded || !window.L) return;
 
     const map = mapInstanceRef.current;
+    const L = window.L;
 
-    // Clear existing bookmark markers
+    // Remove existing bookmark markers from global array
     globalMarkersRef.current = globalMarkersRef.current.filter(markerData => {
       if (markerData.type === 'Bookmark') {
         map.removeLayer(markerData.marker);
@@ -741,9 +686,9 @@ export default function MapComponent({
       return true;
     });
 
-    // Add bookmark markers
+    // Add new bookmark markers
     allBookmarks.forEach(bookmark => {
-      const bookmarkIcon = window.L.divIcon({
+      const bookmarkIcon = L.divIcon({
         className: 'custom-bookmark-marker',
         html: `
           <div style="
@@ -767,9 +712,11 @@ export default function MapComponent({
         iconAnchor: [16, 16],
       });
 
-      const marker = window.L.marker(bookmark.coordinates, { icon: bookmarkIcon }).addTo(map);
+      const marker = L.marker(bookmark.coordinates, { icon: bookmarkIcon }).addTo(map);
+
       marker.on('click', (e: any) => handleBookmarkMarkerClick(e, bookmark));
 
+      // Store marker in global array
       globalMarkersRef.current.push({
         marker,
         type: 'Bookmark',
@@ -779,65 +726,236 @@ export default function MapComponent({
       });
     });
 
+    // Update dashboard after adding markers
     updateDashboard();
-  }, [allBookmarks, handleBookmarkMarkerClick, updateDashboard]);
+  }, [allBookmarks, leafletLoaded, handleBookmarkMarkerClick, updateDashboard]);
 
-  // Focus on travel spot when prop changes
+  // Render schedule markers and routes for journey city filter
+  useEffect(() => {
+    if (!mapInstanceRef.current || !leafletLoaded || !window.L) return;
+    if (!journeyCityFilter) return;
+
+    const map = mapInstanceRef.current;
+    const L = window.L;
+
+    // Clear existing schedule layer group
+    if (scheduleLayerGroupRef.current) {
+      map.removeLayer(scheduleLayerGroupRef.current);
+      scheduleLayerGroupRef.current = null;
+    }
+
+    // Clear existing route layer
+    if (routeLayerRef.current) {
+      map.removeLayer(routeLayerRef.current);
+      routeLayerRef.current = null;
+    }
+
+    // Remove existing schedule markers from global array
+    globalMarkersRef.current = globalMarkersRef.current.filter(markerData => {
+      if (markerData.type === 'Schedule') {
+        return false;
+      }
+      return true;
+    });
+
+    // Wait for schedule data to be fetched
+    if (journeyScheduleLoading || !journeyScheduleFetched) {
+      return;
+    }
+
+    // If no schedule items, nothing to render
+    if (!journeyScheduleItems || journeyScheduleItems.length === 0) {
+      return;
+    }
+
+    // Create a new layer group for schedule markers
+    scheduleLayerGroupRef.current = L.layerGroup().addTo(map);
+
+    // Geocode schedule items and create markers
+    const geocodeAndRenderSchedule = async () => {
+      const scheduleWithCoords: Array<[ScheduleItem, [number, number]]> = [];
+
+      for (const item of journeyScheduleItems) {
+        const coords = await geocodeLocation(item.location, journeyCityFilter);
+        if (coords) {
+          scheduleWithCoords.push([item, coords]);
+        } else {
+          console.warn(`Failed to geocode schedule location: ${item.location}`);
+        }
+      }
+
+      if (scheduleWithCoords.length === 0) {
+        return;
+      }
+
+      // Compute day indices for all items
+      const dayIndices = scheduleWithCoords.map(([item]) => computeDayIndex(item.date, journeyScheduleItems));
+
+      // Create markers for each schedule item
+      scheduleWithCoords.forEach(([item, coords], index) => {
+        const dayIndex = dayIndices[index];
+        const dayLabel = getDayLabel(dayIndex);
+        const dayColor = getDayColor(dayIndex);
+
+        const scheduleIcon = L.divIcon({
+          className: 'custom-schedule-marker',
+          html: `
+            <div style="
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 36px;
+              height: 36px;
+              background: ${dayColor};
+              border: 3px solid white;
+              border-radius: 50%;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+              cursor: pointer;
+              font-weight: 700;
+              font-size: 12px;
+              color: white;
+            ">
+              ${dayLabel}
+            </div>
+          `,
+          iconSize: [36, 36],
+          iconAnchor: [18, 18],
+        });
+
+        const marker = L.marker(coords, { icon: scheduleIcon }).addTo(scheduleLayerGroupRef.current);
+
+        marker.on('click', (e: any) => handleScheduleMarkerClick(e, item, dayLabel));
+
+        // Store marker in global array
+        globalMarkersRef.current.push({
+          marker,
+          type: 'Schedule',
+          city: journeyCityFilter,
+          name: item.location,
+        });
+      });
+
+      // Build per-day routes
+      const dayRoutes = buildDayRoutes(scheduleWithCoords);
+
+      // Create a layer group for routes
+      routeLayerRef.current = L.layerGroup().addTo(map);
+
+      // Draw route polylines for each day with enhanced arrows
+      dayRoutes.forEach(({ dayKey, coordinates, items }) => {
+        if (coordinates.length < 2) return;
+
+        const dayIndex = computeDayIndex(items[0][0].date, journeyScheduleItems);
+        const dayColor = getDayColor(dayIndex);
+
+        // Create polyline
+        const polyline = L.polyline(coordinates, {
+          color: dayColor,
+          weight: 4,
+          opacity: 0.7,
+          smoothFactor: 1,
+        }).addTo(routeLayerRef.current);
+
+        // Add enhanced arrow decorators with more arrows and larger size
+        if (L.polylineDecorator) {
+          const decorator = L.polylineDecorator(polyline, {
+            patterns: [
+              {
+                offset: '10%',
+                repeat: '15%', // More frequent arrows (was 25%)
+                symbol: L.Symbol.arrowHead({
+                  pixelSize: 14, // Larger arrows (was 10)
+                  polygon: false,
+                  pathOptions: {
+                    stroke: true,
+                    color: dayColor,
+                    weight: 3,
+                    opacity: 0.9,
+                  }
+                })
+              }
+            ]
+          }).addTo(routeLayerRef.current);
+        }
+      });
+
+      // Fit map to show all schedule markers
+      if (scheduleWithCoords.length > 0) {
+        const bounds = L.latLngBounds(scheduleWithCoords.map(([_, coords]) => coords));
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+      }
+    };
+
+    geocodeAndRenderSchedule();
+  }, [journeyCityFilter, journeyScheduleItems, journeyScheduleLoading, journeyScheduleFetched, leafletLoaded, handleScheduleMarkerClick]);
+
+  // Handle focused travel spot
   useEffect(() => {
     if (!mapInstanceRef.current || !focusedTravelSpot) return;
 
     const map = mapInstanceRef.current;
-    map.flyTo(focusedTravelSpot.coordinates, 16, {
-      duration: 1,
-    });
+    map.setView(focusedTravelSpot.coordinates, 16, { animate: true });
 
-    // Simulate click on the marker
-    const markerData = globalMarkersRef.current.find(
-      m => m.type === 'TravelSpot' && m.name === focusedTravelSpot.name
-    );
-    if (markerData) {
-      markerData.marker.fire('click');
+    // Trigger the popup
+    if (mapRef.current) {
+      const mapRect = mapRef.current.getBoundingClientRect();
+      const centerX = mapRect.width / 2;
+      const centerY = mapRect.height / 2;
+
+      setSelectedTravelSpot(focusedTravelSpot);
+      setTravelSpotPopupPosition({ x: centerX, y: centerY });
+      setShowTravelSpotPopup(true);
+
+      // Call the callback to reset the focused state
+      if (onTravelSpotFocused) {
+        onTravelSpotFocused();
+      }
     }
-  }, [focusedTravelSpot]);
+  }, [focusedTravelSpot, onTravelSpotFocused]);
 
-  // Focus on bookmark when prop changes
+  // Handle focused bookmark
   useEffect(() => {
     if (!mapInstanceRef.current || !focusedBookmark) return;
 
     const map = mapInstanceRef.current;
-    map.flyTo(focusedBookmark.coordinates, 16, {
-      duration: 1,
-    });
+    map.setView(focusedBookmark.coordinates, 16, { animate: true });
 
-    // Simulate click on the marker
-    const markerData = globalMarkersRef.current.find(
-      m => m.type === 'Bookmark' && m.name === focusedBookmark.name
-    );
-    if (markerData) {
-      markerData.marker.fire('click');
+    // Trigger the popup
+    if (mapRef.current) {
+      const mapRect = mapRef.current.getBoundingClientRect();
+      const centerX = mapRect.width / 2;
+      const centerY = mapRect.height / 2;
+
+      setSelectedBookmark(focusedBookmark);
+      setBookmarkPopupPosition({ x: centerX, y: centerY });
+      setShowBookmarkPopup(true);
+
+      // Call the callback to reset the focused state
+      if (onBookmarkFocused) {
+        onBookmarkFocused();
+      }
     }
-  }, [focusedBookmark]);
+  }, [focusedBookmark, onBookmarkFocused]);
 
-  // Map controls
+  // Zoom controls
   const handleZoomIn = () => {
     if (mapInstanceRef.current) {
       mapInstanceRef.current.zoomIn();
-      userHasInteractedRef.current = true;
+      setZoom(mapInstanceRef.current.getZoom());
     }
   };
 
   const handleZoomOut = () => {
     if (mapInstanceRef.current) {
       mapInstanceRef.current.zoomOut();
-      userHasInteractedRef.current = true;
+      setZoom(mapInstanceRef.current.getZoom());
     }
   };
 
   const handleResetView = () => {
     if (mapInstanceRef.current) {
-      mapInstanceRef.current.flyTo(coordinates, getInitialZoom(), {
-        duration: 1,
-      });
+      mapInstanceRef.current.setView(coordinates, getInitialZoom());
+      setZoom(getInitialZoom());
       userHasInteractedRef.current = false;
     }
   };
@@ -846,19 +964,22 @@ export default function MapComponent({
     <div className="relative w-full h-full">
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Loading map...</p>
+          </div>
         </div>
       )}
-      
-      <div ref={mapRef} className="w-full h-full rounded-lg overflow-hidden" />
 
-      {/* Map Controls */}
+      <div ref={mapRef} className="w-full h-full rounded-lg overflow-hidden shadow-lg" />
+
+      {/* Zoom Controls */}
       <div className="absolute top-4 right-4 flex flex-col gap-2 z-[1000]">
         <Button
           size="icon"
           variant="secondary"
           onClick={handleZoomIn}
-          className="bg-background/95 backdrop-blur-sm shadow-lg hover:bg-background"
+          className="shadow-lg hover:shadow-xl transition-shadow"
         >
           <ZoomIn className="h-4 w-4" />
         </Button>
@@ -866,7 +987,7 @@ export default function MapComponent({
           size="icon"
           variant="secondary"
           onClick={handleZoomOut}
-          className="bg-background/95 backdrop-blur-sm shadow-lg hover:bg-background"
+          className="shadow-lg hover:shadow-xl transition-shadow"
         >
           <ZoomOut className="h-4 w-4" />
         </Button>
@@ -874,7 +995,7 @@ export default function MapComponent({
           size="icon"
           variant="secondary"
           onClick={handleResetView}
-          className="bg-background/95 backdrop-blur-sm shadow-lg hover:bg-background"
+          className="shadow-lg hover:shadow-xl transition-shadow"
         >
           <RotateCcw className="h-4 w-4" />
         </Button>
@@ -894,7 +1015,7 @@ export default function MapComponent({
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <CardTitle className="text-lg">{selectedTravelSpot.name}</CardTitle>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2 mt-2">
                   <Badge
                     style={{
                       backgroundColor: getTravelSpotColor(selectedTravelSpot.spotType),
@@ -923,11 +1044,11 @@ export default function MapComponent({
             {selectedTravelSpot.description && (
               <p className="text-sm text-muted-foreground">{selectedTravelSpot.description}</p>
             )}
-            {(spotMediaLoading || spotSocialMediaLoading) ? (
-              <div className="flex items-center justify-center py-4">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4" />
+              <span>{selectedTravelSpot.city}</span>
+            </div>
+            {(selectedSpotMediaFiles.length > 0 || selectedSpotSocialMediaLinks.length > 0) && (
               <MediaGalleryPopup
                 mediaFiles={selectedSpotMediaFiles}
                 socialMediaLinks={selectedSpotSocialMediaLinks}
@@ -937,7 +1058,7 @@ export default function MapComponent({
         </Card>
       )}
 
-      {/* Schedule Popup */}
+      {/* Schedule Popup with Enhanced Details */}
       {showSchedulePopup && selectedScheduleItem && schedulePopupPosition && (
         <Card
           className="absolute z-[1001] w-80 shadow-2xl"
@@ -950,10 +1071,20 @@ export default function MapComponent({
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <CardTitle className="text-lg">{selectedScheduleItem.location}</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {new Date(Number(selectedScheduleItem.date) / 1_000_000).toLocaleDateString()} at {selectedScheduleItem.time}
-                </p>
+                <CardTitle className="text-lg">{selectedScheduleItem.activity}</CardTitle>
+                <div className="flex flex-col gap-1 mt-2">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      {getDayLabel(computeDayIndex(selectedScheduleItem.date, journeyScheduleItems))}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {getDayContext(selectedScheduleItem.date)}
+                    </span>
+                  </div>
+                  <div className="text-sm font-medium text-primary">
+                    {formatTime12Hour(selectedScheduleItem.time)}
+                  </div>
+                </div>
               </div>
               <Button
                 size="icon"
@@ -965,8 +1096,11 @@ export default function MapComponent({
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm">{selectedScheduleItem.activity}</p>
+          <CardContent className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4" />
+              <span>{selectedScheduleItem.location}</span>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -985,7 +1119,7 @@ export default function MapComponent({
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <CardTitle className="text-lg">{selectedBookmark.name}</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">{selectedBookmark.city}</p>
+                <Badge variant="secondary" className="mt-2">Bookmark</Badge>
               </div>
               <Button
                 size="icon"
@@ -997,8 +1131,14 @@ export default function MapComponent({
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm">{selectedBookmark.description}</p>
+          <CardContent className="space-y-3">
+            {selectedBookmark.description && (
+              <p className="text-sm text-muted-foreground">{selectedBookmark.description}</p>
+            )}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4" />
+              <span>{selectedBookmark.city}</span>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -1009,17 +1149,8 @@ export default function MapComponent({
           <DialogHeader>
             <DialogTitle>Create Bookmark</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="bookmark-city">City</Label>
-              <Input
-                id="bookmark-city"
-                value={bookmarkCity}
-                onChange={(e) => setBookmarkCity(e.target.value)}
-                placeholder="Enter city name"
-              />
-            </div>
-            <div>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
               <Label htmlFor="bookmark-name">Name</Label>
               <Input
                 id="bookmark-name"
@@ -1028,13 +1159,22 @@ export default function MapComponent({
                 placeholder="Enter bookmark name"
               />
             </div>
-            <div>
+            <div className="space-y-2">
+              <Label htmlFor="bookmark-city">City</Label>
+              <Input
+                id="bookmark-city"
+                value={bookmarkCity}
+                onChange={(e) => setBookmarkCity(e.target.value)}
+                placeholder="Enter city name"
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="bookmark-description">Description</Label>
               <Textarea
                 id="bookmark-description"
                 value={bookmarkDescription}
                 onChange={(e) => setBookmarkDescription(e.target.value)}
-                placeholder="Enter description"
+                placeholder="Enter description (optional)"
                 rows={3}
               />
             </div>
@@ -1043,18 +1183,8 @@ export default function MapComponent({
             <Button variant="outline" onClick={() => setShowBookmarkDialog(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={handleCreateBookmark}
-              disabled={!bookmarkCity || !bookmarkName || addBookmarkMutation.isPending}
-            >
-              {addBookmarkMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                'Create Bookmark'
-              )}
+            <Button onClick={handleCreateBookmark} disabled={!bookmarkName || !bookmarkCity}>
+              Create Bookmark
             </Button>
           </DialogFooter>
         </DialogContent>

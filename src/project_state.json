@@ -1,24 +1,34 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project involves a map-based schedule view with day group labels/colors and enhancements to visually connect same-day itinerary items.",
+  "summary": "New project",
   "architectural_notes": [],
-  "known_issues": [],
-  "isFixRequest": false,
+  "known_issues": [
+    "Schedule items do not show automatically after clicking the map button under the travelogue; requires page refresh to appear."
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-in-the-2d-map-schedule-item-rendering-the-schedule-item-svg-text-marker-elements-identified-by-the-user-s-selected-xpaths-draw-a-visible-route-line-that-links-all-schedule-items-occurring-on-the-same-calendar-day",
-      "title": "In the 2D map schedule-item rendering (the schedule item SVG/text marker elements identified by the user’s selected XPaths), draw a visible route line that links all schedule items occurring on the same calendar day.",
+      "id": "feature-fix-the-2d-map-journey-schedule-overlay-so-that-schedule-items-markers-and-route-lines-appear-immediately-after-the-user-clicks-the-map-button-in-the-travelogue-without-needing-a-page-refresh-ensure-mapcomponent-re-renders-schedule-markers-and-route-overlays-whenever-the-travelogue-provided-journey-city-filter-changes-and-or-the-corresponding-schedule-query-returns-data",
+      "title": "Fix the 2D map journey schedule overlay so that schedule items/markers and route lines appear immediately after the user clicks the Map button in the Travelogue (without needing a page refresh). Ensure MapComponent re-renders schedule markers and route overlays whenever the Travelogue-provided journey city filter changes and/or the corresponding schedule query returns data.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-for-each-day-s-route-line-order-the-connected-schedule-items-chronologically-starting-from-the-earliest-item-of-that-day-and-use-a-stroke-color-that-matches-the-schedule-item-logo-day-color-used-for-that-same-day",
-      "title": "For each day’s route line, order the connected schedule items chronologically starting from the earliest item of that day, and use a stroke color that matches the schedule item logo/day color used for that same day.",
+      "id": "feature-make-the-route-line-arrow-effect-stronger-on-the-2d-map-by-increasing-arrow-frequency-more-arrows-along-each-route-segment-and-increasing-arrow-size-slightly-while-keeping-arrow-direction-aligned-with-the-route-s-travel-order",
+      "title": "Make the route line arrow effect stronger on the 2D map by increasing arrow frequency (more arrows along each route segment) and increasing arrow size slightly, while keeping arrow direction aligned with the route’s travel order.",
       "reqIds": [
         "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-enhance-the-schedule-item-popup-box-on-the-2d-map-to-display-richer-details-show-time-in-12-hour-format-with-am-pm-show-the-day-context-e-g-the-schedule-day-label-and-or-weekday-date-derived-from-the-schedule-item-date-and-show-subject-titles-use-the-schedule-item-s-activity-as-the-primary-title-and-include-location-as-a-secondary-line-when-available",
+      "title": "Enhance the schedule item popup box on the 2D map to display richer details: show time in 12-hour format with AM/PM, show the day context (e.g., the schedule day label and/or weekday + date derived from the schedule item date), and show subject titles (use the schedule item’s activity as the primary title and include location as a secondary line when available).",
+      "reqIds": [
+        "REQ-3"
       ],
       "version": 1
     }
@@ -26,18 +36,24 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Draw a route line on the map linking schedule items that occur on the same day, using the logo color.",
+      "summary": "Fix schedule items not appearing automatically after clicking the map button under the travelogue (requires page refresh)",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Order each day's route line chronologically, starting at the earliest schedule item for that day.",
+      "summary": "Make the route line arrow effect stronger (more arrows and slightly larger arrows)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Enhance schedule item popup details (add AM/PM to time, add Day, add subject titles)",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Draw same-day route lines between schedule items on the map (chronological order)",
+  "projectName": "Fix journey schedule markers auto-render on 2D map, strengthen route arrows, and enrich schedule popup details",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }
