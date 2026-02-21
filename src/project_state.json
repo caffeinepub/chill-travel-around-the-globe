@@ -1,34 +1,48 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
-  "architectural_notes": [],
+  "summary": "3D globe travel app with journey management system. User has identified two key issues: 1) Journey title field not persisting to backend storage, and 2) Journey edit modal lacks full date/time editing capability with only read-only date displays.",
+  "architectural_notes": [
+    "Journey type structure changes require synchronization between Motoko backend and TypeScript frontend",
+    "Journey dates act as container for schedule items - changing periods requires validation of all nested items",
+    "Schedule items must fall within journey date range for data integrity"
+  ],
   "known_issues": [
-    "Schedule items do not show automatically after clicking the map button under the travelogue; requires page refresh to appear."
+    "Journey title field collected in frontend but not persisted to backend (Journey type missing title field)",
+    "Journey edit modal shows dates as read-only text - no date picker or time selector available",
+    "Journey edit functionality only allows city changes, not date/time modifications"
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-fix-the-2d-map-journey-schedule-overlay-so-that-schedule-items-markers-and-route-lines-appear-immediately-after-the-user-clicks-the-map-button-in-the-travelogue-without-needing-a-page-refresh-ensure-mapcomponent-re-renders-schedule-markers-and-route-overlays-whenever-the-travelogue-provided-journey-city-filter-changes-and-or-the-corresponding-schedule-query-returns-data",
-      "title": "Fix the 2D map journey schedule overlay so that schedule items/markers and route lines appear immediately after the user clicks the Map button in the Travelogue (without needing a page refresh). Ensure MapComponent re-renders schedule markers and route overlays whenever the Travelogue-provided journey city filter changes and/or the corresponding schedule query returns data.",
+      "id": "feature-replace-read-only-date-displays-in-the-journey-edit-modal-with-interactive-calendar-popovers-matching-the-add-new-journey-form-implementation-allowing-users-to-select-new-start-and-end-dates",
+      "title": "Replace read-only date displays in the journey edit modal with interactive calendar popovers matching the 'Add New Journey' form implementation, allowing users to select new start and end dates",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-make-the-route-line-arrow-effect-stronger-on-the-2d-map-by-increasing-arrow-frequency-more-arrows-along-each-route-segment-and-increasing-arrow-size-slightly-while-keeping-arrow-direction-aligned-with-the-route-s-travel-order",
-      "title": "Make the route line arrow effect stronger on the 2D map by increasing arrow frequency (more arrows along each route segment) and increasing arrow size slightly, while keeping arrow direction aligned with the route’s travel order.",
+      "id": "feature-add-time-selection-controls-to-the-journey-edit-modal-for-both-start-time-and-end-time-using-the-same-select-components-with-hour-and-minute-dropdowns-as-the-add-new-journey-form",
+      "title": "Add time selection controls to the journey edit modal for both start time and end time, using the same Select components with hour and minute dropdowns as the Add New Journey form",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-enhance-the-schedule-item-popup-box-on-the-2d-map-to-display-richer-details-show-time-in-12-hour-format-with-am-pm-show-the-day-context-e-g-the-schedule-day-label-and-or-weekday-date-derived-from-the-schedule-item-date-and-show-subject-titles-use-the-schedule-item-s-activity-as-the-primary-title-and-include-location-as-a-secondary-line-when-available",
-      "title": "Enhance the schedule item popup box on the 2D map to display richer details: show time in 12-hour format with AM/PM, show the day context (e.g., the schedule day label and/or weekday + date derived from the schedule item date), and show subject titles (use the schedule item’s activity as the primary title and include location as a secondary line when available).",
+      "id": "feature-implement-validation-in-the-journey-edit-modal-to-ensure-all-existing-schedule-items-fall-within-the-newly-selected-journey-date-range-displaying-a-clear-error-message-if-any-schedule-items-would-fall-outside-the-updated-period",
+      "title": "Implement validation in the journey edit modal to ensure all existing schedule items fall within the newly selected journey date range, displaying a clear error message if any schedule items would fall outside the updated period",
       "reqIds": [
         "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-backend-updatejourney-function-call-in-the-edit-modal-to-include-the-modified-startdate-enddate-and-time-fields-ensuring-the-revised-journey-period-is-persisted-correctly",
+      "title": "Update the backend updateJourney function call in the edit modal to include the modified startDate, endDate, and time fields, ensuring the revised journey period is persisted correctly",
+      "reqIds": [
+        "REQ-4"
       ],
       "version": 1
     }
@@ -36,24 +50,12 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Fix schedule items not appearing automatically after clicking the map button under the travelogue (requires page refresh)",
+      "summary": "Add full date/time editing capability to journey edit modal with schedule item validation",
       "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Make the route line arrow effect stronger (more arrows and slightly larger arrows)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Enhance schedule item popup details (add AM/PM to time, add Day, add subject titles)",
-      "reqIds": [],
-      "status": "pending"
+      "status": "in_progress"
     }
   ],
-  "projectName": "Fix journey schedule markers auto-render on 2D map, strengthen route arrows, and enrich schedule popup details",
+  "projectName": "Globe Travel",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

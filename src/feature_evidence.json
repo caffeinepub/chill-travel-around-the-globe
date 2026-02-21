@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-the-2d-map-journey-schedule-overlay-so-that-schedule-items-markers-and-route-lines-appear-immediately-after-the-user-clicks-the-map-button-in-the-travelogue-without-needing-a-page-refresh-ensure-mapcomponent-re-renders-schedule-markers-and-route-overlays-whenever-the-travelogue-provided-journey-city-filter-changes-and-or-the-corresponding-schedule-query-returns-data",
-      "featureTitle": "Fix the 2D map journey schedule overlay so that schedule items/markers and route lines appear immediately after the user clicks the Map button in the Travelogue (without needing a page refresh). Ensure MapComponent re-renders schedule markers and route overlays whenever the Travelogue-provided journey city filter changes and/or the corresponding schedule query returns data.",
+      "featureId": "feature-replace-read-only-date-displays-in-the-journey-edit-modal-with-interactive-calendar-popovers-matching-the-add-new-journey-form-implementation-allowing-users-to-select-new-start-and-end-dates",
+      "featureTitle": "Replace read-only date displays in the journey edit modal with interactive calendar popovers matching the 'Add New Journey' form implementation, allowing users to select new start and end dates",
       "files": [
-        "frontend/src/components/MapComponent.tsx"
+        "frontend/src/components/AdminPanel.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -22,10 +22,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-make-the-route-line-arrow-effect-stronger-on-the-2d-map-by-increasing-arrow-frequency-more-arrows-along-each-route-segment-and-increasing-arrow-size-slightly-while-keeping-arrow-direction-aligned-with-the-route-s-travel-order",
-      "featureTitle": "Make the route line arrow effect stronger on the 2D map by increasing arrow frequency (more arrows along each route segment) and increasing arrow size slightly, while keeping arrow direction aligned with the route’s travel order.",
+      "featureId": "feature-add-time-selection-controls-to-the-journey-edit-modal-for-both-start-time-and-end-time-using-the-same-select-components-with-hour-and-minute-dropdowns-as-the-add-new-journey-form",
+      "featureTitle": "Add time selection controls to the journey edit modal for both start time and end time, using the same Select components with hour and minute dropdowns as the Add New Journey form",
       "files": [
-        "frontend/src/components/MapComponent.tsx"
+        "frontend/src/components/AdminPanel.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -42,11 +42,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-enhance-the-schedule-item-popup-box-on-the-2d-map-to-display-richer-details-show-time-in-12-hour-format-with-am-pm-show-the-day-context-e-g-the-schedule-day-label-and-or-weekday-date-derived-from-the-schedule-item-date-and-show-subject-titles-use-the-schedule-item-s-activity-as-the-primary-title-and-include-location-as-a-secondary-line-when-available",
-      "featureTitle": "Enhance the schedule item popup box on the 2D map to display richer details: show time in 12-hour format with AM/PM, show the day context (e.g., the schedule day label and/or weekday + date derived from the schedule item date), and show subject titles (use the schedule item’s activity as the primary title and include location as a secondary line when available).",
+      "featureId": "feature-implement-validation-in-the-journey-edit-modal-to-ensure-all-existing-schedule-items-fall-within-the-newly-selected-journey-date-range-displaying-a-clear-error-message-if-any-schedule-items-would-fall-outside-the-updated-period",
+      "featureTitle": "Implement validation in the journey edit modal to ensure all existing schedule items fall within the newly selected journey date range, displaying a clear error message if any schedule items would fall outside the updated period",
       "files": [
-        "frontend/src/components/MapComponent.tsx",
-        "frontend/src/utils/scheduleDayStyling.ts"
+        "frontend/src/components/AdminPanel.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -59,6 +58,26 @@
       ],
       "testIds": [
         "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-backend-updatejourney-function-call-in-the-edit-modal-to-include-the-modified-startdate-enddate-and-time-fields-ensuring-the-revised-journey-period-is-persisted-correctly",
+      "featureTitle": "Update the backend updateJourney function call in the edit modal to include the modified startDate, endDate, and time fields, ensuring the revised journey period is persisted correctly",
+      "files": [
+        "frontend/src/components/AdminPanel.tsx"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@1.1.2",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
       ],
       "confidence": "high"
     }

@@ -1,61 +1,69 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T02:04:45.473Z",
+  "generatedAt": "2026-02-20T02:42:19.986Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 4,
+    "implemented": 4,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix the 2D map journey schedule overlay so that schedule items/markers and route lines appear immediately after the user clicks the Map button in the Travelogue (without needing a page refresh). Ensure MapComponent re-renders schedule markers and route overlays whenever the Travelogue-provided journey city filter changes and/or the corresponding schedule query returns data.",
+        "summary": "Replace read-only date displays in the journey edit modal with interactive calendar popovers matching the 'Add New Journey' form implementation, allowing users to select new start and end dates",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/MapComponent.tsx",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/LocationMapExplorer.tsx"
+          "frontend/src/components/AdminPanel.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/MapComponent.tsx"
+          "frontend/src/components/AdminPanel.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Make the route line arrow effect stronger on the 2D map by increasing arrow frequency (more arrows along each route segment) and increasing arrow size slightly, while keeping arrow direction aligned with the route’s travel order.",
+        "summary": "Add time selection controls to the journey edit modal for both start time and end time, using the same Select components with hour and minute dropdowns as the Add New Journey form",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/MapComponent.tsx"
+          "frontend/src/components/AdminPanel.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/MapComponent.tsx"
+          "frontend/src/components/AdminPanel.tsx"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Enhance the schedule item popup box on the 2D map to display richer details: show time in 12-hour format with AM/PM, show the day context (e.g., the schedule day label and/or weekday + date derived from the schedule item date), and show subject titles (use the schedule item’s activity as the primary title and include location as a secondary line when available).",
+        "summary": "Implement validation in the journey edit modal to ensure all existing schedule items fall within the newly selected journey date range, displaying a clear error message if any schedule items would fall outside the updated period",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/MapComponent.tsx",
-          "frontend/src/utils/scheduleDayStyling.ts"
+          "frontend/src/components/AdminPanel.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/MapComponent.tsx",
-          "frontend/src/utils/scheduleDayStyling.ts"
+          "frontend/src/components/AdminPanel.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Update the backend updateJourney function call in the edit modal to include the modified startDate, endDate, and time fields, ensuring the revised journey period is persisted correctly",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/AdminPanel.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/AdminPanel.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
     "build-request.json",
+    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/MapComponent.tsx",
-    "frontend/src/utils/scheduleDayStyling.ts",
+    "frontend/src/components/AdminPanel.tsx",
+    "frontend/src/config.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

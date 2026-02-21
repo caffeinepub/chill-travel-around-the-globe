@@ -1,73 +1,101 @@
 {
   "kind": "build_request",
-  "title": "Fix journey schedule markers auto-render on 2D map, strengthen route arrows, and enrich schedule popup details",
-  "priority": "normal",
+  "title": "Add full date/time editing to journey edit modal",
+  "projectName": "Globe Travel",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix the 2D map journey schedule overlay so that schedule items/markers and route lines appear immediately after the user clicks the Map button in the Travelogue (without needing a page refresh). Ensure MapComponent re-renders schedule markers and route overlays whenever the Travelogue-provided journey city filter changes and/or the corresponding schedule query returns data.",
+      "text": "Replace read-only date displays in the journey edit modal with interactive calendar popovers matching the 'Add New Journey' form implementation, allowing users to select new start and end dates",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-recent"
         ],
         "quotes": [
-          "The schedule items doesn't show up automatically when clicking map button under the travelogue and has to refresh the page for it to pop up, could you solve it?"
+          "The edit modal shows dates as read-only text fields",
+          "Replace the read-only date displays with the same calendar popover"
         ]
       },
       "acceptanceCriteria": [
-        "From the Travelogue panel, clicking the Map (2D) button for a journey shows that journey’s schedule markers/route on the map without a manual browser refresh.",
-        "Switching between different journeys via the Travelogue Map button updates the schedule markers/route to match the newly selected journey.",
-        "No regression: existing travel spot markers and bookmark markers still load and remain interactive as before."
+        "Journey edit modal includes calendar popovers for both start date and end date fields",
+        "Date pickers use the same Calendar component and Popover pattern as the Add New Journey form",
+        "Selected dates update the journey's date range when saved"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Make the route line arrow effect stronger on the 2D map by increasing arrow frequency (more arrows along each route segment) and increasing arrow size slightly, while keeping arrow direction aligned with the route’s travel order.",
+      "text": "Add time selection controls to the journey edit modal for both start time and end time, using the same Select components with hour and minute dropdowns as the Add New Journey form",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-recent"
         ],
         "quotes": [
-          "Could you make the arrow effect in the route line stronger (more arrows and the arrow a bit larger)"
+          "Start time: Not editable",
+          "End time: Not editable",
+          "add full date/time editing capability"
         ]
       },
       "acceptanceCriteria": [
-        "Route arrows are visibly more frequent along the route line than before.",
-        "Route arrows are visibly larger than before and remain readable at typical zoom levels.",
-        "Arrow direction continues to correctly indicate travel direction along the route."
+        "Journey edit modal includes hour and minute Select dropdowns for start time",
+        "Journey edit modal includes hour and minute Select dropdowns for end time",
+        "Time controls match the styling and behavior of the Add New Journey form",
+        "Selected times update the journey's time range when saved"
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Enhance the schedule item popup box on the 2D map to display richer details: show time in 12-hour format with AM/PM, show the day context (e.g., the schedule day label and/or weekday + date derived from the schedule item date), and show subject titles (use the schedule item’s activity as the primary title and include location as a secondary line when available).",
+      "text": "Implement validation in the journey edit modal to ensure all existing schedule items fall within the newly selected journey date range, displaying a clear error message if any schedule items would fall outside the updated period",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-recent"
         ],
         "quotes": [
-          "Enhance the details of the schedule item popup box, for example: add AM/PM to the time, add the Day, add subject titles"
+          "Schedule item validation: All schedule items must fall within the journey period",
+          "Validating all existing schedule items"
         ]
       },
       "acceptanceCriteria": [
-        "When clicking a schedule marker, the popup shows the time with AM/PM (e.g., “3:05 PM”).",
-        "The popup shows the day context (day label and/or weekday/date) for the clicked schedule item.",
-        "The popup shows a clear subject/title line for the schedule item (activity), and includes location as a secondary detail when present.",
-        "User-facing text in the popup is in English."
+        "Before saving, the system checks that all schedule items for the journey fall within the new start and end date/time range",
+        "If any schedule items fall outside the new range, display a descriptive error message listing affected items",
+        "User cannot save the journey edit if validation fails",
+        "Validation accounts for both date and time components of schedule items"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Update the backend updateJourney function call in the edit modal to include the modified startDate, endDate, and time fields, ensuring the revised journey period is persisted correctly",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent"
+        ],
+        "quotes": [
+          "edit fails to revise the travel period",
+          "Changes are saved to the backend"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The edit modal mutation sends updated startDate and endDate values to the backend",
+        "Start and end times are included in the backend update payload",
+        "Backend successfully updates and persists the modified journey period",
+        "Edited journey reflects new dates and times in all UI components (Travelogue, Globe, Map)"
       ]
     }
   ],
   "constraints": [
-    "Apply changes only to the selected UI areas related to: (1) Travelogue Map button -> 2D map schedule overlay refresh behavior, (2) the map route line arrow rendering, and (3) the schedule item popup content.",
-    "Do not edit files under frontend/src/components/ui (shadcn components are read-only).",
-    "Do not edit frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, or frontend/src/main.tsx."
+    "Do not modify the backend Journey type structure or main.mo",
+    "Preserve the existing edit modal layout and styling patterns",
+    "Reuse the exact Calendar and Select components from the Add New Journey form",
+    "Do not change how schedule items are stored or managed"
   ],
   "nonGoals": [
-    "Do not add new authentication methods or third-party auth providers.",
-    "Do not introduce new backend services or external databases.",
-    "Do not redesign unrelated parts of the map UI (travel spots, bookmarks, media popups) beyond what is needed to satisfy the three requested fixes."
+    "Adding the journey title field to backend storage (deferred to separate request)",
+    "Automatically adjusting schedule item times when journey period changes",
+    "Providing bulk schedule item updates or migrations",
+    "Changing the Add New Journey form behavior or layout"
   ],
   "imageRequirements": {
     "required": [],
