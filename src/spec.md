@@ -1,12 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Enable full date and time editing in the journey edit modal with validation to ensure schedule items remain within the journey period.
+**Goal:** Ensure the 2D map correctly and immediately shows the selected journey’s schedule markers/routes from the Travelogue, improve route arrow visibility, and enrich schedule marker popup details.
 
 **Planned changes:**
-- Replace read-only date displays with interactive calendar popovers matching the Add New Journey form
-- Add time selection controls (hour and minute dropdowns) for both start and end times
-- Implement validation to ensure all schedule items fall within the updated journey date/time range
-- Update the backend mutation to persist modified journey dates and times
+- Fix the 2D map schedule overlay so schedule markers and route lines render immediately after clicking the Travelogue “Map (2D)” button, and re-render when the selected journey/city filter or schedule query results change.
+- Increase the strength of the route arrow effect on 2D map route lines by making arrows more frequent and slightly larger while preserving correct travel direction.
+- Update the schedule marker popup content to include 12-hour time with AM/PM, day context (day label and/or weekday + date), and clearer subject/title display (activity as primary title, location as secondary when available), with English user-facing text.
 
-**User-visible outcome:** Users can fully edit journey start and end dates/times in the edit modal, with clear validation feedback if changes would invalidate existing schedule items.
+**User-visible outcome:** Clicking “Map (2D)” in the Travelogue immediately shows the correct journey’s schedule markers and route (no refresh needed); route direction arrows are easier to see; and schedule marker popups display clearer time/day/title information.

@@ -1,14 +1,56 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-20T02:42:19.983Z",
-  "summary": "The diff shows comprehensive implementation of all four requirements. The AdminPanel.tsx file has been modified to add calendar popovers for date selection, time selection controls (hour/minute dropdowns), validation logic for schedule items falling within the journey period, and proper backend mutation calls. All requirements from the BuildRequest appear to be addressed in the implementation.",
-  "missing_requirements": [],
-  "hallucinated_features": [],
-  "confidence": 0.95,
+  "generatedAt": "2026-02-16T02:04:45.471Z",
+  "summary": "The diff does not provide direct code evidence that the three requested map/schedule fixes (auto-refresh of journey schedule overlays, stronger route arrows, richer schedule popup content) were implemented. The only clearly evidenced changes are an unrequested TravelSpot 'city' icon change in MapComponent and the addition of day-color/label/context helper utilities.",
+  "missing_requirements": [
+    {
+      "id": "REQ-1",
+      "requirement": "Fix the 2D map journey schedule overlay so that schedule items/markers and route lines appear immediately after the user clicks the Map button in the Travelogue (without needing a page refresh). Ensure MapComponent re-renders schedule markers and route overlays whenever the Travelogue-provided journey city filter changes and/or the corresponding schedule query returns data.",
+      "reason": "No diff evidence shows logic that re-renders schedule markers/routes on journeyCityFilter changes or schedule-query completion. The provided MapComponent snippet only shows imports and a TravelSpot icon change; no overlay refresh behavior is shown.",
+      "evidence": [
+        "frontend/src/components/MapComponent.tsx (truncated snippet shows icon mapping change but no schedule overlay refresh logic)"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Make the route line arrow effect stronger on the 2D map by increasing arrow frequency and increasing arrow size slightly, while keeping arrow direction aligned with the route’s travel order.",
+      "reason": "No diff evidence shows any adjustments to route arrow rendering parameters (frequency/spacing/size) or polyline decorator logic. The visible snippet does not include any route-arrow-related code.",
+      "evidence": [
+        "frontend/src/components/MapComponent.tsx (truncated; no arrow rendering changes visible)"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Enhance the schedule item popup box on the 2D map to display richer details: show time in 12-hour format with AM/PM, show day context, and show subject titles (activity as primary, location as secondary when available), with English user-facing text.",
+      "reason": "Although a new helper getDayContextString() is added, the diff does not show any popup rendering changes in MapComponent (time formatting, day label/context display, activity/location lines).",
+      "evidence": [
+        "frontend/src/utils/scheduleDayStyling.ts (adds getDayContextString but no popup usage shown)",
+        "frontend/src/components/MapComponent.tsx (truncated; popup content changes not visible)"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Changed the TravelSpot icon mapping for spot type 'city' to a custom black SVG (and associated comment about using a black city icon instead of three dots).",
+      "reason": "Not requested by any requirement; BuildRequest constraints explicitly discourage redesigning unrelated parts of the map UI beyond what is needed for the three fixes.",
+      "evidence": [
+        "frontend/src/components/MapComponent.tsx (getTravelSpotIcon: new 'city' SVG icon and comment)"
+      ]
+    },
+    {
+      "description": "Introduced/modified day label color palette utilities and added getDayLabel()/getDayColor()/computeDayIndex()/getDayContextString() helpers.",
+      "reason": "REQ-3 asks for day context in the schedule popup, but the diff does not show these being used in the popup; the broader day-label color system (vibrant palette, D1/D2 labels) is not explicitly requested.",
+      "evidence": [
+        "frontend/src/utils/scheduleDayStyling.ts"
+      ]
+    }
+  ],
+  "confidence": 0.68,
   "changed_files": [
     "frontend-file-summaries.txt",
-    "frontend/src/components/AdminPanel.tsx",
+    "frontend/src/components/MapComponent.tsx",
+    "frontend/src/utils/scheduleDayStyling.ts",
     "project_state.json"
   ]
 }

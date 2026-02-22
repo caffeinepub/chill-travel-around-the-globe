@@ -1,72 +1,69 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Add full date/time editing to journey edit modal",
+  "title": "2D map schedule overlay refresh, stronger route arrows, and richer schedule popups",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Replace read-only date displays in the journey edit modal with interactive calendar popovers matching the 'Add New Journey' form implementation",
+      "summary": "Ensure the 2D map immediately renders and refreshes journey schedule markers/routes when the Travelogue Map (2D) selection changes and when schedule data arrives.",
       "acceptanceCriteria": [
-        "Journey edit modal includes calendar popovers for both start date and end date fields",
-        "Date pickers use the same Calendar component and Popover pattern as the Add New Journey form",
-        "Selected dates update the journey's date range when saved"
+        "From the Travelogue panel, clicking the Map (2D) button for a journey shows that journey’s schedule markers/route on the map without a manual browser refresh.",
+        "Switching between different journeys via the Travelogue Map button updates the schedule markers/route to match the newly selected journey.",
+        "No regression: existing travel spot markers and bookmark markers still load and remain interactive as before."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/AdminPanel.tsx",
+          "path": "frontend/src/components/MapComponent.tsx",
           "operation": "modify",
-          "description": "Replace the read-only date Text inputs in the Edit Journey dialog with interactive Popover + Calendar components. Use the exact same pattern and imports from the 'Add New Journey' form section (lines with CalendarIcon, Popover, PopoverTrigger, PopoverContent, Calendar, format from date-fns). Update the editJourney state to store Date objects instead of formatted strings for startDate and endDate. Add date selection handlers (setDate) that update editJourney.startDate and editJourney.endDate respectively."
+          "description": "Refactor the Leaflet schedule overlay lifecycle to be data-driven: maintain dedicated Leaflet layer group(s) for schedule markers and schedule route lines, and rebuild/clear them in a useEffect that depends on (a) Leaflet/map readiness, (b) journeyCityFilter, and (c) the journey schedule query result (journeyScheduleItems / scheduleItemsWithCoords as applicable). Ensure previous journey overlays are removed when the filter changes, and ensure overlay render runs when data arrives after the Map view is shown (no refresh needed)."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Adjust the schedule-query hook used by MapComponent (e.g., useGetScheduleItems) so it refetches correctly when the journey city changes and avoids stale/disabled states when switching from empty -> selected journey city. Ensure the query key includes the journey city input and that the query is enabled only when the journey city is non-empty."
+        },
+        {
+          "path": "frontend/src/pages/LocationMapExplorer.tsx",
+          "operation": "modify",
+          "description": "Ensure the Travelogue Map (2D) action reliably triggers a map update when switching journeys by wiring MapComponent re-initialization only if needed (e.g., via a stable prop change strategy such as a key tied to selectedLocation + selectedJourneyCity) while preserving existing behaviors for focused travel spots and bookmarks."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Add time selection controls to the journey edit modal for both start time and end time using Select components with hour and minute dropdowns",
+      "summary": "Increase route arrow frequency and slightly increase arrow size for the 2D schedule route lines while preserving correct direction.",
       "acceptanceCriteria": [
-        "Journey edit modal includes hour and minute Select dropdowns for start time",
-        "Journey edit modal includes hour and minute Select dropdowns for end time",
-        "Time controls match the styling and behavior of the Add New Journey form",
-        "Selected times update the journey's time range when saved"
+        "Route arrows are visibly more frequent along the route line than before.",
+        "Route arrows are visibly larger than before and remain readable at typical zoom levels.",
+        "Arrow direction continues to correctly indicate travel direction along the route."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/AdminPanel.tsx",
+          "path": "frontend/src/components/MapComponent.tsx",
           "operation": "modify",
-          "description": "Add time selection controls to the Edit Journey dialog by duplicating the Select (hour/minute) pattern from the 'Add New Journey' form. Create state variables for startHour, startMinute, endHour, endMinute within the edit flow. Add two rows of Select components (one for start time, one for end time) below the date pickers. Populate Select options with hours (00-23) and minutes (00-59) matching the existing form. Wire onChange handlers to update the respective time state variables."
+          "description": "Update the schedule route polyline arrow styling parameters (the pattern spacing/repeat and arrowhead size) to produce more arrows per segment and a slightly larger arrow. Keep arrow placement aligned to the route’s coordinate order so direction remains correct."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Implement validation in the journey edit modal to ensure all schedule items fall within the newly selected journey date range",
+      "summary": "Enrich the 2D map schedule marker popup with AM/PM time, day context (label and/or weekday/date), and clear subject titles (activity + optional location).",
       "acceptanceCriteria": [
-        "Before saving, the system checks that all schedule items for the journey fall within the new start and end date/time range",
-        "If any schedule items fall outside the new range, display a descriptive error message listing affected items",
-        "User cannot save the journey edit if validation fails",
-        "Validation accounts for both date and time components of schedule items"
+        "When clicking a schedule marker, the popup shows the time with AM/PM (e.g., “3:05 PM”).",
+        "The popup shows the day context (day label and/or weekday/date) for the clicked schedule item.",
+        "The popup shows a clear subject/title line for the schedule item (activity), and includes location as a secondary detail when present.",
+        "User-facing text in the popup is in English."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/AdminPanel.tsx",
+          "path": "frontend/src/components/MapComponent.tsx",
           "operation": "modify",
-          "description": "Add schedule validation logic to the handleUpdateJourney function before calling the updateJourney mutation. Fetch all schedule items for the journey using the scheduleItems state or a filtered list from allScheduleItems. Construct full Date objects from the new start/end dates and times. Loop through all schedule items and check if each item's date+time falls within the new journey period. If any items fall outside, collect their details (location, activity, date/time) and display a toast error message listing the conflicting items. Prevent the mutation from executing if validation fails. Use the existing toast system for error display."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Update the backend updateJourney mutation call to include modified startDate, endDate, and time fields",
-      "acceptanceCriteria": [
-        "The edit modal mutation sends updated startDate and endDate values to the backend",
-        "Start and end times are included in the backend update payload",
-        "Backend successfully updates and persists the modified journey period",
-        "Edited journey reflects new dates and times in all UI components (Travelogue, Globe, Map)"
-      ],
-      "file_operations": [
+          "description": "Enhance the schedule marker click handling and popup rendering to format time using 12-hour time with AM/PM, derive a day context string in English from the schedule item date (weekday + date), and display activity as the primary title with location as a secondary line when present. Where available, incorporate existing schedule day helpers (getDayLabel/computeDayIndex) to show a day label consistently."
+        },
         {
-          "path": "frontend/src/components/AdminPanel.tsx",
+          "path": "frontend/src/utils/scheduleDayStyling.ts",
           "operation": "modify",
-          "description": "Modify the handleUpdateJourney function to construct complete Date objects combining the selected dates with the hour/minute values. Convert startDate + startHour + startMinute into a single timestamp (BigInt nanoseconds). Convert endDate + endHour + endMinute into a single timestamp (BigInt nanoseconds). Pass these constructed timestamps as startDate and endDate arguments to the updateJourneyMutation.mutateAsync call. Ensure the mutation payload matches the backend signature: updateJourney(city: string, startDate: Time, endDate: Time). After successful mutation, invalidate relevant queries (['journeys']) to refresh all journey displays."
+          "description": "Add/adjust a small utility (or exported helper) to support deriving a stable day label/day index for map popups from the currently displayed journey’s schedule items (without changing unrelated styling). Keep outputs English-friendly and consistent with existing day label conventions."
         }
       ]
     }
