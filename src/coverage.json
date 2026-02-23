@@ -1,7 +1,7 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T02:04:45.473Z",
+  "generatedAt": "2026-02-23T02:45:31.765Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
@@ -12,50 +12,47 @@
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix the 2D map journey schedule overlay so that schedule items/markers and route lines appear immediately after the user clicks the Map button in the Travelogue (without needing a page refresh). Ensure MapComponent re-renders schedule markers and route overlays whenever the Travelogue-provided journey city filter changes and/or the corresponding schedule query returns data.",
+        "summary": "Display the current local time below the UTC offset selector using the same date-time format as shown in the main web layout",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/MapComponent.tsx",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/LocationMapExplorer.tsx"
+          "frontend/src/components/InteractiveGlobe.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/MapComponent.tsx"
+          "frontend/src/components/InteractiveGlobe.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Make the route line arrow effect stronger on the 2D map by increasing arrow frequency (more arrows along each route segment) and increasing arrow size slightly, while keeping arrow direction aligned with the route’s travel order.",
+        "summary": "Display a corresponding UTC offset time directly below the local time that dynamically updates when the user clicks on different UTC offset buttons, calculating the adjusted time based on the selected offset relative to the local time",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/MapComponent.tsx"
+          "frontend/src/components/InteractiveGlobe.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/MapComponent.tsx"
+          "frontend/src/components/InteractiveGlobe.tsx"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Enhance the schedule item popup box on the 2D map to display richer details: show time in 12-hour format with AM/PM, show the day context (e.g., the schedule day label and/or weekday + date derived from the schedule item date), and show subject titles (use the schedule item’s activity as the primary title and include location as a secondary line when available).",
+        "summary": "Position both the local time and UTC offset time displays within the XPath element /html[1]/body[1]/div[1]/div[2]/div[1]/div[3]/div[1]/div[1], placing them directly below the UTC offset selector without modifying the existing UI layout or the 3D globe",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/MapComponent.tsx",
-          "frontend/src/utils/scheduleDayStyling.ts"
+          "frontend/src/components/InteractiveGlobe.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/MapComponent.tsx",
-          "frontend/src/utils/scheduleDayStyling.ts"
+          "frontend/src/components/InteractiveGlobe.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
     "build-request.json",
+    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/MapComponent.tsx",
-    "frontend/src/utils/scheduleDayStyling.ts",
+    "frontend/src/components/InteractiveGlobe.tsx",
+    "frontend/src/config.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
