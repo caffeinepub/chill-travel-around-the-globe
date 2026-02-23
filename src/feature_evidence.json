@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-display-the-current-local-time-below-the-utc-offset-selector-using-the-same-date-time-format-as-shown-in-the-main-web-layout",
-      "featureTitle": "Display the current local time below the UTC offset selector using the same date-time format as shown in the main web layout",
+      "featureId": "feature-fix-the-2d-map-journey-schedule-overlay-so-that-schedule-items-markers-and-route-lines-appear-immediately-after-the-user-clicks-the-map-button-in-the-travelogue-without-needing-a-page-refresh-ensure-mapcomponent-re-renders-schedule-markers-and-route-overlays-whenever-the-travelogue-provided-journey-city-filter-changes-and-or-the-corresponding-schedule-query-returns-data",
+      "featureTitle": "Fix the 2D map journey schedule overlay so that schedule items/markers and route lines appear immediately after the user clicks the Map button in the Travelogue (without needing a page refresh). Ensure MapComponent re-renders schedule markers and route overlays whenever the Travelogue-provided journey city filter changes and/or the corresponding schedule query returns data.",
       "files": [
-        "frontend/src/components/InteractiveGlobe.tsx"
+        "frontend/src/components/MapComponent.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -22,10 +22,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-display-a-corresponding-utc-offset-time-directly-below-the-local-time-that-dynamically-updates-when-the-user-clicks-on-different-utc-offset-buttons-calculating-the-adjusted-time-based-on-the-selected-offset-relative-to-the-local-time",
-      "featureTitle": "Display a corresponding UTC offset time directly below the local time that dynamically updates when the user clicks on different UTC offset buttons, calculating the adjusted time based on the selected offset relative to the local time",
+      "featureId": "feature-make-the-route-line-arrow-effect-stronger-on-the-2d-map-by-increasing-arrow-frequency-more-arrows-along-each-route-segment-and-increasing-arrow-size-slightly-while-keeping-arrow-direction-aligned-with-the-route-s-travel-order",
+      "featureTitle": "Make the route line arrow effect stronger on the 2D map by increasing arrow frequency (more arrows along each route segment) and increasing arrow size slightly, while keeping arrow direction aligned with the route’s travel order.",
       "files": [
-        "frontend/src/components/InteractiveGlobe.tsx"
+        "frontend/src/components/MapComponent.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -42,10 +42,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-position-both-the-local-time-and-utc-offset-time-displays-within-the-xpath-element-html-1-body-1-div-1-div-2-div-1-div-3-div-1-div-1-placing-them-directly-below-the-utc-offset-selector-without-modifying-the-existing-ui-layout-or-the-3d-globe",
-      "featureTitle": "Position both the local time and UTC offset time displays within the XPath element /html[1]/body[1]/div[1]/div[2]/div[1]/div[3]/div[1]/div[1], placing them directly below the UTC offset selector without modifying the existing UI layout or the 3D globe",
+      "featureId": "feature-enhance-the-schedule-item-popup-box-on-the-2d-map-to-display-richer-details-show-time-in-12-hour-format-with-am-pm-show-the-day-context-e-g-the-schedule-day-label-and-or-weekday-date-derived-from-the-schedule-item-date-and-show-subject-titles-use-the-schedule-item-s-activity-as-the-primary-title-and-include-location-as-a-secondary-line-when-available",
+      "featureTitle": "Enhance the schedule item popup box on the 2D map to display richer details: show time in 12-hour format with AM/PM, show the day context (e.g., the schedule day label and/or weekday + date derived from the schedule item date), and show subject titles (use the schedule item’s activity as the primary title and include location as a secondary line when available).",
       "files": [
-        "frontend/src/components/InteractiveGlobe.tsx"
+        "frontend/src/components/MapComponent.tsx",
+        "frontend/src/utils/scheduleDayStyling.ts"
       ],
       "components": [
         "authorization@1.0.1",

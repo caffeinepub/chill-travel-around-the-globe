@@ -1,39 +1,56 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-23T02:45:31.762Z",
-  "summary": "The diff shows modifications to InteractiveGlobe.tsx, frontend-file-summaries.txt, and project_state.json, but no evidence of implementing the requested time display features (local time and UTC offset time below the UTC offset selector). All three requirements appear to be missing from the implementation.",
+  "generatedAt": "2026-02-16T02:04:45.471Z",
+  "summary": "The diff does not provide direct code evidence that the three requested map/schedule fixes (auto-refresh of journey schedule overlays, stronger route arrows, richer schedule popup content) were implemented. The only clearly evidenced changes are an unrequested TravelSpot 'city' icon change in MapComponent and the addition of day-color/label/context helper utilities.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Display the current local time below the UTC offset selector using the same date-time format as shown in the main web layout",
-      "reason": "No evidence in the diff of adding local time display UI elements, time formatting logic, or real-time updates. The InteractiveGlobe.tsx modifications show only existing globe functionality.",
+      "requirement": "Fix the 2D map journey schedule overlay so that schedule items/markers and route lines appear immediately after the user clicks the Map button in the Travelogue (without needing a page refresh). Ensure MapComponent re-renders schedule markers and route overlays whenever the Travelogue-provided journey city filter changes and/or the corresponding schedule query returns data.",
+      "reason": "No diff evidence shows logic that re-renders schedule markers/routes on journeyCityFilter changes or schedule-query completion. The provided MapComponent snippet only shows imports and a TravelSpot icon change; no overlay refresh behavior is shown.",
       "evidence": [
-        "frontend/src/components/InteractiveGlobe.tsx"
+        "frontend/src/components/MapComponent.tsx (truncated snippet shows icon mapping change but no schedule overlay refresh logic)"
       ]
     },
     {
       "id": "REQ-2",
-      "requirement": "Display a corresponding UTC offset time directly below the local time that dynamically updates when the user clicks on different UTC offset buttons",
-      "reason": "No evidence of UTC offset time display implementation, offset-based time calculation logic, or click handlers for UTC offset buttons that update the time display.",
+      "requirement": "Make the route line arrow effect stronger on the 2D map by increasing arrow frequency and increasing arrow size slightly, while keeping arrow direction aligned with the route’s travel order.",
+      "reason": "No diff evidence shows any adjustments to route arrow rendering parameters (frequency/spacing/size) or polyline decorator logic. The visible snippet does not include any route-arrow-related code.",
       "evidence": [
-        "frontend/src/components/InteractiveGlobe.tsx"
+        "frontend/src/components/MapComponent.tsx (truncated; no arrow rendering changes visible)"
       ]
     },
     {
       "id": "REQ-3",
-      "requirement": "Position both time displays within the XPath element /html[1]/body[1]/div[1]/div[2]/div[1]/div[3]/div[1]/div[1] below the UTC offset selector",
-      "reason": "No evidence of adding any time display elements or DOM modifications within the specified XPath location. The diff does not show JSX/TSX additions for time display components.",
+      "requirement": "Enhance the schedule item popup box on the 2D map to display richer details: show time in 12-hour format with AM/PM, show day context, and show subject titles (activity as primary, location as secondary when available), with English user-facing text.",
+      "reason": "Although a new helper getDayContextString() is added, the diff does not show any popup rendering changes in MapComponent (time formatting, day label/context display, activity/location lines).",
       "evidence": [
-        "frontend/src/components/InteractiveGlobe.tsx"
+        "frontend/src/utils/scheduleDayStyling.ts (adds getDayContextString but no popup usage shown)",
+        "frontend/src/components/MapComponent.tsx (truncated; popup content changes not visible)"
       ]
     }
   ],
-  "hallucinated_features": [],
-  "confidence": 0.95,
+  "hallucinated_features": [
+    {
+      "description": "Changed the TravelSpot icon mapping for spot type 'city' to a custom black SVG (and associated comment about using a black city icon instead of three dots).",
+      "reason": "Not requested by any requirement; BuildRequest constraints explicitly discourage redesigning unrelated parts of the map UI beyond what is needed for the three fixes.",
+      "evidence": [
+        "frontend/src/components/MapComponent.tsx (getTravelSpotIcon: new 'city' SVG icon and comment)"
+      ]
+    },
+    {
+      "description": "Introduced/modified day label color palette utilities and added getDayLabel()/getDayColor()/computeDayIndex()/getDayContextString() helpers.",
+      "reason": "REQ-3 asks for day context in the schedule popup, but the diff does not show these being used in the popup; the broader day-label color system (vibrant palette, D1/D2 labels) is not explicitly requested.",
+      "evidence": [
+        "frontend/src/utils/scheduleDayStyling.ts"
+      ]
+    }
+  ],
+  "confidence": 0.68,
   "changed_files": [
     "frontend-file-summaries.txt",
-    "frontend/src/components/InteractiveGlobe.tsx",
+    "frontend/src/components/MapComponent.tsx",
+    "frontend/src/utils/scheduleDayStyling.ts",
     "project_state.json"
   ]
 }

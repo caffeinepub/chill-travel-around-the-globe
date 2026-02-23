@@ -1,13 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Add local time and UTC offset time displays below the UTC offset selector.
+**Goal:** Ensure the 2D map correctly and immediately shows the selected journey’s schedule markers/routes from the Travelogue, improve route arrow visibility, and enrich schedule marker popup details.
 
 **Planned changes:**
-- Display current local time below the UTC offset selector using the existing date-time format
-- Display UTC offset time directly below local time that dynamically updates when clicking different UTC offset buttons
-- Calculate and show adjusted time based on selected offset relative to local time (e.g., UTC+8 10:19 AM becomes UTC+9 11:19 AM)
-- Position both time displays within the specified container element below the UTC offset selector
-- Ensure both times update in real-time
+- Fix the 2D map schedule overlay so schedule markers and route lines render immediately after clicking the Travelogue “Map (2D)” button, and re-render when the selected journey/city filter or schedule query results change.
+- Increase the strength of the route arrow effect on 2D map route lines by making arrows more frequent and slightly larger while preserving correct travel direction.
+- Update the schedule marker popup content to include 12-hour time with AM/PM, day context (day label and/or weekday + date), and clearer subject/title display (activity as primary title, location as secondary when available), with English user-facing text.
 
-**User-visible outcome:** Users can see their local time and a dynamically calculated UTC offset time below the UTC offset selector. When they click different UTC offset buttons, the offset time adjusts accordingly to show what time it would be in that timezone.
+**User-visible outcome:** Clicking “Map (2D)” in the Travelogue immediately shows the correct journey’s schedule markers and route (no refresh needed); route direction arrows are easier to see; and schedule marker popups display clearer time/day/title information.
