@@ -1,73 +1,58 @@
 {
   "kind": "build_request",
-  "title": "Fix journey schedule markers auto-render on 2D map, strengthen route arrows, and enrich schedule popup details",
+  "title": "Add UTC info to Map Settings and local time display under UTC Offset Selection",
+  "projectName": "Globe Time Explorer",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix the 2D map journey schedule overlay so that schedule items/markers and route lines appear immediately after the user clicks the Map button in the Travelogue (without needing a page refresh). Ensure MapComponent re-renders schedule markers and route overlays whenever the Travelogue-provided journey city filter changes and/or the corresponding schedule query returns data.",
+      "text": "In the WebsiteLayoutPanel component, add a UTC info display under the 'Map Settings' section that shows the currently selected UTC offset in the same format as the local time display (e.g., 'UTC+08:00: 14:30:45')",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-latest"
         ],
         "quotes": [
-          "The schedule items doesn't show up automatically when clicking map button under the travelogue and has to refresh the page for it to pop up, could you solve it?"
+          "Under the Map Settings of the Website layout, add also the corresponding UTC info"
         ]
       },
       "acceptanceCriteria": [
-        "From the Travelogue panel, clicking the Map (2D) button for a journey shows that journey’s schedule markers/route on the map without a manual browser refresh.",
-        "Switching between different journeys via the Travelogue Map button updates the schedule markers/route to match the newly selected journey.",
-        "No regression: existing travel spot markers and bookmark markers still load and remain interactive as before."
+        "UTC info appears under the Map Settings section in WebsiteLayoutPanel",
+        "Format matches the local time display format used elsewhere",
+        "Updates dynamically when UTC offset changes"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Make the route line arrow effect stronger on the 2D map by increasing arrow frequency (more arrows along each route segment) and increasing arrow size slightly, while keeping arrow direction aligned with the route’s travel order.",
+      "text": "In the LocationMapExplorer page, add a local time display directly under the 'UTC Offset Selection' button that uses the same format as shown under Map Settings (showing UTC offset and time like 'UTC+08:00: 14:30:45')",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-latest"
         ],
         "quotes": [
-          "Could you make the arrow effect in the route line stronger (more arrows and the arrow a bit larger)"
+          "Under the UTC Offset Selection button, add the local time with format same as the one under Map settings"
         ]
       },
       "acceptanceCriteria": [
-        "Route arrows are visibly more frequent along the route line than before.",
-        "Route arrows are visibly larger than before and remain readable at typical zoom levels.",
-        "Arrow direction continues to correctly indicate travel direction along the route."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Enhance the schedule item popup box on the 2D map to display richer details: show time in 12-hour format with AM/PM, show the day context (e.g., the schedule day label and/or weekday + date derived from the schedule item date), and show subject titles (use the schedule item’s activity as the primary title and include location as a secondary line when available).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-user-1"
-        ],
-        "quotes": [
-          "Enhance the details of the schedule item popup box, for example: add AM/PM to the time, add the Day, add subject titles"
-        ]
-      },
-      "acceptanceCriteria": [
-        "When clicking a schedule marker, the popup shows the time with AM/PM (e.g., “3:05 PM”).",
-        "The popup shows the day context (day label and/or weekday/date) for the clicked schedule item.",
-        "The popup shows a clear subject/title line for the schedule item (activity), and includes location as a secondary detail when present.",
-        "User-facing text in the popup is in English."
+        "Local time display appears directly beneath the UTC Offset Selection button",
+        "Format is identical to the time display in Map Settings",
+        "Time updates in real-time based on selected UTC offset",
+        "Display is positioned within the XPath element /html[1]/body[1]/div[3]/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]"
       ]
     }
   ],
   "constraints": [
-    "Apply changes only to the selected UI areas related to: (1) Travelogue Map button -> 2D map schedule overlay refresh behavior, (2) the map route line arrow rendering, and (3) the schedule item popup content.",
-    "Do not edit files under frontend/src/components/ui (shadcn components are read-only).",
-    "Do not edit frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, or frontend/src/main.tsx."
+    "Do not modify the current UI layout structure",
+    "Do not change the 3D globe component or its behavior",
+    "Only modify elements related to requirements 1 and 2",
+    "Preserve all existing functionality in WebsiteLayoutPanel and LocationMapExplorer"
   ],
   "nonGoals": [
-    "Do not add new authentication methods or third-party auth providers.",
-    "Do not introduce new backend services or external databases.",
-    "Do not redesign unrelated parts of the map UI (travel spots, bookmarks, media popups) beyond what is needed to satisfy the three requested fixes."
+    "Changing the overall page layout",
+    "Modifying the 3D globe visualization",
+    "Adding new features beyond the two specified time displays",
+    "Altering existing Map Settings or UTC Offset Selection button functionality"
   ],
   "imageRequirements": {
     "required": [],

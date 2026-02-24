@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-the-2d-map-journey-schedule-overlay-so-that-schedule-items-markers-and-route-lines-appear-immediately-after-the-user-clicks-the-map-button-in-the-travelogue-without-needing-a-page-refresh-ensure-mapcomponent-re-renders-schedule-markers-and-route-overlays-whenever-the-travelogue-provided-journey-city-filter-changes-and-or-the-corresponding-schedule-query-returns-data",
-      "featureTitle": "Fix the 2D map journey schedule overlay so that schedule items/markers and route lines appear immediately after the user clicks the Map button in the Travelogue (without needing a page refresh). Ensure MapComponent re-renders schedule markers and route overlays whenever the Travelogue-provided journey city filter changes and/or the corresponding schedule query returns data.",
+      "featureId": "feature-in-the-websitelayoutpanel-component-add-a-utc-info-display-under-the-map-settings-section-that-shows-the-currently-selected-utc-offset-in-the-same-format-as-the-local-time-display-e-g-utc-08-00-14-30-45",
+      "featureTitle": "In the WebsiteLayoutPanel component, add a UTC info display under the 'Map Settings' section that shows the currently selected UTC offset in the same format as the local time display (e.g., 'UTC+08:00: 14:30:45')",
       "files": [
-        "frontend/src/components/MapComponent.tsx"
+        "frontend/src/components/WebsiteLayoutPanel.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -22,10 +22,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-make-the-route-line-arrow-effect-stronger-on-the-2d-map-by-increasing-arrow-frequency-more-arrows-along-each-route-segment-and-increasing-arrow-size-slightly-while-keeping-arrow-direction-aligned-with-the-route-s-travel-order",
-      "featureTitle": "Make the route line arrow effect stronger on the 2D map by increasing arrow frequency (more arrows along each route segment) and increasing arrow size slightly, while keeping arrow direction aligned with the route’s travel order.",
+      "featureId": "feature-in-the-locationmapexplorer-page-add-a-local-time-display-directly-under-the-utc-offset-selection-button-that-uses-the-same-format-as-shown-under-map-settings-showing-utc-offset-and-time-like-utc-08-00-14-30-45",
+      "featureTitle": "In the LocationMapExplorer page, add a local time display directly under the 'UTC Offset Selection' button that uses the same format as shown under Map Settings (showing UTC offset and time like 'UTC+08:00: 14:30:45')",
       "files": [
-        "frontend/src/components/MapComponent.tsx"
+        "frontend/src/pages/LocationMapExplorer.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -38,27 +38,6 @@
       ],
       "testIds": [
         "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-enhance-the-schedule-item-popup-box-on-the-2d-map-to-display-richer-details-show-time-in-12-hour-format-with-am-pm-show-the-day-context-e-g-the-schedule-day-label-and-or-weekday-date-derived-from-the-schedule-item-date-and-show-subject-titles-use-the-schedule-item-s-activity-as-the-primary-title-and-include-location-as-a-secondary-line-when-available",
-      "featureTitle": "Enhance the schedule item popup box on the 2D map to display richer details: show time in 12-hour format with AM/PM, show the day context (e.g., the schedule day label and/or weekday + date derived from the schedule item date), and show subject titles (use the schedule item’s activity as the primary title and include location as a secondary line when available).",
-      "files": [
-        "frontend/src/components/MapComponent.tsx",
-        "frontend/src/utils/scheduleDayStyling.ts"
-      ],
-      "components": [
-        "authorization@1.0.1",
-        "blob-storage@1.1.2",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
       ],
       "confidence": "high"
     }

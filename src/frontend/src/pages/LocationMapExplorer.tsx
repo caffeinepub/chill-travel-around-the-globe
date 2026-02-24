@@ -55,11 +55,38 @@ export default function LocationMapExplorer() {
   const [countryFontSize, setCountryFontSize] = useState<number>(8);
   const [flightAnimation, setFlightAnimation] = useState<FlightAnimationData | null>(null);
   const [selectedJourneyCity, setSelectedJourneyCity] = useState<string | null>(null);
+  const [utcOffsetTime, setUtcOffsetTime] = useState<string>('');
 
   const { mutate: searchLocation, isPending } = useSearchLocation();
   const { data: layoutPreferences } = useGetWebsiteLayoutPreferences();
 
   const offsets = [-12, -11, -10, -9.5, -9, -8, -7, -6, -5, -4, -3.5, -3, -2, -1, 0, 1, 2, 3, 3.5, 4, 4.5, 5, 5.5, 5.75, 6, 6.5, 7, 8, 8.75, 9, 9.5, 10, 10.5, 11, 12, 12.75, 13, 14];
+
+  const utcOffsetHours = offsets[activeOffsetIndex];
+
+  // Update UTC offset time display every second
+  useEffect(() => {
+    const updateUtcOffsetTime = () => {
+      const now = new Date();
+      const utcDate = new Date(now.getTime() + utcOffsetHours * 60 * 60 * 1000);
+      
+      const hours = utcDate.getUTCHours().toString().padStart(2, '0');
+      const minutes = utcDate.getUTCMinutes().toString().padStart(2, '0');
+      const seconds = utcDate.getUTCSeconds().toString().padStart(2, '0');
+      
+      const offsetSign = utcOffsetHours >= 0 ? '+' : '';
+      const offsetFormatted = utcOffsetHours % 1 === 0 
+        ? `${offsetSign}${utcOffsetHours.toFixed(0).padStart(2, '0')}:00`
+        : `${offsetSign}${Math.floor(utcOffsetHours).toString().padStart(2, '0')}:${Math.abs((utcOffsetHours % 1) * 60).toString().padStart(2, '0')}`;
+      
+      setUtcOffsetTime(`UTC${offsetFormatted}: ${hours}:${minutes}:${seconds}`);
+    };
+
+    updateUtcOffsetTime();
+    const interval = setInterval(updateUtcOffsetTime, 1000);
+
+    return () => clearInterval(interval);
+  }, [utcOffsetHours]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -361,7 +388,7 @@ export default function LocationMapExplorer() {
               <MusicPanel onSongSelect={handleSongSelect} currentlyPlayingSong={currentSong} />
 
               {/* Website Layout Panel - Icon Only */}
-              <WebsiteLayoutPanel />
+              <WebsiteLayoutPanel utcOffsetHours={utcOffsetHours} />
 
               {/* Authentication Panel - Icon Only - positioned right below Website Layout */}
               <LoginPanel />
@@ -437,47 +464,27 @@ export default function LocationMapExplorer() {
                             <ToggleGroupItem 
                               value="3D" 
                               aria-label="3D Globe View"
-                              className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground h-6 px-2 text-xs text-gray-700 dark:text-gray-300"
+                              className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground h-6 px-2 text-xs"
                             >
-                              3D
+                              <Globe className="h-3 w-3" />
                             </ToggleGroupItem>
                           </TooltipTrigger>
-                          <TooltipContent side="bottom" className="max-w-sm p-4 glass-morphism">
-                            <div className="space-y-2">
-                              <p className="font-medium text-gray-400">Interactive 3D Globe with Personalized Travel Map</p>
-                              <p className="text-sm leading-relaxed text-gray-400">
-                                Drag to rotate • Scroll to zoom • Click country to highlight • Click ocean to deselect
-                              </p>
-                              <p className="text-sm text-yellow-400">
-                                Animated arcs from {layoutPreferences?.defaultSearchPlace || 'Zurich'} to your traveled cities
-                              </p>
-                              <p className="text-sm text-sky-400">
-                                Watch for start city labels, ripple effects, and arrival city labels when arcs animate!
-                              </p>
-                            </div>
+                          <TooltipContent>
+                            <p>3D Globe View</p>
                           </TooltipContent>
                         </Tooltip>
-                        
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <ToggleGroupItem 
                               value="2D" 
                               aria-label="2D Map View"
-                              className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground h-6 px-2 text-xs text-gray-700 dark:text-gray-300"
+                              className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground h-6 px-2 text-xs"
                             >
-                              2D
+                              <MapPin className="h-3 w-3" />
                             </ToggleGroupItem>
                           </TooltipTrigger>
-                          <TooltipContent side="bottom" className="max-w-sm p-4 glass-morphism">
-                            <div className="space-y-2">
-                              <p className="font-medium text-gray-400">Interactive 2D Map with Detailed Location View</p>
-                              <p className="text-sm leading-relaxed text-gray-400">
-                                Drag to pan • Scroll to zoom • Click markers for details • Click map to bookmark
-                              </p>
-                              <p className="text-sm text-green-400">
-                                View city ratings, albums, travel spots, and schedule items
-                              </p>
-                            </div>
+                          <TooltipContent>
+                            <p>2D Map View</p>
                           </TooltipContent>
                         </Tooltip>
                       </ToggleGroup>
@@ -488,107 +495,108 @@ export default function LocationMapExplorer() {
             </div>
           </header>
 
-          {/* World Travel Hotspot Panel - positioned below City button - INCREASED Z-INDEX */}
+          {/* World Travel Hotspot Panel - positioned below City button */}
           {worldHotspotOpen && (
             <div 
               id="world-hotspot-panel"
-              className="absolute top-[60px] left-4 z-[10004] pointer-events-auto"
+              className="absolute top-[60px] left-4 z-[10002] pointer-events-auto"
             >
-              <Card className="w-80 max-h-[calc(100vh-80px)] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-xl border border-white/40 dark:border-slate-700/60">
+              <Card className="w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-xl border border-white/40 dark:border-slate-700/60">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Building2 className="h-5 w-5" />
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Building className="h-5 w-5" />
                     World Travel Hotspot
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Explore your travel destinations and hotspots around the world.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* UTC Offset Panel - positioned below Show Time Zones button - INCREASED Z-INDEX */}
-          {showTimeZones && (
-            <div 
-              id="utc-offset-panel"
-              className="absolute top-[116px] left-4 z-[10004] pointer-events-auto"
-            >
-              <Card className="w-80 max-h-[calc(100vh-136px)] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-xl border border-white/40 dark:border-slate-700/60">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    UTC Offset Selection
-                  </CardTitle>
-                </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="grid grid-cols-4 gap-2">
-                    {offsets.map((offset, index) => (
-                      <Button
-                        key={offset}
-                        variant={activeOffsetIndex === index ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setActiveOffsetIndex(index)}
-                        className="text-xs"
-                      >
-                        {formatUtcOffsetLabel(offset)}
-                      </Button>
-                    ))}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Show Capitals</span>
+                    <input
+                      type="checkbox"
+                      checked={showCapitals}
+                      onChange={(e) => setShowCapitals(e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Show Global Cities</span>
+                    <input
+                      type="checkbox"
+                      checked={showGlobalCities}
+                      onChange={(e) => setShowGlobalCities(e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Show Major Cities</span>
+                    <input
+                      type="checkbox"
+                      checked={showMajorCities}
+                      onChange={(e) => setShowMajorCities(e.target.checked)}
+                      className="h-4 w-4"
+                    />
                   </div>
                 </CardContent>
               </Card>
             </div>
           )}
 
-          {/* World Controls Panel - positioned below World button - INCREASED Z-INDEX */}
+          {/* UTC Offset Selection Panel - positioned below Show Time Zones button */}
+          {showTimeZones && (
+            <div 
+              id="utc-offset-panel"
+              className="absolute top-[108px] left-4 z-[10002] pointer-events-auto"
+            >
+              <Card className="w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-xl border border-white/40 dark:border-slate-700/60">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Clock className="h-5 w-5" />
+                    UTC Offset Selection
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Local time display */}
+                  <div className="text-center py-2 px-3 bg-primary/10 dark:bg-primary/20 rounded-md">
+                    <p className="text-sm font-semibold text-primary dark:text-primary-foreground">
+                      {utcOffsetTime}
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Select UTC Offset</label>
+                    <div className="grid grid-cols-6 gap-1 max-h-48 overflow-y-auto p-1">
+                      {offsets.map((offset, index) => (
+                        <Button
+                          key={offset}
+                          variant={activeOffsetIndex === index ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setActiveOffsetIndex(index)}
+                          className="h-8 text-xs"
+                        >
+                          {formatUtcOffsetLabel(offset)}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* World Controls Panel - positioned below World button */}
           {worldControlsOpen && (
             <div 
               id="world-controls-panel"
-              className="absolute top-[172px] left-4 z-[10004] pointer-events-auto"
+              className="absolute top-[156px] left-4 z-[10002] pointer-events-auto"
             >
-              <Card className="w-80 max-h-[calc(100vh-192px)] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-xl border border-white/40 dark:border-slate-700/60">
+              <Card className="w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-xl border border-white/40 dark:border-slate-700/60">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-lg">
                     <Earth className="h-5 w-5" />
                     World Controls
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">City Display</label>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={showCapitals}
-                          onChange={(e) => setShowCapitals(e.target.checked)}
-                          className="rounded"
-                        />
-                        Show Capitals
-                      </label>
-                      <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={showGlobalCities}
-                          onChange={(e) => setShowGlobalCities(e.target.checked)}
-                          className="rounded"
-                        />
-                        Show Global Cities
-                      </label>
-                      <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={showMajorCities}
-                          onChange={(e) => setShowMajorCities(e.target.checked)}
-                          className="rounded"
-                        />
-                        Show Major Cities
-                      </label>
-                    </div>
-                  </div>
-
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Rotation Speed</label>
                     <input
@@ -601,10 +609,10 @@ export default function LocationMapExplorer() {
                       className="w-full"
                     />
                     <p className="text-xs text-muted-foreground">
-                      {rotationSpeed.toFixed(4)}
+                      Current: {rotationSpeed.toFixed(4)}
                     </p>
                   </div>
-
+                  
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Country Font Size</label>
                     <input
@@ -617,22 +625,40 @@ export default function LocationMapExplorer() {
                       className="w-full"
                     />
                     <p className="text-xs text-muted-foreground">
-                      {countryFontSize.toFixed(1)}px
+                      Current: {countryFontSize.toFixed(1)}px
                     </p>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Show Terminator</span>
+                    <input
+                      type="checkbox"
+                      checked={showTerminator}
+                      onChange={(e) => setShowTerminator(e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Show Twilight</span>
+                    <input
+                      type="checkbox"
+                      checked={showTwilight}
+                      onChange={(e) => setShowTwilight(e.target.checked)}
+                      className="h-4 w-4"
+                    />
                   </div>
                 </CardContent>
               </Card>
             </div>
           )}
-
-          {/* Music Player Bar - positioned at bottom */}
-          {layoutPreferences?.showMusicPlayer && (
-            <div className="absolute bottom-0 left-0 right-0 z-[10000] pointer-events-auto">
-              <MusicPlayerBar currentSong={currentSong} onSongChange={setCurrentSong} />
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Music Player Bar - conditionally rendered based on layout preferences */}
+      {layoutPreferences?.showMusicPlayer !== false && (
+        <MusicPlayerBar currentSong={currentSong} onSongChange={setCurrentSong} />
+      )}
     </TooltipProvider>
   );
 }

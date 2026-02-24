@@ -11,9 +11,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useGetWebsiteLayoutPreferences, useSaveWebsiteLayoutPreferences } from '@/hooks/useQueries';
 
-export default function WebsiteLayoutPanel() {
+interface WebsiteLayoutPanelProps {
+  utcOffsetHours?: number;
+}
+
+export default function WebsiteLayoutPanel({ utcOffsetHours = 0 }: WebsiteLayoutPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [localTime, setLocalTime] = useState<string>('');
+  const [utcTime, setUtcTime] = useState<string>('');
 
   const { data: layoutPreferences } = useGetWebsiteLayoutPreferences();
   const saveLayoutPreferences = useSaveWebsiteLayoutPreferences();
@@ -38,6 +43,30 @@ export default function WebsiteLayoutPanel() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Update UTC time with offset every second
+  useEffect(() => {
+    const updateUtcTime = () => {
+      const now = new Date();
+      const utcDate = new Date(now.getTime() + utcOffsetHours * 60 * 60 * 1000);
+      
+      const hours = utcDate.getUTCHours().toString().padStart(2, '0');
+      const minutes = utcDate.getUTCMinutes().toString().padStart(2, '0');
+      const seconds = utcDate.getUTCSeconds().toString().padStart(2, '0');
+      
+      const offsetSign = utcOffsetHours >= 0 ? '+' : '';
+      const offsetFormatted = utcOffsetHours % 1 === 0 
+        ? `${offsetSign}${utcOffsetHours.toFixed(0).padStart(2, '0')}:00`
+        : `${offsetSign}${Math.floor(utcOffsetHours).toString().padStart(2, '0')}:${Math.abs((utcOffsetHours % 1) * 60).toString().padStart(2, '0')}`;
+      
+      setUtcTime(`UTC${offsetFormatted}: ${hours}:${minutes}:${seconds}`);
+    };
+
+    updateUtcTime();
+    const interval = setInterval(updateUtcTime, 1000);
+
+    return () => clearInterval(interval);
+  }, [utcOffsetHours]);
 
   const handleMusicPlayerToggle = async (enabled: boolean) => {
     try {
@@ -159,6 +188,8 @@ export default function WebsiteLayoutPanel() {
                       Current default search place: <strong>{layoutPreferences?.defaultSearchPlace || 'Hong Kong'}</strong>
                       <br />
                       Local time: <strong>{localTime}</strong>
+                      <br />
+                      <strong>{utcTime}</strong>
                     </AlertDescription>
                   </Alert>
                 </CardContent>
@@ -207,4 +238,3 @@ export default function WebsiteLayoutPanel() {
     </Dialog>
   );
 }
-

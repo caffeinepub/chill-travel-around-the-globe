@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Ensure the 2D map correctly and immediately shows the selected journey’s schedule markers/routes from the Travelogue, improve route arrow visibility, and enrich schedule marker popup details.
+**Goal:** Add UTC time information displays to both the Map Settings panel and under the UTC Offset Selection button.
 
 **Planned changes:**
-- Fix the 2D map schedule overlay so schedule markers and route lines render immediately after clicking the Travelogue “Map (2D)” button, and re-render when the selected journey/city filter or schedule query results change.
-- Increase the strength of the route arrow effect on 2D map route lines by making arrows more frequent and slightly larger while preserving correct travel direction.
-- Update the schedule marker popup content to include 12-hour time with AM/PM, day context (day label and/or weekday + date), and clearer subject/title display (activity as primary title, location as secondary when available), with English user-facing text.
+- Add UTC time display under the Map Settings section in WebsiteLayoutPanel showing format like 'UTC+08:00: 14:30:45'
+- Add local time display directly under the UTC Offset Selection button in LocationMapExplorer using the same format
+- Ensure both displays update dynamically based on the selected UTC offset
 
-**User-visible outcome:** Clicking “Map (2D)” in the Travelogue immediately shows the correct journey’s schedule markers and route (no refresh needed); route direction arrows are easier to see; and schedule marker popups display clearer time/day/title information.
+**User-visible outcome:** Users can now see the current time in their selected UTC offset in two locations: under Map Settings and directly beneath the UTC Offset Selection button, making it easier to track time zones while exploring the globe.
