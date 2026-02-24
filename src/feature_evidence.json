@@ -2,8 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-in-websitelayoutpanel-modify-the-local-time-display-format-to-show-the-utc-offset-within-the-date-string-e-g-february-24-2026-utc-8-instead-of-separate-utc-8-label-the-xpath-for-the-element-to-modify-is-html-1-body-1-div-3-div-2-div-2-div-2-div-1-div-2-div-2-div-1-strong-3",
-      "featureTitle": "In WebsiteLayoutPanel, modify the local time display format to show the UTC offset within the date string (e.g., 'February 24, 2026 (UTC +8)' instead of separate UTC+8 label). The XPath for the element to modify is /html[1]/body[1]/div[3]/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]/div[1]/strong[3].",
+      "featureId": "feature-in-the-websitelayoutpanel-component-modify-the-local-time-display-to-append-the-utc-offset-in-the-format-utc-x-or-utc-x-where-x-is-the-timezone-offset-for-example-february-24-2026-at-9-11-am-utc-8-apply-this-change-to-the-element-at-xpath-html-1-body-1-div-3-div-2-div-2-div-2-div-1-div-2-div-2-div-1-strong-2-which-displays-the-local-time-for-the-default-search-location",
+      "featureTitle": "In the WebsiteLayoutPanel component, modify the local time display to append the UTC offset in the format '(UTC +X)' or '(UTC -X)' where X is the timezone offset. For example, 'February 24, 2026 at 9:11 AM (UTC +8)'. Apply this change to the element at XPath /html[1]/body[1]/div[3]/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]/div[1]/strong[2], which displays the local time for the default search location.",
       "files": [
         "frontend/src/components/WebsiteLayoutPanel.tsx"
       ],
@@ -18,26 +18,6 @@
       ],
       "testIds": [
         "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-in-locationmapexplorer-add-a-display-above-the-select-utc-offset-button-that-shows-the-current-local-time-and-its-utc-offset-in-the-same-format-as-req-1-e-g-local-time-february-24-2026-utc-8-the-xpath-for-reference-is-html-1-body-1-div-3-div-2-div-2-div-2-div-1-div-2-div-2-div-1-strong-2",
-      "featureTitle": "In LocationMapExplorer, add a display above the 'Select UTC Offset' button that shows the current local time and its UTC offset in the same format as REQ-1 (e.g., 'Local Time: February 24, 2026 (UTC +8)'). The XPath for reference is /html[1]/body[1]/div[3]/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]/div[1]/strong[2].",
-      "files": [
-        "frontend/src/pages/LocationMapExplorer.tsx"
-      ],
-      "components": [
-        "authorization@1.0.1",
-        "blob-storage@1.1.2",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-2"
       ],
       "confidence": "high"
     }

@@ -1,54 +1,41 @@
 {
   "kind": "build_request",
-  "title": "Update UTC timezone display format and add local time above UTC Offset Selection",
+  "title": "Add UTC timezone offset display to local time in Map Settings",
+  "projectName": "Global Travel Map",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "In WebsiteLayoutPanel, modify the local time display format to show the UTC offset within the date string (e.g., 'February 24, 2026 (UTC +8)' instead of separate UTC+8 label). The XPath for the element to modify is /html[1]/body[1]/div[3]/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]/div[1]/strong[3].",
+      "text": "In the WebsiteLayoutPanel component, modify the local time display to append the UTC offset in the format '(UTC +X)' or '(UTC -X)' where X is the timezone offset. For example, 'February 24, 2026 at 9:11 AM (UTC +8)'. Apply this change to the element at XPath /html[1]/body[1]/div[3]/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]/div[1]/strong[2], which displays the local time for the default search location.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-latest"
+          "msg-1"
         ],
         "quotes": [
-          "What i want to show is Local Time: February 24, 2026 (UTC +8)"
+          "Under the Map Settings of the Website layout, i want to show what UTC timezone the local time is in",
+          "Local Time: February 24, 2026  at 9:11 AM (UTC +8)"
         ]
       },
       "acceptanceCriteria": [
-        "Local time displays in format 'Month Day, Year (UTC +/-offset)' where offset is calculated from the default search location",
-        "The display updates when default search location changes",
-        "The format shows the timezone offset of the local time, not UTC+0"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "In LocationMapExplorer, add a display above the 'Select UTC Offset' button that shows the current local time and its UTC offset in the same format as REQ-1 (e.g., 'Local Time: February 24, 2026 (UTC +8)'). The XPath for reference is /html[1]/body[1]/div[3]/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]/div[1]/strong[2].",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-latest"
-        ],
-        "quotes": [
-          "Under the UTC Offset Selection, add the Local Time and the respective UTC above the Select UTC Offset"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Local time with UTC offset displays above the 'Select UTC Offset' button",
-        "Display updates in real-time as the globe location changes",
-        "Format matches the WebsiteLayoutPanel format: 'Month Day, Year (UTC +/-offset)'"
+        "The local time display includes the UTC offset in parentheses format '(UTC +X)' or '(UTC -X)'",
+        "The offset accurately reflects the timezone of the selected default search location",
+        "The format matches the example: 'February 24, 2026 at 9:11 AM (UTC +8)'",
+        "The change applies only to the specific element identified by the provided XPath"
       ]
     }
   ],
   "constraints": [
-    "Do not modify the current UI layout structure",
-    "Do not change the 3D globe component or its functionality",
-    "Preserve all existing features and components"
+    "Do not change the current UI layout",
+    "Do not modify the 3D globe component",
+    "Only modify the specific element at XPath /html[1]/body[1]/div[3]/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]/div[1]/strong[2]",
+    "All other UI elements must remain unchanged"
   ],
   "nonGoals": [
-    "Changing the 3D globe visualization",
-    "Modifying other UI panels or components beyond WebsiteLayoutPanel and LocationMapExplorer",
-    "Altering the UTC offset selection functionality itself"
+    "Redesigning the Map Settings panel layout",
+    "Adding timezone offset display to other components or locations",
+    "Modifying the 3D globe rendering or interactions",
+    "Changing date/time formats beyond adding the UTC offset suffix"
   ],
   "imageRequirements": {
     "required": [],

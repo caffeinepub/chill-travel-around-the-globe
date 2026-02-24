@@ -1,37 +1,22 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Update UTC timezone display format and add local time above UTC Offset Selection",
+  "title": "Add UTC timezone offset display to local time in Map Settings",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Modify WebsiteLayoutPanel to display local time with UTC offset inline in the date string format",
+      "summary": "Display UTC offset alongside local time in WebsiteLayoutPanel for the default search location",
       "acceptanceCriteria": [
-        "Local time displays in format 'Month Day, Year (UTC +/-offset)' where offset is calculated from the default search location",
-        "The display updates when default search location changes",
-        "The format shows the timezone offset of the local time, not UTC+0"
+        "The local time display includes the UTC offset in parentheses format '(UTC +X)' or '(UTC -X)'",
+        "The offset accurately reflects the timezone of the selected default search location",
+        "The format matches the example: 'February 24, 2026 at 9:11 AM (UTC +8)'",
+        "The change applies only to the specific element identified by the provided XPath"
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/WebsiteLayoutPanel.tsx",
           "operation": "modify",
-          "description": "Update the local time display to show UTC offset inline within the date string (e.g., 'February 24, 2026 (UTC +8)' instead of separate UTC+8 label). Modify the component to fetch timezone offset based on defaultSearchPlace coordinates using timezoneUtils, format the date with the inline offset, and update the display when defaultSearchPlace changes. Remove or repurpose the separate UTC offset label element."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Add local time with UTC offset display above the 'Select UTC Offset' button in LocationMapExplorer",
-      "acceptanceCriteria": [
-        "Local time with UTC offset displays above the 'Select UTC Offset' button",
-        "Display updates in real-time as the globe location changes",
-        "Format matches the WebsiteLayoutPanel format: 'Month Day, Year (UTC +/-offset)'"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/LocationMapExplorer.tsx",
-          "operation": "modify",
-          "description": "Add a new display element above the 'Select UTC Offset' button in the globe controls section that shows local time with UTC offset in the format 'Local Time: Month Day, Year (UTC +/-offset)'. Use the current globe camera/marker position coordinates to calculate timezone offset via timezoneUtils. Ensure the display updates in real-time when the globe location changes and matches the format implemented in WebsiteLayoutPanel."
+          "description": "Modify the local time display in the WebsiteLayoutPanel component to append the UTC offset in the format '(UTC +X)' or '(UTC -X)'. Use the Intl.DateTimeFormat API to detect the timezone offset for the defaultSearchPlace location. Update the display element (the <strong> tag showing local time) to include both the formatted date/time and the calculated UTC offset. Ensure the offset calculation handles DST correctly and displays positive offsets with a '+' sign and negative offsets with a '-' sign. The implementation should use existing timezone utilities if available in the codebase."
         }
       ]
     }

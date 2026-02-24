@@ -1,46 +1,36 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-24T01:52:12.888Z",
+  "generatedAt": "2026-02-24T02:45:42.888Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 2,
+    "total": 1,
+    "implemented": 1,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "In WebsiteLayoutPanel, modify the local time display format to show the UTC offset within the date string (e.g., 'February 24, 2026 (UTC +8)' instead of separate UTC+8 label). The XPath for the element to modify is /html[1]/body[1]/div[3]/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]/div[1]/strong[3].",
+        "summary": "In the WebsiteLayoutPanel component, modify the local time display to append the UTC offset in the format '(UTC +X)' or '(UTC -X)' where X is the timezone offset. For example, 'February 24, 2026 at 9:11 AM (UTC +8)'. Apply this change to the element at XPath /html[1]/body[1]/div[3]/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]/div[1]/strong[2], which displays the local time for the default search location.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/WebsiteLayoutPanel.tsx"
         ],
         "matchedFiles": [
           "frontend/src/components/WebsiteLayoutPanel.tsx"
-        ]
-      },
-      {
-        "id": "REQ-2",
-        "summary": "In LocationMapExplorer, add a display above the 'Select UTC Offset' button that shows the current local time and its UTC offset in the same format as REQ-1 (e.g., 'Local Time: February 24, 2026 (UTC +8)'). The XPath for reference is /html[1]/body[1]/div[3]/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]/div[1]/strong[2].",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/LocationMapExplorer.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/LocationMapExplorer.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
     "build-request.json",
+    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/components/WebsiteLayoutPanel.tsx",
-    "frontend/src/pages/LocationMapExplorer.tsx",
+    "frontend/src/config.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

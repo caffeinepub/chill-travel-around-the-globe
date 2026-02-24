@@ -1,47 +1,27 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "3D globe application with UTC timezone display and local time indicators",
+  "summary": "Web application with 3D globe and timezone-aware map settings",
   "architectural_notes": [
-    "3D globe visualization is a core component",
-    "UI layout must remain unchanged except for specified timezone display features"
+    "3D globe visualization component",
+    "Map settings panel with timezone display",
+    "Default search place configuration (e.g., Hong Kong)"
   ],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-in-websitelayoutpanel-modify-the-local-time-display-format-to-show-the-utc-offset-within-the-date-string-e-g-february-24-2026-utc-8-instead-of-separate-utc-8-label-the-xpath-for-the-element-to-modify-is-html-1-body-1-div-3-div-2-div-2-div-2-div-1-div-2-div-2-div-1-strong-3",
-      "title": "In WebsiteLayoutPanel, modify the local time display format to show the UTC offset within the date string (e.g., 'February 24, 2026 (UTC +8)' instead of separate UTC+8 label). The XPath for the element to modify is /html[1]/body[1]/div[3]/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]/div[1]/strong[3].",
+      "id": "feature-in-the-websitelayoutpanel-component-modify-the-local-time-display-to-append-the-utc-offset-in-the-format-utc-x-or-utc-x-where-x-is-the-timezone-offset-for-example-february-24-2026-at-9-11-am-utc-8-apply-this-change-to-the-element-at-xpath-html-1-body-1-div-3-div-2-div-2-div-2-div-1-div-2-div-2-div-1-strong-2-which-displays-the-local-time-for-the-default-search-location",
+      "title": "In the WebsiteLayoutPanel component, modify the local time display to append the UTC offset in the format '(UTC +X)' or '(UTC -X)' where X is the timezone offset. For example, 'February 24, 2026 at 9:11 AM (UTC +8)'. Apply this change to the element at XPath /html[1]/body[1]/div[3]/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]/div[1]/strong[2], which displays the local time for the default search location.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
-    },
-    {
-      "id": "feature-in-locationmapexplorer-add-a-display-above-the-select-utc-offset-button-that-shows-the-current-local-time-and-its-utc-offset-in-the-same-format-as-req-1-e-g-local-time-february-24-2026-utc-8-the-xpath-for-reference-is-html-1-body-1-div-3-div-2-div-2-div-2-div-1-div-2-div-2-div-1-strong-2",
-      "title": "In LocationMapExplorer, add a display above the 'Select UTC Offset' button that shows the current local time and its UTC offset in the same format as REQ-1 (e.g., 'Local Time: February 24, 2026 (UTC +8)'). The XPath for reference is /html[1]/body[1]/div[3]/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]/div[1]/strong[2].",
-      "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
     }
   ],
-  "new_feature_requests": [
-    {
-      "id": "AR-1",
-      "summary": "Display local time with UTC offset (e.g., 'February 24, 2026 (UTC +8)')",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Show local time and UTC offset above UTC Offset Selection",
-      "reqIds": [],
-      "status": "pending"
-    }
-  ],
-  "gameProjectType": "3d",
-  "projectName": "Update UTC timezone display format and add local time above UTC Offset Selection",
+  "new_feature_requests": [],
+  "gameProjectType": "none",
+  "projectName": "Global Travel Map",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }
