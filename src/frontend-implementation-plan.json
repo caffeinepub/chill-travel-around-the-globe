@@ -1,38 +1,37 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Add UTC info to Map Settings and local time display under UTC Offset Selection",
+  "title": "Update UTC timezone display format and add local time above UTC Offset Selection",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Add UTC info display under the 'Map Settings' section in WebsiteLayoutPanel showing the currently selected UTC offset in format 'UTC+08:00: 14:30:45'",
+      "summary": "Modify WebsiteLayoutPanel to display local time with UTC offset inline in the date string format",
       "acceptanceCriteria": [
-        "UTC info appears under the Map Settings section in WebsiteLayoutPanel",
-        "Format matches the local time display format used elsewhere",
-        "Updates dynamically when UTC offset changes"
+        "Local time displays in format 'Month Day, Year (UTC +/-offset)' where offset is calculated from the default search location",
+        "The display updates when default search location changes",
+        "The format shows the timezone offset of the local time, not UTC+0"
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/WebsiteLayoutPanel.tsx",
           "operation": "modify",
-          "description": "Add a UTC time display section below the existing Map Settings content. Import and use React state/effect hooks to track the current UTC offset from the parent LocationMapExplorer (pass as prop). Format and display the current time with the UTC offset prefix (e.g., 'UTC+08:00: 14:30:45'). Implement a timer using setInterval to update the time display every second. Ensure the display updates when the UTC offset prop changes."
+          "description": "Update the local time display to show UTC offset inline within the date string (e.g., 'February 24, 2026 (UTC +8)' instead of separate UTC+8 label). Modify the component to fetch timezone offset based on defaultSearchPlace coordinates using timezoneUtils, format the date with the inline offset, and update the display when defaultSearchPlace changes. Remove or repurpose the separate UTC offset label element."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Add local time display directly under the 'UTC Offset Selection' button in LocationMapExplorer using the same format as Map Settings ('UTC+08:00: 14:30:45')",
+      "summary": "Add local time with UTC offset display above the 'Select UTC Offset' button in LocationMapExplorer",
       "acceptanceCriteria": [
-        "Local time display appears directly beneath the UTC Offset Selection button",
-        "Format is identical to the time display in Map Settings",
-        "Time updates in real-time based on selected UTC offset",
-        "Display is positioned within the XPath element /html[1]/body[1]/div[3]/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]"
+        "Local time with UTC offset displays above the 'Select UTC Offset' button",
+        "Display updates in real-time as the globe location changes",
+        "Format matches the WebsiteLayoutPanel format: 'Month Day, Year (UTC +/-offset)'"
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/LocationMapExplorer.tsx",
           "operation": "modify",
-          "description": "Add a local time display component directly below the UTC Offset Selection Button (inside the same container div). Use the current utcOffsetHours state to format and display the time with UTC offset prefix (e.g., 'UTC+08:00: 14:30:45'). Implement a timer using setInterval/useEffect to update the displayed time every second. Pass the utcOffsetHours state as a prop to WebsiteLayoutPanel so REQ-1 can display the same offset. Ensure the time calculation correctly handles fractional offsets (e.g., +05:30, +05:45)."
+          "description": "Add a new display element above the 'Select UTC Offset' button in the globe controls section that shows local time with UTC offset in the format 'Local Time: Month Day, Year (UTC +/-offset)'. Use the current globe camera/marker position coordinates to calculate timezone offset via timezoneUtils. Ensure the display updates in real-time when the globe location changes and matches the format implemented in WebsiteLayoutPanel."
         }
       ]
     }

@@ -1,58 +1,54 @@
 {
   "kind": "build_request",
-  "title": "Add UTC info to Map Settings and local time display under UTC Offset Selection",
-  "projectName": "Globe Time Explorer",
+  "title": "Update UTC timezone display format and add local time above UTC Offset Selection",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "In the WebsiteLayoutPanel component, add a UTC info display under the 'Map Settings' section that shows the currently selected UTC offset in the same format as the local time display (e.g., 'UTC+08:00: 14:30:45')",
+      "text": "In WebsiteLayoutPanel, modify the local time display format to show the UTC offset within the date string (e.g., 'February 24, 2026 (UTC +8)' instead of separate UTC+8 label). The XPath for the element to modify is /html[1]/body[1]/div[3]/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]/div[1]/strong[3].",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-latest"
         ],
         "quotes": [
-          "Under the Map Settings of the Website layout, add also the corresponding UTC info"
+          "What i want to show is Local Time: February 24, 2026 (UTC +8)"
         ]
       },
       "acceptanceCriteria": [
-        "UTC info appears under the Map Settings section in WebsiteLayoutPanel",
-        "Format matches the local time display format used elsewhere",
-        "Updates dynamically when UTC offset changes"
+        "Local time displays in format 'Month Day, Year (UTC +/-offset)' where offset is calculated from the default search location",
+        "The display updates when default search location changes",
+        "The format shows the timezone offset of the local time, not UTC+0"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "In the LocationMapExplorer page, add a local time display directly under the 'UTC Offset Selection' button that uses the same format as shown under Map Settings (showing UTC offset and time like 'UTC+08:00: 14:30:45')",
+      "text": "In LocationMapExplorer, add a display above the 'Select UTC Offset' button that shows the current local time and its UTC offset in the same format as REQ-1 (e.g., 'Local Time: February 24, 2026 (UTC +8)'). The XPath for reference is /html[1]/body[1]/div[3]/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]/div[1]/strong[2].",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-latest"
         ],
         "quotes": [
-          "Under the UTC Offset Selection button, add the local time with format same as the one under Map settings"
+          "Under the UTC Offset Selection, add the Local Time and the respective UTC above the Select UTC Offset"
         ]
       },
       "acceptanceCriteria": [
-        "Local time display appears directly beneath the UTC Offset Selection button",
-        "Format is identical to the time display in Map Settings",
-        "Time updates in real-time based on selected UTC offset",
-        "Display is positioned within the XPath element /html[1]/body[1]/div[3]/div[2]/div[2]/div[2]/div[1]/div[2]/div[2]"
+        "Local time with UTC offset displays above the 'Select UTC Offset' button",
+        "Display updates in real-time as the globe location changes",
+        "Format matches the WebsiteLayoutPanel format: 'Month Day, Year (UTC +/-offset)'"
       ]
     }
   ],
   "constraints": [
     "Do not modify the current UI layout structure",
-    "Do not change the 3D globe component or its behavior",
-    "Only modify elements related to requirements 1 and 2",
-    "Preserve all existing functionality in WebsiteLayoutPanel and LocationMapExplorer"
+    "Do not change the 3D globe component or its functionality",
+    "Preserve all existing features and components"
   ],
   "nonGoals": [
-    "Changing the overall page layout",
-    "Modifying the 3D globe visualization",
-    "Adding new features beyond the two specified time displays",
-    "Altering existing Map Settings or UTC Offset Selection button functionality"
+    "Changing the 3D globe visualization",
+    "Modifying other UI panels or components beyond WebsiteLayoutPanel and LocationMapExplorer",
+    "Altering the UTC offset selection functionality itself"
   ],
   "imageRequirements": {
     "required": [],

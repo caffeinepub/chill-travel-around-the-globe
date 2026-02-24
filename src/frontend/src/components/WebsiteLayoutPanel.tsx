@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useGetWebsiteLayoutPreferences, useSaveWebsiteLayoutPreferences } from '@/hooks/useQueries';
+import { findTimeZone, loadTimeZoneData } from '@/lib/timezoneUtils';
 
 interface WebsiteLayoutPanelProps {
   utcOffsetHours?: number;
@@ -19,30 +20,104 @@ export default function WebsiteLayoutPanel({ utcOffsetHours = 0 }: WebsiteLayout
   const [isOpen, setIsOpen] = useState(false);
   const [localTime, setLocalTime] = useState<string>('');
   const [utcTime, setUtcTime] = useState<string>('');
+  const [defaultPlaceCoords, setDefaultPlaceCoords] = useState<[number, number] | null>(null);
 
   const { data: layoutPreferences } = useGetWebsiteLayoutPreferences();
   const saveLayoutPreferences = useSaveWebsiteLayoutPreferences();
 
-  // Update local time every second
+  // Geocode default search place to get coordinates
+  useEffect(() => {
+    const geocodeDefaultPlace = async () => {
+      const defaultPlace = layoutPreferences?.defaultSearchPlace || 'Hong Kong';
+      
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(defaultPlace)}&limit=1`
+        );
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+          const lat = parseFloat(data[0].lat);
+          const lon = parseFloat(data[0].lon);
+          setDefaultPlaceCoords([lat, lon]);
+        }
+      } catch (error) {
+        console.error('Error geocoding default place:', error);
+      }
+    };
+
+    geocodeDefaultPlace();
+  }, [layoutPreferences?.defaultSearchPlace]);
+
+  // Load timezone data on mount
+  useEffect(() => {
+    loadTimeZoneData();
+  }, []);
+
+  // Update local time with UTC offset every second
   useEffect(() => {
     const updateLocalTime = () => {
-      const now = new Date();
-      const formattedTime = now.toLocaleString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      });
-      setLocalTime(formattedTime);
+      if (!defaultPlaceCoords) {
+        // Fallback to system time if no coordinates
+        const now = new Date();
+        const formattedTime = now.toLocaleString('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
+        setLocalTime(formattedTime);
+        return;
+      }
+
+      const [lat, lon] = defaultPlaceCoords;
+      const tzInfo = findTimeZone(lat, lon);
+      
+      if (tzInfo) {
+        const now = new Date();
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: tzInfo.tzid,
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
+        
+        const formattedTime = formatter.format(now);
+        
+        // Format UTC offset
+        const offsetSign = tzInfo.utcOffset >= 0 ? '+' : '';
+        const offsetHours = Math.floor(Math.abs(tzInfo.utcOffset));
+        const offsetMinutes = Math.round((Math.abs(tzInfo.utcOffset) - offsetHours) * 60);
+        const offsetStr = offsetMinutes > 0 
+          ? `${offsetSign}${offsetHours}:${offsetMinutes.toString().padStart(2, '0')}`
+          : `${offsetSign}${offsetHours}`;
+        
+        setLocalTime(`${formattedTime} (UTC ${offsetStr})`);
+      } else {
+        // Fallback
+        const now = new Date();
+        const formattedTime = now.toLocaleString('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
+        setLocalTime(formattedTime);
+      }
     };
 
     updateLocalTime();
     const interval = setInterval(updateLocalTime, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [defaultPlaceCoords]);
 
   // Update UTC time with offset every second
   useEffect(() => {
