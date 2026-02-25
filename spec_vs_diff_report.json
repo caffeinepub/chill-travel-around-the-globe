@@ -1,0 +1,37 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-25T09:44:23.709Z",
+  "summary": "The diff only shows a modification to project_state.json, which is a planning/metadata file. It records the requirements as 'pending' action requests but contains no actual implementation of any frontend changes. None of the three requirements (moving buttons/time display into Sun Effects, removing the bottom-right panel, or preserving layout) have been implemented in any frontend source files.",
+  "missing_requirements": [
+    {
+      "id": "REQ-1",
+      "requirement": "Move the Real, Hourly, and Year mode buttons along with their corresponding time display from the bottom-right floating panel into the Sun Effects section inside the World Controls panel, preserving all existing functionality.",
+      "reason": "No frontend source files were modified. The diff only updates project_state.json with a 'pending' status for this requirement. No component or layout file shows the buttons and time display being rendered inside the Sun Effects section.",
+      "evidence": [
+        "project_state.json"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Remove the bottom-right floating panel from the DOM entirely after its contents have been relocated to the Sun Effects section.",
+      "reason": "No frontend source files were modified. The diff only updates project_state.json with a 'pending' status for this requirement. The bottom-right panel removal is not implemented in any component file.",
+      "evidence": [
+        "project_state.json"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Preserve the existing UI layout and 3D globe unchanged. All other controls, panels, and the globe rendering must remain exactly as they are before this change.",
+      "reason": "Since no frontend files were changed, this cannot be verified as implemented. The requirement is also listed as 'pending' in project_state.json.",
+      "evidence": [
+        "project_state.json"
+      ]
+    }
+  ],
+  "hallucinated_features": [],
+  "confidence": 0.95,
+  "changed_files": [
+    "project_state.json"
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "3D globe visualization project with World Controls panel. Moving Real/Hourly/Year buttons and time display from bottom-right panel into the Sun Effects section of the World Controls panel.",
+  "architectural_notes": [
+    "3D globe visualization with a World Controls panel containing a Sun Effects section",
+    "Bottom-right selected panel (Real, Hourly, Year buttons + time display) is being relocated into Sun Effects section"
+  ],
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Move Real/Hourly/Year buttons and time display from bottom-right panel into Sun Effects section of World Controls panel, removing original bottom-right panel",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Move the Real, Hourly, and Year mode buttons along with their corresponding time display from the bottom-right floating panel (identified by XPath /html[1]/body[1]/div[1]/div[2]/div[1]/div[4]/div[1]) into the Sun Effects section inside the World Controls panel (identified by XPath /html[1]/body[1]/div[1]/div[1]/div[1]/div[1]/div[2]). The buttons and time display must be rendered as a cohesive sub-section within Sun Effects, preserving all existing functionality (mode switching, time display updates).",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Remove the bottom-right floating panel (XPath /html[1]/body[1]/div[1]/div[2]/div[1]/div[4]/div[1]) from the DOM entirely after its contents have been relocated to the Sun Effects section.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Preserve the existing UI layout and 3D globe unchanged. All other controls, panels, and the globe rendering must remain exactly as they are before this change.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "3d",
+  "projectName": "World Clock Globe",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

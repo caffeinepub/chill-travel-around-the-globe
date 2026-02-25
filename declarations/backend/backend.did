@@ -1,0 +1,383 @@
+type WebsiteLayoutSettings = 
+ record {
+   cityFontSize: float64;
+   createdAt: Time;
+   defaultSearchPlace: text;
+   mapZoomLevel: nat;
+   rippleSize: float64;
+   showAllTravelSpots: bool;
+   showMusicPlayerBar: bool;
+   updatedAt: Time;
+ };
+type VibeItem = 
+ record {
+   city: text;
+   coordinates: record {
+                  float64;
+                  float64;
+                };
+   createdAt: Time;
+   description: text;
+   itemType: text;
+   name: text;
+   updatedAt: Time;
+ };
+type UserRole = 
+ variant {
+   admin;
+   guest;
+   user;
+ };
+type UserProfile = record {name: text;};
+type TravelSpot = 
+ record {
+   city: text;
+   coordinates: record {
+                  float64;
+                  float64;
+                };
+   createdAt: Time;
+   description: opt text;
+   mediaFiles: vec MediaFile;
+   name: text;
+   rating: float64;
+   socialMediaLinks: vec SocialMediaLink;
+   spotType: text;
+   updatedAt: Time;
+ };
+type Time = int;
+type Song = 
+ record {
+   album: text;
+   artist: opt text;
+   filePath: text;
+   title: opt text;
+   uploadedAt: Time;
+ };
+type SocialMediaLink = 
+ record {
+   addedAt: Time;
+   platform: text;
+   url: text;
+ };
+type ScheduleItem = 
+ record {
+   activity: text;
+   createdAt: Time;
+   date: Time;
+   location: text;
+   time: text;
+   updatedAt: Time;
+ };
+type MusicAlbum = 
+ record {
+   createdAt: Time;
+   description: text;
+   songs: vec Song;
+   title: text;
+   updatedAt: Time;
+ };
+type MediaType = 
+ variant {
+   audio;
+   image;
+   video;
+ };
+type MediaFile = 
+ record {
+   format: text;
+   mediaType: MediaType;
+   path: text;
+   uploadedAt: Time;
+ };
+type MapBookmark = 
+ record {
+   city: text;
+   coordinates: record {
+                  float64;
+                  float64;
+                };
+   createdAt: Time;
+   description: text;
+   name: text;
+   updatedAt: Time;
+ };
+type LocationInfo = 
+ record {
+   coordinates: record {
+                  float64;
+                  float64;
+                };
+   createdAt: Time;
+   name: text;
+   photoPath: opt text;
+   updatedAt: Time;
+ };
+type Journey = 
+ record {
+   city: text;
+   createdAt: Time;
+   endDate: Time;
+   startDate: Time;
+   updatedAt: Time;
+ };
+type GeonameCity = 
+ record {
+   classification: text;
+   country: text;
+   featureCode: text;
+   latitude: float64;
+   longitude: float64;
+   name: text;
+   population: int;
+   region: text;
+ };
+type FileReference = 
+ record {
+   hash: text;
+   path: text;
+ };
+type CityRating = 
+ record {
+   city: text;
+   comment: text;
+   createdAt: Time;
+   rating: float64;
+   updatedAt: Time;
+ };
+type CityAlbum = 
+ record {
+   city: text;
+   createdAt: Time;
+   mediaFiles: vec MediaFile;
+   socialMediaLinks: vec SocialMediaLink;
+   updatedAt: Time;
+ };
+service : {
+  addCity: (city: GeonameCity) -> ();
+  addCityAlbum: (city: text, mediaFiles: vec MediaFile, socialMediaLinks:
+   vec SocialMediaLink) -> ();
+  addCityRating: (city: text, rating: float64, comment: text) -> ();
+  addJourney: (city: text, startDate: Time, endDate: Time) -> ();
+  addLocationInfo: (name: text, coordinates: record {
+                                               float64;
+                                               float64;
+                                             }, photoPath: opt text) -> ();
+  addMapBookmark: (coordinates: record {
+                                  float64;
+                                  float64;
+                                }, name: text, description: text, city:
+   text) -> ();
+  addMediaToCityAlbum: (city: text, mediaFile: MediaFile) -> (bool);
+  addMediaToTravelSpot: (city: text, spotName: text, mediaFile: MediaFile) ->
+   (bool);
+  addMusicAlbum: (title: text, description: text, songs: vec Song) -> ();
+  addScheduleItem: (journeyCity: text, date: Time, time: text, location:
+   text, activity: text) -> ();
+  addSocialMediaLinkToCityAlbum: (city: text, socialMediaLink:
+   SocialMediaLink) -> (bool);
+  addSocialMediaLinkToTravelSpot: (city: text, spotName: text,
+   socialMediaLink: SocialMediaLink) -> (bool);
+  addSongToMusicAlbum: (title: text, song: Song) -> (bool);
+  addTravelSpot: (city: text, name: text, description: opt text, coordinates:
+   record {
+     float64;
+     float64;
+   }, spotType: text, rating: float64) -> ();
+  addWebsiteLayoutSettings: (showMusicPlayerBar: bool, defaultSearchPlace:
+   text, showAllTravelSpots: bool, rippleSize: float64, cityFontSize:
+   float64) -> ();
+  assignCallerUserRole: (user: principal, role: UserRole) -> ();
+  deleteCity: (name: text) -> (bool);
+  deleteCityAlbum: (city: text) -> (bool);
+  deleteCityRating: (city: text) -> (bool);
+  deleteJourney: (city: text) -> (bool);
+  deleteLocationInfo: (name: text) -> (bool);
+  deleteMapBookmark: (name: text) -> (bool);
+  deleteMusicAlbum: (title: text) -> (bool);
+  deleteScheduleItem: (journeyCity: text, date: Time, time: text) -> (bool);
+  deleteTravelSpot: (city: text, name: text) -> (bool);
+  deleteWebsiteLayoutSettings: () -> (bool);
+  dropFileReference: (path: text) -> ();
+  getAllBookmarksAndTravelSpotsByCity: () ->
+   (vec record {
+          text;
+          vec VibeItem;
+        }) query;
+  getAllBookmarksByCity: () -> (vec record {
+                                      text;
+                                      vec MapBookmark;
+                                    }) query;
+  getAllCities: () -> (vec GeonameCity) query;
+  getAllCitiesWithRatingsAndTravelSpots: () ->
+   (vec record {
+          text;
+          opt float64;
+          vec TravelSpot;
+        }) query;
+  getAllCityAlbums: () -> (vec CityAlbum) query;
+  getAllCityRatings: () -> (vec CityRating) query;
+  getAllJourneys: () -> (vec Journey) query;
+  getAllLocationInfo: () -> (vec LocationInfo) query;
+  getAllMapBookmarks: () -> (vec MapBookmark) query;
+  getAllMusicAlbums: () -> (vec MusicAlbum) query;
+  getAllScheduleItems: () -> (vec ScheduleItem) query;
+  getAllScheduleItemsWithCoordinates: () ->
+   (vec record {
+          ScheduleItem;
+          record {
+            float64;
+            float64;
+          };
+        }) query;
+  getAllTravelSpots: () -> (vec TravelSpot) query;
+  getAllTravelSpotsForMap: () -> (vec TravelSpot) query;
+  getAllVibes: () -> (vec VibeItem) query;
+  getAllWebsiteLayoutSettings: () -> (vec WebsiteLayoutSettings) query;
+  getAverageCityRating: (city: text) -> (float64) query;
+  getBookmarkSummaryByCity: () -> (vec record {
+                                         text;
+                                         nat;
+                                       }) query;
+  getCallerUserProfile: () -> (opt UserProfile) query;
+  getCallerUserRole: () -> (UserRole) query;
+  getCitiesByCoordinates: (minLat: float64, maxLat: float64, minLon: 
+   float64, maxLon: float64) -> (vec GeonameCity) query;
+  getCitiesByCountry: (country: text) -> (vec GeonameCity) query;
+  getCitiesByCountryAndFeatureCode: (country: text, featureCode: text) ->
+   (vec GeonameCity) query;
+  getCitiesByCountryAndPopulation: (country: text, minPopulation: int,
+   maxPopulation: int) -> (vec GeonameCity) query;
+  getCitiesByCountryAndRegion: (country: text, region: text) ->
+   (vec GeonameCity) query;
+  getCitiesByCountryFeatureCodeAndPopulation: (country: text, featureCode:
+   text, minPopulation: int, maxPopulation: int) -> (vec GeonameCity) query;
+  getCitiesByCountryRegionAndFeatureCode: (country: text, region: text,
+   featureCode: text) -> (vec GeonameCity) query;
+  getCitiesByCountryRegionAndPopulation: (country: text, region: text,
+   minPopulation: int, maxPopulation: int) -> (vec GeonameCity) query;
+  getCitiesByCountryRegionFeatureCodeAndPopulation: (country: text, region:
+   text, featureCode: text, minPopulation: int, maxPopulation: int) ->
+   (vec GeonameCity) query;
+  getCitiesByFeatureCode: (featureCode: text) -> (vec GeonameCity) query;
+  getCitiesByFeatureCodeAndPopulation: (featureCode: text, minPopulation:
+   int, maxPopulation: int) -> (vec GeonameCity) query;
+  getCitiesByPopulation: (minPopulation: int, maxPopulation: int) ->
+   (vec GeonameCity) query;
+  getCitiesByRegion: (region: text) -> (vec GeonameCity) query;
+  getCitiesByRegionAndFeatureCode: (region: text, featureCode: text) ->
+   (vec GeonameCity) query;
+  getCitiesByRegionAndPopulation: (region: text, minPopulation: int,
+   maxPopulation: int) -> (vec GeonameCity) query;
+  getCitiesByRegionFeatureCodeAndPopulation: (region: text, featureCode:
+   text, minPopulation: int, maxPopulation: int) -> (vec GeonameCity) query;
+  getCitiesPaginated: (page: nat, pageSize: nat) -> (vec GeonameCity) query;
+  getCity: (name: text) -> (opt GeonameCity) query;
+  getCityAlbum: (city: text) -> (opt CityAlbum) query;
+  getCityAlbumForPopup: (city: text) -> (opt CityAlbum) query;
+  getCityComments: (city: text) -> (vec text) query;
+  getCityFontSize: () -> (float64) query;
+  getCityMediaFiles: (city: text) -> (vec MediaFile) query;
+  getCityRating: (city: text) -> (opt CityRating) query;
+  getCityRatingForPopup: (city: text) -> (opt float64) query;
+  getCitySocialMediaLinks: (city: text) -> (vec SocialMediaLink) query;
+  getCombinedVibesSummaryByCity: () -> (vec record {
+                                              text;
+                                              nat;
+                                              nat;
+                                            }) query;
+  getCountryCoordinates: (countryName: text) ->
+   (opt record {
+          float64;
+          float64;
+        }) query;
+  getDisplaySettings: () -> (opt bool) query;
+  getFileReference: (path: text) -> (FileReference) query;
+  getJourney: (city: text) -> (opt Journey) query;
+  getJourneyScheduleWithDays: (journeyCity: text) ->
+   (vec record {
+          text;
+          vec ScheduleItem;
+        }) query;
+  getLocationInfo: (name: text) -> (opt LocationInfo) query;
+  getMapBookmarkByCoordinates: (coordinates: record {
+                                               float64;
+                                               float64;
+                                             }) -> (opt MapBookmark) query;
+  getMapBookmarks: () -> (vec MapBookmark) query;
+  getMapBookmarksByCity: (city: text) -> (vec MapBookmark) query;
+  getMusicAlbum: (title: text) -> (opt MusicAlbum) query;
+  getMusicAlbumSongs: (title: text) -> (vec Song) query;
+  getPreviousJourneys: () -> (vec Journey) query;
+  getRippleSize: () -> (float64) query;
+  getScheduleItems: (journeyCity: text) -> (vec ScheduleItem) query;
+  getTravelSpotMediaFiles: (city: text, spotName: text) ->
+   (vec MediaFile) query;
+  getTravelSpotSocialMediaLinks: (city: text, spotName: text) ->
+   (vec SocialMediaLink) query;
+  getTravelSpotSummaryByCity: () -> (vec record {
+                                           text;
+                                           nat;
+                                         }) query;
+  getTravelSpotTypeBreakdown: (city: text) -> (vec record {
+                                                     text;
+                                                     nat;
+                                                   }) query;
+  getTravelSpotTypes: () -> (vec text) query;
+  getTravelSpots: (city: text) -> (vec TravelSpot) query;
+  getTravelSpotsByCityAndType: (city: text, spotType: text) ->
+   (vec TravelSpot) query;
+  getUpcomingJourneys: () -> (vec Journey) query;
+  getUserProfile: (user: principal) -> (opt UserProfile) query;
+  getVibesByCity: () -> (vec record {
+                               text;
+                               vec VibeItem;
+                             }) query;
+  getWebsiteLayoutSettings: () -> (opt WebsiteLayoutSettings) query;
+  importCities: (cities: vec GeonameCity) -> ();
+  initializeAccessControl: () -> ();
+  initializeCoordinates: () -> ();
+  isCallerAdmin: () -> (bool) query;
+  listFileReferences: () -> (vec FileReference) query;
+  registerFileReference: (path: text, hash: text) -> ();
+  removeMediaFromCityAlbum: (city: text, mediaPath: text) -> (bool);
+  removeMediaFromTravelSpot: (city: text, spotName: text, mediaPath: 
+   text) -> (bool);
+  removeSocialMediaLinkFromCityAlbum: (city: text, url: text) -> (bool);
+  removeSocialMediaLinkFromTravelSpot: (city: text, spotName: text, url:
+   text) -> (bool);
+  removeSongFromMusicAlbum: (title: text, songTitle: text) -> (bool);
+  reorderScheduleItems: (journeyCity: text, newOrder: vec ScheduleItem) ->
+   (bool);
+  saveCallerUserProfile: (profile: UserProfile) -> ();
+  searchCities: (searchTerm: text, page: nat, pageSize: nat) ->
+   (vec GeonameCity) query;
+  updateCity: (name: text, city: GeonameCity) -> (bool);
+  updateCityAlbum: (city: text, mediaFiles: vec MediaFile, socialMediaLinks:
+   vec SocialMediaLink) -> (bool);
+  updateCityRating: (city: text, rating: float64, comment: text) -> (bool);
+  updateDashboard: () -> (vec record {
+                                text;
+                                nat;
+                                nat;
+                              });
+  updateJourney: (city: text, startDate: Time, endDate: Time) -> (bool);
+  updateLocationInfo: (name: text, photoPath: opt text) -> (bool);
+  updateMapBookmark: (coordinates: record {
+                                     float64;
+                                     float64;
+                                   }, name: text, description: text, city:
+   text) -> (bool);
+  updateMusicAlbum: (title: text, description: text, songs: vec Song) ->
+   (bool);
+  updateScheduleItem: (journeyCity: text, date: Time, time: text, location:
+   text, activity: text) -> (bool);
+  updateTravelSpot: (city: text, name: text, description: opt text,
+   coordinates: record {
+                  float64;
+                  float64;
+                }, spotType: text, rating: float64) -> (bool);
+  updateWebsiteLayoutSettings: (showMusicPlayerBar: bool, defaultSearchPlace:
+   text, showAllTravelSpots: bool, rippleSize: float64, cityFontSize:
+   float64) -> (bool);
+}

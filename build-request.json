@@ -1,0 +1,80 @@
+{
+  "kind": "build_request",
+  "title": "Move Real/Hourly/Year buttons and time display into Sun Effects section",
+  "projectName": "World Clock Globe",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "Move the Real, Hourly, and Year mode buttons along with their corresponding time display from the bottom-right floating panel (identified by XPath /html[1]/body[1]/div[1]/div[2]/div[1]/div[4]/div[1]) into the Sun Effects section inside the World Controls panel (identified by XPath /html[1]/body[1]/div[1]/div[1]/div[1]/div[1]/div[2]). The buttons and time display must be rendered as a cohesive sub-section within Sun Effects, preserving all existing functionality (mode switching, time display updates).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1",
+          "msg-2"
+        ],
+        "quotes": [
+          "Move the bottom right selected panel (Real Button, Hourly button, Year Button, and the corresponding time display) into the Sun Effects of the world controls button."
+        ]
+      },
+      "acceptanceCriteria": [
+        "The Real, Hourly, and Year buttons appear inside the Sun Effects section of the World Controls panel.",
+        "The time display corresponding to the selected mode appears inside the Sun Effects section of the World Controls panel.",
+        "Clicking Real, Hourly, or Year buttons correctly switches the sun simulation mode as before.",
+        "The time display updates correctly according to the selected mode.",
+        "The bottom-right floating panel containing those buttons and time display is fully removed from the UI."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Remove the bottom-right floating panel (XPath /html[1]/body[1]/div[1]/div[2]/div[1]/div[4]/div[1]) from the DOM entirely after its contents have been relocated to the Sun Effects section.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Move the bottom right selected panel (Real Button, Hourly button, Year Button, and the corresponding time display) into the Sun Effects of the world controls button."
+        ]
+      },
+      "acceptanceCriteria": [
+        "The bottom-right panel is no longer rendered anywhere on the page.",
+        "No empty placeholder or ghost element remains in the bottom-right corner."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Preserve the existing UI layout and 3D globe unchanged. All other controls, panels, and the globe rendering must remain exactly as they are before this change.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Do not change the current UI layout and the 3d globe. All should remain unchanged"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The 3D globe renders identically to before the change.",
+        "All other World Controls sections (other than Sun Effects receiving new content) are visually and functionally unchanged.",
+        "All other panels and UI elements outside the World Controls panel are unchanged."
+      ]
+    }
+  ],
+  "constraints": [
+    "Do not alter the 3D globe component or its rendering logic.",
+    "Do not modify any UI layout outside of moving the specified controls into Sun Effects.",
+    "Do not change existing button functionality or state management logic.",
+    "Immutable frontend paths (hooks, ui components, main.tsx) must not be edited."
+  ],
+  "nonGoals": [
+    "Redesigning the Sun Effects section beyond accommodating the moved controls.",
+    "Adding new sun simulation modes or time display features.",
+    "Changing the World Controls panel layout beyond inserting the moved controls.",
+    "Any backend changes."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}
