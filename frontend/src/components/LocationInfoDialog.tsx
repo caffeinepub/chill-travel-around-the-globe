@@ -1,322 +1,283 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Camera, Upload, Trash2, Edit, Plus, Loader2, Image, X } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2, Upload, X, Camera, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useGetAllLocationInfo, useAddLocationInfo, useUpdateLocationInfo, useDeleteLocationInfo } from '@/hooks/useQueries';
-import { useFileUpload, useFileUrl, useFileDelete } from '../blob-storage/FileStorage';
 import { LocationInfo } from '@/backend';
+import { useAddLocationInfo, useUpdateLocationInfo, useDeleteLocationInfo } from '@/hooks/useQueries';
+import { useFileUpload, useFileUrl, useFileDelete } from '../blob-storage/FileStorage';
 
 interface LocationInfoDialogProps {
-  locationName?: string;
-  coordinates?: [number, number];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  locationName: string;
+  coordinates: [number, number];
+  existingInfo?: LocationInfo | null;
 }
 
-function LocationPhotoDisplay({ photoPath }: { photoPath: string }) {
-  const { data: photoUrl } = useFileUrl(photoPath);
-  if (!photoUrl) return <div className="w-full h-32 bg-muted rounded animate-pulse" />;
-  return (
-    <img
-      src={photoUrl}
-      alt="Location"
-      className="w-full h-32 object-cover rounded"
-    />
-  );
-}
-
-export default function LocationInfoDialog({ locationName, coordinates }: LocationInfoDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isAdding, setIsAdding] = useState(false);
-  const [editingLocation, setEditingLocation] = useState<LocationInfo | null>(null);
-  const [newLocationName, setNewLocationName] = useState(locationName || '');
+export default function LocationInfoDialog({
+  open,
+  onOpenChange,
+  locationName,
+  coordinates,
+  existingInfo
+}: LocationInfoDialogProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const { data: allLocationInfo = [], refetch } = useGetAllLocationInfo();
+  const { uploadFile, isUploading } = useFileUpload();
+  const { deleteFile } = useFileDelete();
+  const { data: existingPhotoUrl } = useFileUrl(existingInfo?.photoPath || '');
+
   const addLocationInfo = useAddLocationInfo();
   const updateLocationInfo = useUpdateLocationInfo();
   const deleteLocationInfo = useDeleteLocationInfo();
-  const { uploadFile, isUploading } = useFileUpload();
-  const { deleteFile } = useFileDelete();
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const isEditing = !!existingInfo;
+  const isLoading = addLocationInfo.isPending || updateLocationInfo.isPending || deleteLocationInfo.isPending || isUploading;
 
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      toast.error('Please select a JPEG, PNG, or WebP image');
-      return;
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('File size must be less than 10MB');
+        return;
+      }
+      setSelectedFile(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
     }
-
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Image must be less than 10MB');
-      return;
-    }
-
-    setSelectedFile(file);
   };
 
-  const handleAddLocation = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRemoveFile = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setSelectedFile(null);
+    setPreviewUrl(null);
+  };
 
-    if (!newLocationName.trim()) {
-      toast.error('Please enter a location name');
+  const handleSave = async () => {
+    if (!selectedFile && !existingInfo?.photoPath) {
+      toast.error('Please upload a photo');
       return;
     }
 
     try {
-      let photoPath: string | null = null;
+      let photoPath: string | null = existingInfo?.photoPath ?? null;
 
       if (selectedFile) {
-        const sanitizedName = newLocationName.replace(/[^a-zA-Z0-9\s-_]/g, '').replace(/\s+/g, '_');
-        const fileName = `location-photos/${sanitizedName}/${Date.now()}_${selectedFile.name}`;
-        const uploadResult = await uploadFile(fileName, selectedFile, (progress) => {
-          setUploadProgress(progress);
-        });
+        const fileName = `locations/${locationName.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.${selectedFile.name.split('.').pop()}`;
+        const uploadResult = await uploadFile(fileName, selectedFile);
         photoPath = uploadResult.path;
       }
 
-      await addLocationInfo.mutateAsync({
-        name: newLocationName.trim(),
-        coordinates: coordinates || [0, 0],
-        photoPath: photoPath,
-      });
-
-      toast.success('Location info added successfully!');
-      setNewLocationName('');
-      setSelectedFile(null);
-      setUploadProgress(0);
-      setIsAdding(false);
-      refetch();
-    } catch (error) {
-      console.error('Error adding location info:', error);
-      toast.error('Failed to add location info');
-    }
-  };
-
-  const handleUpdateLocation = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!editingLocation) return;
-
-    try {
-      let photoPath: string | null = editingLocation.photoPath || null;
-
-      if (selectedFile) {
-        const sanitizedName = editingLocation.name.replace(/[^a-zA-Z0-9\s-_]/g, '').replace(/\s+/g, '_');
-        const fileName = `location-photos/${sanitizedName}/${Date.now()}_${selectedFile.name}`;
-        const uploadResult = await uploadFile(fileName, selectedFile, (progress) => {
-          setUploadProgress(progress);
+      if (isEditing) {
+        const success = await updateLocationInfo.mutateAsync({
+          name: locationName,
+          photoPath,
         });
-        photoPath = uploadResult.path;
+        if (success) {
+          toast.success('Location photo updated successfully!');
+          onOpenChange(false);
+        } else {
+          toast.error('Failed to update location photo');
+        }
+      } else {
+        await addLocationInfo.mutateAsync({
+          name: locationName,
+          coordinates,
+          photoPath,
+        });
+        toast.success('Location photo saved successfully!');
+        onOpenChange(false);
       }
-
-      await updateLocationInfo.mutateAsync({
-        name: editingLocation.name,
-        photoPath: photoPath,
-      });
-
-      toast.success('Location info updated successfully!');
-      setEditingLocation(null);
-      setSelectedFile(null);
-      setUploadProgress(0);
-      refetch();
     } catch (error) {
-      console.error('Error updating location info:', error);
-      toast.error('Failed to update location info');
+      console.error('Error saving location info:', error);
+      toast.error('Failed to save location photo');
     }
   };
 
-  const handleDeleteLocation = async (name: string, photoPath?: string) => {
-    if (!confirm(`Are you sure you want to delete location info for "${name}"?`)) return;
+  const handleDelete = async () => {
+    if (!existingInfo) return;
 
     try {
-      if (photoPath) {
-        await deleteFile(photoPath);
+      if (existingInfo.photoPath) {
+        await deleteFile(existingInfo.photoPath);
       }
-      await deleteLocationInfo.mutateAsync(name);
-      toast.success('Location info deleted successfully!');
-      refetch();
+      const success = await deleteLocationInfo.mutateAsync(locationName);
+      if (success) {
+        toast.success('Location photo deleted successfully!');
+        onOpenChange(false);
+      } else {
+        toast.error('Failed to delete location photo');
+      }
     } catch (error) {
       console.error('Error deleting location info:', error);
-      toast.error('Failed to delete location info');
+      toast.error('Failed to delete location photo');
     }
   };
 
-  const filteredLocationInfo = locationName
-    ? allLocationInfo.filter(info => info.name.toLowerCase().includes(locationName.toLowerCase()))
-    : allLocationInfo;
+  const handleClose = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    onOpenChange(false);
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Camera className="h-4 w-4" />
-          Location Photos
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Camera className="h-5 w-5" />
-            Location Photos
-            {locationName && <Badge variant="secondary">{locationName}</Badge>}
+            {isEditing ? 'Edit' : 'Add'} Location Photo
           </DialogTitle>
+          <DialogDescription>
+            {isEditing ? 'Update' : 'Add'} a photo for <strong>{locationName}</strong>
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Add New Location */}
-          {!isAdding && !editingLocation && (
-            <Button onClick={() => setIsAdding(true)} className="w-full" variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Location Photo
-            </Button>
-          )}
+          <div className="space-y-2">
+            <Label>Photo</Label>
 
-          {isAdding && (
-            <form onSubmit={handleAddLocation} className="space-y-3 border rounded-lg p-4">
-              <h4 className="font-medium">Add New Location Photo</h4>
-              <div className="space-y-1">
-                <Label htmlFor="locationName">Location Name</Label>
-                <Input
-                  id="locationName"
-                  value={newLocationName}
-                  onChange={e => setNewLocationName(e.target.value)}
-                  placeholder="e.g., Eiffel Tower"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="locationPhoto">Photo (optional)</Label>
-                <input
-                  type="file"
-                  id="locationPhoto"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-                <label
-                  htmlFor="locationPhoto"
-                  className="flex items-center gap-2 cursor-pointer border rounded-md px-3 py-2 text-sm hover:bg-accent"
-                >
-                  <Upload className="h-4 w-4" />
-                  {selectedFile ? selectedFile.name : 'Choose image...'}
-                </label>
-              </div>
-              {isUploading && (
-                <div className="text-sm text-muted-foreground">
-                  Uploading... {uploadProgress}%
-                </div>
-              )}
-              <div className="flex gap-2">
-                <Button type="submit" disabled={isUploading || addLocationInfo.isPending} className="flex-1">
-                  {(isUploading || addLocationInfo.isPending) ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Adding...</>
-                  ) : (
-                    'Add Location'
-                  )}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => { setIsAdding(false); setSelectedFile(null); }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          )}
-
-          {editingLocation && (
-            <form onSubmit={handleUpdateLocation} className="space-y-3 border rounded-lg p-4">
-              <h4 className="font-medium">Edit: {editingLocation.name}</h4>
-              {editingLocation.photoPath && (
-                <LocationPhotoDisplay photoPath={editingLocation.photoPath} />
-              )}
-              <div className="space-y-1">
-                <Label htmlFor="editLocationPhoto">Replace Photo (optional)</Label>
-                <input
-                  type="file"
-                  id="editLocationPhoto"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-                <label
-                  htmlFor="editLocationPhoto"
-                  className="flex items-center gap-2 cursor-pointer border rounded-md px-3 py-2 text-sm hover:bg-accent"
-                >
-                  <Upload className="h-4 w-4" />
-                  {selectedFile ? selectedFile.name : 'Choose new image...'}
-                </label>
-              </div>
-              {isUploading && (
-                <div className="text-sm text-muted-foreground">
-                  Uploading... {uploadProgress}%
-                </div>
-              )}
-              <div className="flex gap-2">
-                <Button type="submit" disabled={isUploading || updateLocationInfo.isPending} className="flex-1">
-                  {(isUploading || updateLocationInfo.isPending) ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Updating...</>
-                  ) : (
-                    'Update Location'
-                  )}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => { setEditingLocation(null); setSelectedFile(null); }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          )}
-
-          {/* Location List */}
-          <div className="space-y-3">
-            {filteredLocationInfo.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No location photos yet
-              </p>
-            ) : (
-              filteredLocationInfo.map((info, index) => (
-                <div key={index} className="border rounded-lg p-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium">{info.name}</h4>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => { setEditingLocation(info); setIsAdding(false); }}
-                      >
-                        <Edit className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive"
-                        onClick={() => handleDeleteLocation(info.name, info.photoPath)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
+            {existingInfo?.photoPath && existingPhotoUrl && !selectedFile && (
+              <Card>
+                <CardContent className="p-3">
+                  <div className="relative">
+                    <img
+                      src={existingPhotoUrl}
+                      alt="Location photo"
+                      className="w-full h-48 object-cover rounded-md"
+                    />
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      className="absolute top-2 right-2"
+                      onClick={handleRemoveFile}
+                      disabled={isLoading}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
-                  {info.photoPath && <LocationPhotoDisplay photoPath={info.photoPath} />}
-                  <p className="text-xs text-muted-foreground">
-                    Coordinates: {info.coordinates[0].toFixed(4)}, {info.coordinates[1].toFixed(4)}
-                  </p>
-                </div>
-              ))
+                </CardContent>
+              </Card>
             )}
+
+            {selectedFile && previewUrl && (
+              <Card>
+                <CardContent className="p-3">
+                  <div className="relative">
+                    <img
+                      src={previewUrl}
+                      alt="Photo preview"
+                      className="w-full h-48 object-cover rounded-md"
+                    />
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      className="absolute top-2 right-2"
+                      onClick={handleRemoveFile}
+                      disabled={isLoading}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {!selectedFile && (!existingInfo?.photoPath || !existingPhotoUrl) && (
+              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                <Camera className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground mb-3">
+                  Upload a photo of this location
+                </p>
+                <Label htmlFor="photo-upload" className="cursor-pointer">
+                  <Button variant="outline" size="sm" asChild disabled={isLoading}>
+                    <span>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Choose Photo
+                    </span>
+                  </Button>
+                </Label>
+                <Input
+                  id="photo-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  disabled={isLoading}
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Max file size: 10MB. Supported formats: JPG, PNG, GIF
+                </p>
+              </div>
+            )}
+
+            {(existingInfo?.photoPath || selectedFile) && (
+              <Label htmlFor="photo-replace" className="cursor-pointer">
+                <Button variant="outline" size="sm" asChild disabled={isLoading}>
+                  <span>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Replace Photo
+                  </span>
+                </Button>
+              </Label>
+            )}
+            <Input
+              id="photo-replace"
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+              disabled={isLoading}
+            />
           </div>
         </div>
+
+        <DialogFooter className="flex justify-between">
+          <div>
+            {isEditing && (
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isLoading}
+              >
+                {deleteLocationInfo.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Trash2 className="h-4 w-4 mr-2" />
+                )}
+                Delete
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleClose} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={isLoading}>
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              {isEditing ? 'Update' : 'Save'}
+            </Button>
+          </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

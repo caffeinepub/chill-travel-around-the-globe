@@ -1,32 +1,22 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "A journey/travel planning app where users can add multiple journeys per city (distinguished by custom title, date as fallback) with journeys grouped by city in the journey list panel.",
-  "architectural_notes": [],
-  "known_issues": [],
-  "isFixRequest": false,
+  "summary": "Travel journey app where users can create multiple journeys per city, each with their own independent travelogue. Currently working on scoping travelogue/schedule items per journey ID so each journey title has its own entries.",
+  "architectural_notes": [
+    "Travelogue/schedule items should be keyed by journeyId (not cityId) so multiple journeys to the same city each have independent entries",
+    "Journey ID (tied to journey title) is the primary key for scoping all travelogue entries"
+  ],
+  "known_issues": [
+    "Multiple journeys for the same city currently share the same travelogue/schedule items instead of having independent ones",
+    "Repeated AI context limit failures when attempting backend data model changes to scope items per journey"
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-update-all-relevant-frontend-mutation-hooks-add-journey-edit-journey-in-usequeries-ts-to-include-the-optional-customtitle-field-so-it-is-sent-to-and-received-from-the-backend",
-      "title": "Update all relevant frontend mutation hooks (add journey, edit journey) in useQueries.ts to include the optional customTitle field so it is sent to and received from the backend.",
+      "id": "feature-in-traveloguepanel-tsx-when-displaying-schedule-items-for-a-selected-journey-filter-the-schedule-items-by-the-journey-s-unique-id-so-that-only-items-belonging-to-that-specific-journey-are-shown-each-journey-title-must-display-only-its-own-travelogue-entries-independent-of-other-journeys-that-share-the-same-city",
+      "title": "In TraveloguePanel.tsx, when displaying schedule items for a selected journey, filter the schedule items by the journey's unique ID so that only items belonging to that specific journey are shown. Each journey title must display only its own travelogue entries, independent of other journeys that share the same city.",
       "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-journey-creation-and-editing-ui-inside-the-div-at-xpath-html-1-body-1-div-5-which-is-the-traveloguepanel-or-equivalent-journey-list-panel-to-include-an-optional-journey-title-text-input-field-this-title-is-used-to-distinguish-multiple-journeys-for-the-same-city",
-      "title": "Update the journey creation and editing UI (inside the div at XPath /html[1]/body[1]/div[5], which is the TraveloguePanel or equivalent journey list panel) to include an optional 'Journey Title' text input field. This title is used to distinguish multiple journeys for the same city.",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-in-the-journey-list-panel-div-5-corresponding-to-traveloguepanel-group-journeys-by-city-name-each-city-group-should-be-collapsible-and-display-the-city-name-as-a-group-header-within-each-group-list-all-journeys-for-that-city-showing-their-custom-title-or-date-as-fallback-multiple-journeys-for-the-same-city-must-all-appear-under-the-same-city-group-header",
-      "title": "In the journey list panel (div[5], corresponding to TraveloguePanel), group journeys by city name. Each city group should be collapsible and display the city name as a group header. Within each group, list all journeys for that city showing their custom title (or date as fallback). Multiple journeys for the same city must all appear under the same city group header.",
-      "reqIds": [
-        "REQ-4"
+        "REQ-1"
       ],
       "version": 1
     }
@@ -34,21 +24,13 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Allow multiple journeys per city with custom titles (date as fallback) and group journeys by city in the journey list panel (div[5])",
+      "summary": "Scope travelogue entries by journey ID on the frontend so each journey has its own independent travelogue",
       "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Update the backend Journey data type and storage to allow multiple journeys per city. Remove any uniqueness constraint on city. Add an optional custom title field (Text) to the Journey type. When no custom title is provided, fall back to the journey date as the distinguishing label.",
-      "reqIds": [
-        "REQ-1"
-      ],
       "status": "pending"
     }
   ],
   "gameProjectType": "none",
-  "projectName": "World Clock Globe",
+  "projectName": "Travel Journeys",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

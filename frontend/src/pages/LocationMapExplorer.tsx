@@ -1,768 +1,275 @@
-import { useState, useCallback, useEffect } from 'react';
-import { MapPin, Globe, Building, Map, Building2, Earth, Clock, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Globe, Map, Clock, X, Settings, BookOpen, Sparkles, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { toast } from 'sonner';
-import MapComponent from '@/components/MapComponent';
+import { useSearchLocation, SUPPORTED_COUNTRIES, useGetWebsiteLayoutPreferences } from '@/hooks/useQueries';
 import InteractiveGlobe from '@/components/InteractiveGlobe';
+import MapComponent from '@/components/MapComponent';
+import LoginPanel from '@/components/LoginPanel';
 import AdminPanel from '@/components/AdminPanel';
 import TraveloguePanel from '@/components/TraveloguePanel';
 import VibesPanel from '@/components/VibesPanel';
-import LoginPanel from '@/components/LoginPanel';
-import MusicPlayerBar from '@/components/MusicPlayerBar';
 import MusicPanel from '@/components/MusicPanel';
+import MusicPlayerBar from '@/components/MusicPlayerBar';
 import WebsiteLayoutPanel from '@/components/WebsiteLayoutPanel';
-import { useSearchLocation, SUPPORTED_COUNTRIES, useGetWebsiteLayoutPreferences } from '@/hooks/useQueries';
-import { TravelSpot, Song, MapBookmark } from '@/backend';
+import { useInternetIdentity } from '@/hooks/useInternetIdentity';
+import { TravelSpot, MapBookmark, Song } from '@/backend';
 
-interface LocationResult {
+interface SearchResult {
   coordinates: [number, number];
   name: string;
-  searchQuery: string;
-  type: 'country' | 'city' | 'town' | 'village';
-  country?: string;
-  state?: string;
-}
-
-interface FlightAnimationData {
-  fromCity: string;
-  toCity: string;
-  fromCoords: { lat: number; lon: number };
-  toCoords: { lat: number; lon: number };
+  type: string;
 }
 
 export default function LocationMapExplorer() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
-  const [viewMode, setViewMode] = useState<'3D' | '2D'>('3D');
+  const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
+  const [is3DView, setIs3DView] = useState(true);
+  const [localTime, setLocalTime] = useState('');
+  const [utcOffsetTime, setUtcOffsetTime] = useState('');
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [showTraveloguePanel, setShowTraveloguePanel] = useState(false);
   const [focusedTravelSpot, setFocusedTravelSpot] = useState<TravelSpot | null>(null);
   const [focusedBookmark, setFocusedBookmark] = useState<MapBookmark | null>(null);
-  const [currentSong, setCurrentSong] = useState<Song & { albumTitle: string } | undefined>(undefined);
-  const [showTimeZones, setShowTimeZones] = useState(false);
-  const [worldHotspotOpen, setWorldHotspotOpen] = useState(false);
-  const [worldControlsOpen, setWorldControlsOpen] = useState(false);
-  const [showCapitals, setShowCapitals] = useState(true);
-  const [showGlobalCities, setShowGlobalCities] = useState(true);
-  const [showMajorCities, setShowMajorCities] = useState(true);
-  const [showTerminator, setShowTerminator] = useState(true);
-  const [showTwilight, setShowTwilight] = useState(true);
-  const [activeOffsetIndex, setActiveOffsetIndex] = useState<number>(14);
-  const [rotationSpeed, setRotationSpeed] = useState<number>(0.0005);
-  const [countryFontSize, setCountryFontSize] = useState<number>(8);
-  const [flightAnimation, setFlightAnimation] = useState<FlightAnimationData | null>(null);
-  const [selectedJourneyCity, setSelectedJourneyCity] = useState<string | null>(null);
-  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [journeyCityFilter, setJourneyCityFilter] = useState<string | null>(null);
+  const [currentSong, setCurrentSong] = useState<(Song & { albumTitle: string }) | undefined>(undefined);
 
-  const { mutate: searchLocation, isPending } = useSearchLocation();
+  const searchLocation = useSearchLocation();
   const { data: layoutPreferences } = useGetWebsiteLayoutPreferences();
+  const { identity } = useInternetIdentity();
+  const isAuthenticated = !!identity;
 
-  const offsets = [-12, -11, -10, -9.5, -9, -8, -7, -6, -5, -4, -3.5, -3, -2, -1, 0, 1, 2, 3, 3.5, 4, 4.5, 5, 5.5, 5.75, 6, 6.5, 7, 8, 8.75, 9, 9.5, 10, 10.5, 11, 12, 12.75, 13, 14];
-
-  // Live clock update effect
+  // Clock update
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
+    const updateClock = () => {
+      const now = new Date();
+      setLocalTime(now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
 
+      if (searchResult?.coordinates) {
+        try {
+          const offsetMs = now.getTimezoneOffset() * -60000;
+          const offsetHours = offsetMs / 3600000;
+          const sign = offsetHours >= 0 ? '+' : '-';
+          const absHours = Math.floor(Math.abs(offsetHours));
+          const absMins = Math.round((Math.abs(offsetHours) - absHours) * 60);
+          const offsetStr = `UTC ${sign}${absHours}${absMins > 0 ? `:${absMins.toString().padStart(2, '0')}` : ''}`;
+          setUtcOffsetTime(`${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} (${offsetStr})`);
+        } catch {
+          setUtcOffsetTime('');
+        }
+      }
+    };
+
+    updateClock();
+    const interval = setInterval(updateClock, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [searchResult]);
 
-  // Format a Date object as "Month DD, YYYY at HH:MM AM/PM (UTC ±X)"
-  const formatTimeWithOffset = (date: Date, offsetHoursDecimal: number): string => {
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const month = months[date.getMonth()];
-    const day = date.getDate();
-    const year = date.getFullYear();
-
-    let hours = date.getHours();
-    const minutes = date.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12;
-    const minutesStr = minutes < 10 ? '0' + minutes : String(minutes);
-
-    // Format the offset label
-    const offsetSign = offsetHoursDecimal >= 0 ? '+' : '-';
-    const absOffset = Math.abs(offsetHoursDecimal);
-    const offsetWholeHours = Math.floor(absOffset);
-    const offsetMinsPart = Math.round((absOffset - offsetWholeHours) * 60);
-    const offsetStr = offsetMinsPart > 0
-      ? `${offsetSign}${offsetWholeHours}:${offsetMinsPart < 10 ? '0' + offsetMinsPart : offsetMinsPart}`
-      : `${offsetSign}${offsetWholeHours}`;
-
-    return `${month} ${day}, ${year} at ${hours}:${minutesStr} ${ampm} (UTC ${offsetStr})`;
-  };
-
-  // Format local time with UTC offset
-  const formatLocalTime = (): string => {
-    const localOffsetMinutes = -currentTime.getTimezoneOffset();
-    const localOffsetHours = localOffsetMinutes / 60;
-    return formatTimeWithOffset(currentTime, localOffsetHours);
-  };
-
-  // Format UTC offset time based on selected offset
-  const formatUtcOffsetTime = (): string => {
-    const selectedOffset = offsets[activeOffsetIndex]; // in decimal hours
-    const localOffsetMinutes = -currentTime.getTimezoneOffset(); // local offset in minutes
-    const selectedOffsetMinutes = selectedOffset * 60; // selected offset in minutes
-
-    // Difference in milliseconds between selected offset and local offset
-    const diffMs = (selectedOffsetMinutes - localOffsetMinutes) * 60 * 1000;
-
-    // Adjusted time
-    const adjustedTime = new Date(currentTime.getTime() + diffMs);
-
-    return formatTimeWithOffset(adjustedTime, selectedOffset);
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) {
-      toast.error('Please enter a location name');
-      return;
+  // Load default search place from layout preferences
+  useEffect(() => {
+    if (layoutPreferences?.defaultSearchPlace && !searchResult) {
+      handleSearch(layoutPreferences.defaultSearchPlace);
     }
+  }, [layoutPreferences?.defaultSearchPlace]);
 
-    const query = searchQuery.trim();
-    performSearch(query);
-  };
+  const handleSearch = async (query?: string) => {
+    const q = (query || searchQuery).trim();
+    if (!q) return;
 
-  const performSearch = (query: string) => {
-    searchLocation(query, {
-      onSuccess: (result) => {
-        if (result) {
-          setSelectedLocation(result);
-          // Switch to 2D mode when search is successful
-          setViewMode('2D');
-          // Clear focused travel spot and bookmark when performing new search
-          setFocusedTravelSpot(null);
-          setFocusedBookmark(null);
-          const locationDisplay = result.country && result.name !== result.country 
-            ? `${result.name}, ${result.country}`
-            : result.name;
-          toast.success(`Found ${locationDisplay}!`);
-        } else {
-          // Provide helpful feedback for unsupported locations
-          const suggestions = SUPPORTED_COUNTRIES
-            .filter(country => 
-              country.toLowerCase().includes(query.toLowerCase()) ||
-              query.toLowerCase().includes(country.toLowerCase())
-            )
-            .slice(0, 3);
-          
-          if (suggestions.length > 0) {
-            toast.error(`"${query}" not found. Did you mean: ${suggestions.join(', ')}?`);
-          } else {
-            toast.error(`"${query}" not found. Try searching for countries, cities, or towns.`);
-          }
-        }
-      },
-      onError: (error) => {
-        console.error('Search error:', error);
-        toast.error('Failed to search for location. Please try again.');
+    try {
+      const result = await searchLocation.mutateAsync(q);
+      if (result) {
+        setSearchResult({
+          coordinates: result.coordinates,
+          name: result.name,
+          type: result.type,
+        });
+        if (!query) setSearchQuery(result.name);
       }
-    });
-  };
-
-  const handleViewModeChange = (value: string) => {
-    if (value && (value === '3D' || value === '2D')) {
-      setViewMode(value);
-      
-      // When 2D button is clicked, automatically search for the user's configured default search place
-      if (value === '2D') {
-        const defaultSearchPlace = layoutPreferences?.defaultSearchPlace || 'Hong Kong';
-        setSearchQuery(defaultSearchPlace);
-        performSearch(defaultSearchPlace);
-        // Clear journey context when manually switching to 2D
-        setSelectedJourneyCity(null);
-      }
+    } catch (error) {
+      console.error('Search error:', error);
     }
   };
 
-  // Handler for city button - toggles the World Travel Hotspot panel
-  const handleCityButtonClick = () => {
-    setWorldHotspotOpen(prev => !prev);
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleSearch();
   };
 
-  // Handler for Show Time Zones button
-  const handleShowTimeZonesClick = () => {
-    setShowTimeZones(prev => !prev);
-    toast.info(showTimeZones ? 'Time zones hidden' : 'Time zones shown');
+  const handleJourney2DMap = (journeyCity: string) => {
+    setJourneyCityFilter(journeyCity);
+    setIs3DView(false);
+    setShowTraveloguePanel(false);
   };
 
-  // Handler for World button - toggles the World Controls panel
-  const handleWorldButtonClick = () => {
-    setWorldControlsOpen(prev => !prev);
-  };
-
-  // Handle travel spot focus from Vibes panel
-  const handleTravelSpotFocus = useCallback((spot: TravelSpot) => {
-    // First, search for the city to ensure we're in the right location
-    performSearch(spot.city);
-    
-    // Set the focused travel spot
+  const handleTravelSpotFocus = (spot: TravelSpot) => {
     setFocusedTravelSpot(spot);
-    
-    // Clear focused bookmark and journey context
-    setFocusedBookmark(null);
-    setSelectedJourneyCity(null);
-  }, []);
-
-  // Handle bookmark focus from Vibes panel
-  const handleBookmarkFocus = useCallback((bookmark: MapBookmark) => {
-    // First, search for the city to ensure we're in the right location
-    performSearch(bookmark.city);
-    
-    // Set the focused bookmark
-    setFocusedBookmark(bookmark);
-    
-    // Clear focused travel spot and journey context
-    setFocusedTravelSpot(null);
-    setSelectedJourneyCity(null);
-  }, []);
-
-  // Handle song selection from music panel
-  const handleSongSelect = useCallback((song: Song & { albumTitle: string }) => {
-    setCurrentSong(song);
-  }, []);
-
-  // Handle flight animation trigger from Travelogue panel
-  const handleFlightAnimation = useCallback((fromCity: string, toCity: string, fromCoords: { lat: number; lon: number }, toCoords: { lat: number; lon: number }) => {
-    setFlightAnimation({ fromCity, toCity, fromCoords, toCoords });
-    // Switch to 3D mode to show the animation
-    setViewMode('3D');
-    toast.info(`Flying from ${fromCity} to ${toCity}...`);
-  }, []);
-
-  // Handle 2D Map button click from Travelogue panel
-  const handleJourney2DMap = useCallback((journeyCity: string) => {
-    // Switch to 2D mode
-    setViewMode('2D');
-    
-    // Set the selected journey city for filtering schedule markers
-    setSelectedJourneyCity(journeyCity);
-    
-    // Search for the journey city to center the map
-    setSearchQuery(journeyCity);
-    performSearch(journeyCity);
-    
-    // Clear focused travel spot and bookmark
-    setFocusedTravelSpot(null);
-    setFocusedBookmark(null);
-    
-    toast.info(`Showing 2D map for ${journeyCity}`);
-  }, []);
-
-  const shouldShowGlobe = viewMode === '3D';
-  const shouldShowMap = viewMode === '2D' && selectedLocation;
-
-  // Apply bright-background class to document root when showing map
-  useEffect(() => {
-    if (shouldShowMap) {
-      document.documentElement.classList.add('bright-background-mode');
-    } else {
-      document.documentElement.classList.remove('bright-background-mode');
-    }
-    
-    return () => {
-      document.documentElement.classList.remove('bright-background-mode');
-    };
-  }, [shouldShowMap]);
-
-  // Close World Travel Hotspot panel when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (worldHotspotOpen) {
-        const target = event.target as HTMLElement;
-        const cityButton = document.getElementById('city-button');
-        const hotspotPanel = document.getElementById('world-hotspot-panel');
-        
-        if (cityButton && hotspotPanel && 
-            !cityButton.contains(target) && 
-            !hotspotPanel.contains(target)) {
-          setWorldHotspotOpen(false);
-        }
-      }
-    };
-
-    if (worldHotspotOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [worldHotspotOpen]);
-
-  // Close UTC Offset panel when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showTimeZones) {
-        const target = event.target as HTMLElement;
-        const timeZonesButton = document.getElementById('show-time-zones-button');
-        const utcOffsetPanel = document.getElementById('utc-offset-panel');
-        
-        if (timeZonesButton && utcOffsetPanel && 
-            !timeZonesButton.contains(target) && 
-            !utcOffsetPanel.contains(target)) {
-          setShowTimeZones(false);
-        }
-      }
-    };
-
-    if (showTimeZones) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showTimeZones]);
-
-  // Close World Controls panel when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (worldControlsOpen) {
-        const target = event.target as HTMLElement;
-        const worldButton = document.getElementById('world-button');
-        const worldPanel = document.getElementById('world-controls-panel');
-        
-        if (worldButton && worldPanel && 
-            !worldButton.contains(target) && 
-            !worldPanel.contains(target)) {
-          setWorldControlsOpen(false);
-        }
-      }
-    };
-
-    if (worldControlsOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [worldControlsOpen]);
-
-  const formatUtcOffsetLabel = (offset: number): string => {
-    if (offset === 0) return '0';
-    return offset > 0 ? `+${offset}` : `${offset}`;
+    setIs3DView(false);
   };
+
+  const handleBookmarkFocus = (bookmark: MapBookmark) => {
+    setFocusedBookmark(bookmark);
+    setIs3DView(false);
+  };
+
+  const showMusicPlayer = layoutPreferences?.showMusicPlayer !== false;
 
   return (
-    <TooltipProvider>
-      {/* Full-screen background container with 3D globe or 2D map */}
-      <div className="fixed inset-0 z-0">
-        {shouldShowGlobe ? (
-          <InteractiveGlobe 
-            showTimeZones={showTimeZones}
-            showCapitals={showCapitals}
-            showGlobalCities={showGlobalCities}
-            showMajorCities={showMajorCities}
-            showTerminator={showTerminator}
-            showTwilight={showTwilight}
-            onTerminatorChange={setShowTerminator}
-            onTwilightChange={setShowTwilight}
-            activeOffsetIndex={activeOffsetIndex}
-            onOffsetChange={setActiveOffsetIndex}
-            rotationSpeed={rotationSpeed}
-            countryFontSize={countryFontSize}
-            flightAnimation={flightAnimation}
-            onFlightAnimationComplete={() => setFlightAnimation(null)}
+    <div className="relative w-full h-screen overflow-hidden bg-background">
+      {/* Main view */}
+      {is3DView ? (
+        <InteractiveGlobe />
+      ) : (
+        <MapComponent
+          coordinates={searchResult?.coordinates || [0, 0]}
+          locationName={searchResult?.name || ''}
+          locationType={searchResult?.type}
+          focusedTravelSpot={focusedTravelSpot}
+          focusedBookmark={focusedBookmark}
+          onTravelSpotFocused={() => setFocusedTravelSpot(null)}
+          onBookmarkFocused={() => setFocusedBookmark(null)}
+          journeyCityFilter={journeyCityFilter}
+        />
+      )}
+
+      {/* Top search bar */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 w-[37.5%] min-w-64">
+        <div className="flex-1 flex items-center gap-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg border border-white/40 dark:border-slate-700/60">
+          <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Search location..."
+            className="border-0 bg-transparent p-0 h-auto focus-visible:ring-0 text-sm"
           />
-        ) : shouldShowMap ? (
-          <MapComponent 
-            coordinates={selectedLocation.coordinates} 
-            locationName={selectedLocation.searchQuery}
-            locationType={selectedLocation.type}
-            focusedTravelSpot={focusedTravelSpot}
-            focusedBookmark={focusedBookmark}
-            onTravelSpotFocused={() => setFocusedTravelSpot(null)}
-            onBookmarkFocused={() => setFocusedBookmark(null)}
-            journeyCityFilter={selectedJourneyCity}
-          />
-        ) : (
-          <div className="h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900">
-            <div className="text-center max-w-md mx-auto px-4">
-              <Map className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2 text-foreground">2D Map View</h3>
-              <p className="text-muted-foreground text-sm">
-                Search for a location above to view it on the interactive map, or switch to 3D mode to explore the globe.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* UI Container - Transparent overlay with pointer-events: none */}
-      <div className="fixed inset-0 z-10 pointer-events-none">
-        <div className="min-h-screen flex flex-col">
-          {/* Panel Icon Buttons Only - positioned absolutely with pointer-events: auto - INCREASED Z-INDEX */}
-          <div className="absolute top-4 right-4 z-[10003] pointer-events-auto">
-            <div className="flex flex-col items-end gap-2">
-              {/* Menu Panel - Icon Only */}
-              <AdminPanel />
-              
-              {/* Travelogue Panel - Icon Only */}
-              <TraveloguePanel 
-                onFlightAnimation={handleFlightAnimation}
-                onJourney2DMap={handleJourney2DMap}
-              />
-
-              {/* Vibes Panel - Icon Only */}
-              <VibesPanel onTravelSpotFocus={handleTravelSpotFocus} onBookmarkFocus={handleBookmarkFocus} />
-
-              {/* Music Panel - Icon Only */}
-              <MusicPanel onSongSelect={handleSongSelect} currentlyPlayingSong={currentSong} />
-
-              {/* Website Layout Panel - Icon Only */}
-              <WebsiteLayoutPanel />
-
-              {/* Authentication Panel - Icon Only - positioned right below Website Layout */}
-              <LoginPanel />
-            </div>
-          </div>
-
-          {/* Three buttons positioned vertically at upper left corner - aligned with search bar at top-4 - INCREASED Z-INDEX */}
-          <div className="absolute top-4 left-4 z-[10003] pointer-events-auto">
-            <div className="flex flex-col gap-2">
-              <Button 
-                id="city-button"
-                type="button"
-                onClick={handleCityButtonClick}
-                disabled={isPending}
-                className="bg-primary/90 hover:bg-primary backdrop-blur-sm h-10 w-10 p-0 relative z-[10003]"
-                aria-label="World Travel Hotspot"
-              >
-                <Building2 className="h-4 w-4" />
-              </Button>
-              
-              <Button 
-                id="show-time-zones-button"
-                type="button"
-                onClick={handleShowTimeZonesClick}
-                disabled={isPending}
-                className="bg-primary/90 hover:bg-primary backdrop-blur-sm h-10 w-10 p-0 relative z-[10003]"
-                aria-label="Show Time Zones"
-              >
-                <Clock className="h-4 w-4" />
-              </Button>
-              
-              <Button 
-                id="world-button"
-                type="button"
-                onClick={handleWorldButtonClick}
-                disabled={isPending}
-                className="bg-primary/90 hover:bg-primary backdrop-blur-sm h-10 w-10 p-0 relative z-[10003]"
-                aria-label="World Controls"
-              >
-                <Earth className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Header - fully transparent overlay - search bar aligned at top-4 horizontally with City button and Admin Panel */}
-          <header className="relative z-[10000] pointer-events-none">
-            <div className="container mx-auto px-4 py-4">
-              {/* Search Form with Integrated View Toggle - reduced to 37.5% width - removed outer containers */}
-              <div className="flex justify-center pointer-events-auto">
-                <form onSubmit={handleSearch} className="flex gap-3 w-full max-w-[280px]">
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Search location..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9 bg-background/90 backdrop-blur-sm border-border/50 h-10"
-                    />
-                  </div>
-                  <Button 
-                    type="submit" 
-                    disabled={isPending}
-                    className="bg-primary/90 hover:bg-primary backdrop-blur-sm h-10 px-3"
-                  >
-                    {isPending ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                    ) : (
-                      <Search className="h-4 w-4" />
-                    )}
-                  </Button>
-                </form>
-              </div>
-            </div>
-          </header>
-
-          {/* View Mode Toggle - positioned below header */}
-          <div className="absolute top-[72px] left-1/2 transform -translate-x-1/2 z-[10002] pointer-events-auto">
-            <ToggleGroup 
-              type="single" 
-              value={viewMode} 
-              onValueChange={handleViewModeChange}
-              className="bg-background/90 backdrop-blur-sm border border-border/50 rounded-lg p-1"
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 p-0"
+              onClick={() => setSearchQuery('')}
             >
-              <ToggleGroupItem value="3D" className="h-7 px-3 text-xs font-medium">
-                <Globe className="h-3 w-3 mr-1" />
-                3D
-              </ToggleGroupItem>
-              <ToggleGroupItem value="2D" className="h-7 px-3 text-xs font-medium">
-                <Map className="h-3 w-3 mr-1" />
-                2D
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-
-          {/* UTC Offset Selection Panel */}
-          {showTimeZones && (
-            <div 
-              id="utc-offset-panel"
-              className="absolute top-4 left-16 z-[10002] pointer-events-auto"
-            >
-              <Card className="bg-background/95 backdrop-blur-sm border-border/50 shadow-lg w-80">
-                <CardHeader className="pb-2 pt-3 px-3">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    UTC Offset Selection
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-3">
-                  {/* Local Time display */}
-                  <div className="mb-3 p-2 bg-muted/50 rounded-md">
-                    <div className="text-xs font-medium text-muted-foreground mb-0.5">Local Time</div>
-                    <div className="text-xs font-mono text-foreground">{formatLocalTime()}</div>
-                  </div>
-
-                  {/* UTC Offset Time display */}
-                  <div className="mb-3 p-2 bg-primary/10 rounded-md border border-primary/20">
-                    <div className="text-xs font-medium text-muted-foreground mb-0.5">UTC Offset Time</div>
-                    <div className="text-xs font-mono text-foreground">{formatUtcOffsetTime()}</div>
-                  </div>
-
-                  {/* UTC Offset Buttons */}
-                  <div className="flex flex-wrap gap-1">
-                    {offsets.map((offset, index) => (
-                      <button
-                        key={offset}
-                        onClick={() => setActiveOffsetIndex(index)}
-                        className={`text-xs px-1.5 py-0.5 rounded border transition-colors ${
-                          activeOffsetIndex === index
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'bg-background text-foreground border-border hover:bg-muted'
-                        }`}
-                      >
-                        {formatUtcOffsetLabel(offset)}
-                      </button>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+              <X className="h-3 w-3" />
+            </Button>
           )}
-
-          {/* World Travel Hotspot Panel */}
-          {worldHotspotOpen && (
-            <div 
-              id="world-hotspot-panel"
-              className="absolute top-4 left-16 z-[10002] pointer-events-auto"
-            >
-              <Card className="bg-background/95 backdrop-blur-sm border-border/50 shadow-lg w-72">
-                <CardHeader className="pb-2 pt-3 px-3">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
-                    World Travel Hotspot
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-3">
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Search for cities and locations around the world to explore on the map.
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {['Tokyo', 'Paris', 'New York', 'London', 'Dubai', 'Singapore', 'Sydney', 'Rome', 'Barcelona', 'Bangkok'].map((city) => (
-                      <Badge
-                        key={city}
-                        variant="outline"
-                        className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors text-xs"
-                        onClick={() => {
-                          setSearchQuery(city);
-                          performSearch(city);
-                          setWorldHotspotOpen(false);
-                        }}
-                      >
-                        {city}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* World Controls Panel */}
-          {worldControlsOpen && (
-            <div 
-              id="world-controls-panel"
-              className="absolute top-4 left-16 z-[10002] pointer-events-auto"
-            >
-              <Card className="bg-background/95 backdrop-blur-sm border-border/50 shadow-lg w-72">
-                <CardHeader className="pb-2 pt-3 px-3">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <Earth className="h-4 w-4" />
-                    World Controls
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-3 space-y-3">
-                  {/* City Labels */}
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1.5">City Labels</p>
-                    <div className="flex flex-wrap gap-1">
-                      <button
-                        onClick={() => setShowCapitals(prev => !prev)}
-                        className={`text-xs px-2 py-1 rounded border transition-colors ${
-                          showCapitals
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'bg-background text-foreground border-border hover:bg-muted'
-                        }`}
-                      >
-                        Capitals
-                      </button>
-                      <button
-                        onClick={() => setShowGlobalCities(prev => !prev)}
-                        className={`text-xs px-2 py-1 rounded border transition-colors ${
-                          showGlobalCities
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'bg-background text-foreground border-border hover:bg-muted'
-                        }`}
-                      >
-                        Global Cities
-                      </button>
-                      <button
-                        onClick={() => setShowMajorCities(prev => !prev)}
-                        className={`text-xs px-2 py-1 rounded border transition-colors ${
-                          showMajorCities
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'bg-background text-foreground border-border hover:bg-muted'
-                        }`}
-                      >
-                        Major Cities
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Sun Effects */}
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Sun Effects</p>
-                    <div className="flex flex-wrap gap-1">
-                      <button
-                        onClick={() => setShowTerminator(prev => !prev)}
-                        className={`text-xs px-2 py-1 rounded border transition-colors ${
-                          showTerminator
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'bg-background text-foreground border-border hover:bg-muted'
-                        }`}
-                      >
-                        Day/Night Line
-                      </button>
-                      <button
-                        onClick={() => setShowTwilight(prev => !prev)}
-                        className={`text-xs px-2 py-1 rounded border transition-colors ${
-                          showTwilight
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'bg-background text-foreground border-border hover:bg-muted'
-                        }`}
-                      >
-                        Twilight Zone
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Rotation Speed */}
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Rotation Speed</p>
-                    <div className="flex gap-1">
-                      {[
-                        { label: 'Stop', value: 0 },
-                        { label: 'Slow', value: 0.0002 },
-                        { label: 'Normal', value: 0.0005 },
-                        { label: 'Fast', value: 0.002 },
-                      ].map(({ label, value }) => (
-                        <button
-                          key={label}
-                          onClick={() => setRotationSpeed(value)}
-                          className={`text-xs px-2 py-1 rounded border transition-colors ${
-                            rotationSpeed === value
-                              ? 'bg-primary text-primary-foreground border-primary'
-                              : 'bg-background text-foreground border-border hover:bg-muted'
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Font Size */}
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1.5">City Font Size</p>
-                    <div className="flex gap-1">
-                      {[
-                        { label: 'S', value: 6 },
-                        { label: 'M', value: 8 },
-                        { label: 'L', value: 10 },
-                        { label: 'XL', value: 12 },
-                      ].map(({ label, value }) => (
-                        <button
-                          key={label}
-                          onClick={() => setCountryFontSize(value)}
-                          className={`text-xs px-2 py-1 rounded border transition-colors ${
-                            countryFontSize === value
-                              ? 'bg-primary text-primary-foreground border-primary'
-                              : 'bg-background text-foreground border-border hover:bg-muted'
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* Footer */}
-          <footer className="absolute bottom-0 left-0 right-0 z-[10000] pointer-events-none">
-            <div className="container mx-auto px-4 py-2">
-              <div className="flex justify-center pointer-events-auto">
-                <p className="text-xs text-muted-foreground/70 backdrop-blur-sm bg-background/30 px-2 py-1 rounded">
-                  Built with ❤️ using{' '}
-                  <a
-                    href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline hover:text-foreground transition-colors"
-                  >
-                    caffeine.ai
-                  </a>{' '}
-                  © {new Date().getFullYear()}
-                </p>
-              </div>
-            </div>
-          </footer>
         </div>
+        <Button
+          size="icon"
+          variant="secondary"
+          className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm shadow-lg border border-white/40 dark:border-slate-700/60 rounded-full"
+          onClick={() => handleSearch()}
+          disabled={searchLocation.isPending}
+        >
+          <Search className="h-4 w-4" />
+        </Button>
       </div>
 
-      {/* Music Player Bar - positioned at bottom, above footer */}
-      {layoutPreferences?.showMusicPlayer !== false && (
-        <div className="fixed bottom-8 left-0 right-0 z-[10001] pointer-events-auto px-4">
-          <MusicPlayerBar 
+      {/* Right-side controls */}
+      <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
+        <Button
+          size="icon"
+          variant="secondary"
+          className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm hover:bg-white/80 dark:hover:bg-slate-800/80 shadow-lg border border-white/40 dark:border-slate-700/60"
+          onClick={() => setIs3DView(!is3DView)}
+          title={is3DView ? 'Switch to 2D Map' : 'Switch to 3D Globe'}
+        >
+          {is3DView ? <Map className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+        </Button>
+
+        <LoginPanel />
+
+        {isAuthenticated && (
+          <>
+            <Button
+              size="icon"
+              variant="secondary"
+              className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm hover:bg-white/80 dark:hover:bg-slate-800/80 shadow-lg border border-white/40 dark:border-slate-700/60"
+              onClick={() => setShowAdminPanel(true)}
+              title="Admin Panel"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+
+            <Button
+              size="icon"
+              variant="secondary"
+              className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm hover:bg-white/80 dark:hover:bg-slate-800/80 shadow-lg border border-white/40 dark:border-slate-700/60"
+              onClick={() => setShowTraveloguePanel(true)}
+              title="Travelogue"
+            >
+              <BookOpen className="h-4 w-4" />
+            </Button>
+          </>
+        )}
+
+        <VibesPanel
+          onTravelSpotFocus={handleTravelSpotFocus}
+          onBookmarkFocus={handleBookmarkFocus}
+        />
+
+        {isAuthenticated && (
+          <MusicPanel
+            onSongSelect={setCurrentSong}
+            currentlyPlayingSong={currentSong}
+          />
+        )}
+
+        <WebsiteLayoutPanel />
+      </div>
+
+      {/* Clock display */}
+      {searchResult && (
+        <div className="absolute bottom-20 left-4 z-[1000] bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm rounded-lg px-3 py-2 shadow border border-white/40 dark:border-slate-700/60 text-xs space-y-0.5">
+          <div className="flex items-center gap-2">
+            <Clock className="h-3 w-3 text-muted-foreground" />
+            <span className="text-muted-foreground">Local Time</span>
+            <span className="font-mono font-medium">{localTime}</span>
+          </div>
+          {utcOffsetTime && (
+            <div className="flex items-center gap-2">
+              <Clock className="h-3 w-3 text-muted-foreground" />
+              <span className="text-muted-foreground">UTC Offset</span>
+              <span className="font-mono font-medium text-xs">{utcOffsetTime}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Music player bar */}
+      {isAuthenticated && showMusicPlayer && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000]">
+          <MusicPlayerBar
             currentSong={currentSong}
             onSongChange={setCurrentSong}
           />
         </div>
       )}
-    </TooltipProvider>
+
+      {/* Admin Panel */}
+      <AdminPanel
+        isOpen={showAdminPanel}
+        onClose={() => setShowAdminPanel(false)}
+      />
+
+      {/* Travelogue Panel */}
+      <TraveloguePanel
+        isOpen={showTraveloguePanel}
+        onClose={() => setShowTraveloguePanel(false)}
+        onShowCityOnMap={handleJourney2DMap}
+      />
+
+      {/* Footer */}
+      <div className="absolute bottom-4 right-4 z-[1000] text-xs text-muted-foreground/60">
+        Built with ❤️ using{' '}
+        <a
+          href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-muted-foreground transition-colors"
+        >
+          caffeine.ai
+        </a>
+      </div>
+    </div>
   );
 }

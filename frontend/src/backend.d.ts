@@ -88,12 +88,11 @@ export interface MusicAlbum {
     updatedAt: Time;
 }
 export interface Journey {
-    id: bigint;
+    title: string;
     endDate: Time;
     city: string;
     createdAt: Time;
     updatedAt: Time;
-    customTitle?: string;
     startDate: Time;
 }
 export interface Song {
@@ -141,7 +140,7 @@ export interface backendInterface {
     addCity(city: GeonameCity): Promise<void>;
     addCityAlbum(city: string, mediaFiles: Array<MediaFile>, socialMediaLinks: Array<SocialMediaLink>): Promise<void>;
     addCityRating(city: string, rating: number, comment: string): Promise<void>;
-    addJourney(city: string, customTitle: string | null, startDate: Time, endDate: Time): Promise<bigint>;
+    addJourney(title: string, city: string, startDate: Time, endDate: Time): Promise<void>;
     addLocationInfo(name: string, coordinates: [number, number], photoPath: string | null): Promise<void>;
     addMapBookmark(coordinates: [number, number], name: string, description: string, city: string): Promise<void>;
     addMediaToCityAlbum(city: string, mediaFile: MediaFile): Promise<boolean>;
@@ -157,7 +156,7 @@ export interface backendInterface {
     deleteCity(name: string): Promise<boolean>;
     deleteCityAlbum(city: string): Promise<boolean>;
     deleteCityRating(city: string): Promise<boolean>;
-    deleteJourney(id: bigint): Promise<boolean>;
+    deleteJourney(city: string): Promise<boolean>;
     deleteLocationInfo(name: string): Promise<boolean>;
     deleteMapBookmark(name: string): Promise<boolean>;
     deleteMusicAlbum(title: string): Promise<boolean>;
@@ -206,9 +205,8 @@ export interface backendInterface {
     getCountryCoordinates(countryName: string): Promise<[number, number] | null>;
     getDisplaySettings(): Promise<boolean | null>;
     getFileReference(path: string): Promise<FileReference>;
-    getJourney(id: bigint): Promise<Journey | null>;
+    getJourney(city: string): Promise<Journey | null>;
     getJourneyScheduleWithDays(journeyCity: string): Promise<Array<[string, Array<ScheduleItem>]>>;
-    getJourneysByCity(city: string): Promise<Array<Journey>>;
     getLiveJourneys(): Promise<Array<Journey>>;
     getLocationInfo(name: string): Promise<LocationInfo | null>;
     getMapBookmarkByCoordinates(coordinates: [number, number]): Promise<MapBookmark | null>;
@@ -250,7 +248,7 @@ export interface backendInterface {
     updateCityAlbum(city: string, mediaFiles: Array<MediaFile>, socialMediaLinks: Array<SocialMediaLink>): Promise<boolean>;
     updateCityRating(city: string, rating: number, comment: string): Promise<boolean>;
     updateDashboard(): Promise<Array<[string, bigint, bigint]>>;
-    updateJourney(id: bigint, city: string, customTitle: string | null, startDate: Time, endDate: Time): Promise<boolean>;
+    updateJourney(city: string, startDate: Time, endDate: Time): Promise<boolean>;
     updateLocationInfo(name: string, photoPath: string | null): Promise<boolean>;
     updateMapBookmark(coordinates: [number, number], name: string, description: string, city: string): Promise<boolean>;
     updateMusicAlbum(title: string, description: string, songs: Array<Song>): Promise<boolean>;

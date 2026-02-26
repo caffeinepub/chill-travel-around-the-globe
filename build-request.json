@@ -1,96 +1,40 @@
 {
   "kind": "build_request",
-  "title": "Allow multiple journeys per city with custom titles and grouped display",
-  "projectName": "World Clock Globe",
+  "title": "Filter travelogue entries by journey ID so each journey has its own independent travelogue",
+  "projectName": "Travel Journeys",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Update the backend Journey data type and storage to allow multiple journeys per city. Remove any uniqueness constraint on city. Add an optional custom title field (Text) to the Journey type. When no custom title is provided, fall back to the journey date as the distinguishing label.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-recent"
-        ],
-        "quotes": [
-          "Multiple journeys per city — each journey can have a custom title (e.g., 'Paris - Summer 2024'), with date as a fallback if no title is provided"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The backend accepts and stores multiple Journey records with the same city name.",
-        "Each Journey record has an optional customTitle field.",
-        "Creating two journeys with the same city but different custom titles succeeds without error.",
-        "Querying all journeys returns all records including duplicates for the same city."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Update all relevant frontend mutation hooks (add journey, edit journey) in useQueries.ts to include the optional customTitle field so it is sent to and received from the backend.",
+      "text": "In TraveloguePanel.tsx, when displaying schedule items for a selected journey, filter the schedule items by the journey's unique ID so that only items belonging to that specific journey are shown. Each journey title must display only its own travelogue entries, independent of other journeys that share the same city.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-recent"
         ],
         "quotes": [
-          "each journey can have a custom title"
+          "Filter travelogue entries by journey ID on the frontend so each journey has its own independent travelogue",
+          "I want each journey of the same journey city to have their own travelogue",
+          "use the existing journey ID (already tied to each title/journey entry) as the foreign key on travelogue items, so the frontend filters/displays travelogue entries based on the currently selected journey ID"
         ]
       },
       "acceptanceCriteria": [
-        "The add-journey mutation accepts and forwards a customTitle parameter.",
-        "The edit-journey mutation accepts and forwards a customTitle parameter.",
-        "Journey query results include the customTitle field."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Update the journey creation and editing UI (inside the div at XPath /html[1]/body[1]/div[5], which is the TraveloguePanel or equivalent journey list panel) to include an optional 'Journey Title' text input field. This title is used to distinguish multiple journeys for the same city.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-recent"
-        ],
-        "quotes": [
-          "it would be good if it can be distinguished by a custom title"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The add-journey form includes an optional 'Journey Title' text input.",
-        "The edit-journey form includes the 'Journey Title' text input pre-populated with the existing title.",
-        "Submitting without a title is allowed; the journey date is used as the display label in that case."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "In the journey list panel (div[5], corresponding to TraveloguePanel), group journeys by city name. Each city group should be collapsible and display the city name as a group header. Within each group, list all journeys for that city showing their custom title (or date as fallback). Multiple journeys for the same city must all appear under the same city group header.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-recent"
-        ],
-        "quotes": [
-          "it would be good if can group them together",
-          "journeys for the same city will be grouped together in the journey list/panel"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Journeys with the same city name appear under a single city group header in the panel.",
-        "Each city group is collapsible/expandable.",
-        "Each journey entry within a group displays its custom title, or the journey date if no title is set.",
-        "Adding a second journey to an existing city adds it to the existing city group rather than creating a duplicate group.",
-        "Cities with only one journey still appear within a group header for consistency."
+        "When a journey is selected/expanded in TraveloguePanel, only schedule items whose journeyId matches that journey's ID are shown",
+        "Two journeys to the same city (e.g., two separate 'Paris' trips) each display completely separate, independent travelogue entries",
+        "If a schedule item has no journeyId set, it does not appear under any journey's travelogue (or falls back gracefully without mixing entries)",
+        "The travelogue display in TraveloguePanel correctly updates when switching between journeys"
       ]
     }
   ],
   "constraints": [
-    "The XPath /html[1]/body[1]/div[5] targets the journey list panel — all journey list UI changes must be scoped to this element.",
-    "Do not modify files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui.",
-    "All Motoko logic must remain in backend/main.mo as a single actor."
+    "Do not modify any backend Motoko files — this is a frontend-only filtering change",
+    "Do not modify files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui",
+    "Use the existing journey ID field already present on journey objects — do not invent new fields"
   ],
   "nonGoals": [
-    "Automatic deduplication or merging of existing journeys with the same city.",
-    "Sorting or filtering journeys beyond the city grouping.",
-    "Any changes to the Sun Effects panel or time/button controls.",
-    "Changes to the 3D globe or map components."
+    "Adding journeyId field to the backend ScheduleItem type",
+    "Migrating or restructuring backend data storage",
+    "Changing how schedule items are stored or created in the admin panel"
   ],
   "imageRequirements": {
     "required": [],

@@ -102,12 +102,11 @@ export const CityRating = IDL.Record({
   'rating' : IDL.Float64,
 });
 export const Journey = IDL.Record({
-  'id' : IDL.Nat,
+  'title' : IDL.Text,
   'endDate' : Time,
   'city' : IDL.Text,
   'createdAt' : Time,
   'updatedAt' : Time,
-  'customTitle' : IDL.Opt(IDL.Text),
   'startDate' : Time,
 });
 export const LocationInfo = IDL.Record({
@@ -173,11 +172,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'addCityRating' : IDL.Func([IDL.Text, IDL.Float64, IDL.Text], [], []),
-  'addJourney' : IDL.Func(
-      [IDL.Text, IDL.Opt(IDL.Text), Time, Time],
-      [IDL.Nat],
-      [],
-    ),
+  'addJourney' : IDL.Func([IDL.Text, IDL.Text, Time, Time], [], []),
   'addLocationInfo' : IDL.Func(
       [IDL.Text, IDL.Tuple(IDL.Float64, IDL.Float64), IDL.Opt(IDL.Text)],
       [],
@@ -232,7 +227,7 @@ export const idlService = IDL.Service({
   'deleteCity' : IDL.Func([IDL.Text], [IDL.Bool], []),
   'deleteCityAlbum' : IDL.Func([IDL.Text], [IDL.Bool], []),
   'deleteCityRating' : IDL.Func([IDL.Text], [IDL.Bool], []),
-  'deleteJourney' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+  'deleteJourney' : IDL.Func([IDL.Text], [IDL.Bool], []),
   'deleteLocationInfo' : IDL.Func([IDL.Text], [IDL.Bool], []),
   'deleteMapBookmark' : IDL.Func([IDL.Text], [IDL.Bool], []),
   'deleteMusicAlbum' : IDL.Func([IDL.Text], [IDL.Bool], []),
@@ -349,13 +344,12 @@ export const idlService = IDL.Service({
     ),
   'getDisplaySettings' : IDL.Func([], [IDL.Opt(IDL.Bool)], ['query']),
   'getFileReference' : IDL.Func([IDL.Text], [FileReference], ['query']),
-  'getJourney' : IDL.Func([IDL.Nat], [IDL.Opt(Journey)], ['query']),
+  'getJourney' : IDL.Func([IDL.Text], [IDL.Opt(Journey)], ['query']),
   'getJourneyScheduleWithDays' : IDL.Func(
       [IDL.Text],
       [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Vec(ScheduleItem)))],
       ['query'],
     ),
-  'getJourneysByCity' : IDL.Func([IDL.Text], [IDL.Vec(Journey)], ['query']),
   'getLiveJourneys' : IDL.Func([], [IDL.Vec(Journey)], ['query']),
   'getLocationInfo' : IDL.Func([IDL.Text], [IDL.Opt(LocationInfo)], ['query']),
   'getMapBookmarkByCoordinates' : IDL.Func(
@@ -469,11 +463,7 @@ export const idlService = IDL.Service({
       [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Nat, IDL.Nat))],
       ['query'],
     ),
-  'updateJourney' : IDL.Func(
-      [IDL.Nat, IDL.Text, IDL.Opt(IDL.Text), Time, Time],
-      [IDL.Bool],
-      [],
-    ),
+  'updateJourney' : IDL.Func([IDL.Text, Time, Time], [IDL.Bool], []),
   'updateLocationInfo' : IDL.Func(
       [IDL.Text, IDL.Opt(IDL.Text)],
       [IDL.Bool],
@@ -610,12 +600,11 @@ export const idlFactory = ({ IDL }) => {
     'rating' : IDL.Float64,
   });
   const Journey = IDL.Record({
-    'id' : IDL.Nat,
+    'title' : IDL.Text,
     'endDate' : Time,
     'city' : IDL.Text,
     'createdAt' : Time,
     'updatedAt' : Time,
-    'customTitle' : IDL.Opt(IDL.Text),
     'startDate' : Time,
   });
   const LocationInfo = IDL.Record({
@@ -682,11 +671,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'addCityRating' : IDL.Func([IDL.Text, IDL.Float64, IDL.Text], [], []),
-    'addJourney' : IDL.Func(
-        [IDL.Text, IDL.Opt(IDL.Text), Time, Time],
-        [IDL.Nat],
-        [],
-      ),
+    'addJourney' : IDL.Func([IDL.Text, IDL.Text, Time, Time], [], []),
     'addLocationInfo' : IDL.Func(
         [IDL.Text, IDL.Tuple(IDL.Float64, IDL.Float64), IDL.Opt(IDL.Text)],
         [],
@@ -741,7 +726,7 @@ export const idlFactory = ({ IDL }) => {
     'deleteCity' : IDL.Func([IDL.Text], [IDL.Bool], []),
     'deleteCityAlbum' : IDL.Func([IDL.Text], [IDL.Bool], []),
     'deleteCityRating' : IDL.Func([IDL.Text], [IDL.Bool], []),
-    'deleteJourney' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+    'deleteJourney' : IDL.Func([IDL.Text], [IDL.Bool], []),
     'deleteLocationInfo' : IDL.Func([IDL.Text], [IDL.Bool], []),
     'deleteMapBookmark' : IDL.Func([IDL.Text], [IDL.Bool], []),
     'deleteMusicAlbum' : IDL.Func([IDL.Text], [IDL.Bool], []),
@@ -866,13 +851,12 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getDisplaySettings' : IDL.Func([], [IDL.Opt(IDL.Bool)], ['query']),
     'getFileReference' : IDL.Func([IDL.Text], [FileReference], ['query']),
-    'getJourney' : IDL.Func([IDL.Nat], [IDL.Opt(Journey)], ['query']),
+    'getJourney' : IDL.Func([IDL.Text], [IDL.Opt(Journey)], ['query']),
     'getJourneyScheduleWithDays' : IDL.Func(
         [IDL.Text],
         [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Vec(ScheduleItem)))],
         ['query'],
       ),
-    'getJourneysByCity' : IDL.Func([IDL.Text], [IDL.Vec(Journey)], ['query']),
     'getLiveJourneys' : IDL.Func([], [IDL.Vec(Journey)], ['query']),
     'getLocationInfo' : IDL.Func(
         [IDL.Text],
@@ -994,11 +978,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Nat, IDL.Nat))],
         ['query'],
       ),
-    'updateJourney' : IDL.Func(
-        [IDL.Nat, IDL.Text, IDL.Opt(IDL.Text), Time, Time],
-        [IDL.Bool],
-        [],
-      ),
+    'updateJourney' : IDL.Func([IDL.Text, Time, Time], [IDL.Bool], []),
     'updateLocationInfo' : IDL.Func(
         [IDL.Text, IDL.Opt(IDL.Text)],
         [IDL.Bool],

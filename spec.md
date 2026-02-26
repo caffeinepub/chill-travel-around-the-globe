@@ -1,12 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Allow multiple journeys per the same city, each with an optional custom title, and display them grouped by city in the journey panel.
+**Goal:** Filter travelogue entries in TraveloguePanel by the selected journey's unique ID so that each journey displays only its own independent travelogue entries.
 
 **Planned changes:**
-- Remove the uniqueness constraint on city in the backend Journey data type and add an optional `customTitle` field; fall back to journey date when no title is provided
-- Update add-journey and edit-journey mutation hooks to include the optional `customTitle` field
-- Add an optional "Journey Title" text input to the add and edit journey forms in the TraveloguePanel
-- Group journeys by city name in the TraveloguePanel, with each city group collapsible and listing all journeys under it showing their custom title or date as fallback
+- In `TraveloguePanel.tsx`, filter displayed schedule items by matching their `journeyId` to the currently selected journey's ID
+- Ensure two journeys to the same city each show completely separate travelogue entries
+- Schedule items without a `journeyId` are excluded or handled gracefully without mixing into any journey's travelogue
+- Travelogue display updates correctly when switching between journeys
 
-**User-visible outcome:** Users can create multiple journeys for the same city (each with an optional custom title), and the journey list panel groups all journeys for the same city under a single collapsible city header.
+**User-visible outcome:** Each journey's travelogue panel shows only its own entries, so two trips to the same city no longer share or mix travelogue items.

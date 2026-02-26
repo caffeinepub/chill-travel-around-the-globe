@@ -1,76 +1,47 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-25T14:14:42.734Z",
+  "generatedAt": "2026-02-26T09:57:22.381Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 3,
+    "total": 1,
+    "implemented": 1,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Update the backend Journey data type and storage to allow multiple journeys per city. Remove any uniqueness constraint on city. Add an optional custom title field (Text) to the Journey type. When no custom title is provided, fall back to the journey date as the distinguishing label.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-2",
-        "summary": "Update all relevant frontend mutation hooks (add journey, edit journey) in useQueries.ts to include the optional customTitle field so it is sent to and received from the backend.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Update the journey creation and editing UI (inside the div at XPath /html[1]/body[1]/div[5], which is the TraveloguePanel or equivalent journey list panel) to include an optional 'Journey Title' text input field. This title is used to distinguish multiple journeys for the same city.",
+        "summary": "In TraveloguePanel.tsx, when displaying schedule items for a selected journey, filter the schedule items by the journey's unique ID so that only items belonging to that specific journey are shown. Each journey title must display only its own travelogue entries, independent of other journeys that share the same city.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/TraveloguePanel.tsx",
-          "frontend/src/components/AdminPanel.tsx"
+          "frontend/src/hooks/useQueries.ts"
         ],
         "matchedFiles": [
           "frontend/src/components/TraveloguePanel.tsx",
-          "frontend/src/components/AdminPanel.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "In the journey list panel (div[5], corresponding to TraveloguePanel), group journeys by city name. Each city group should be collapsible and display the city name as a group header. Within each group, list all journeys for that city showing their custom title (or date as fallback). Multiple journeys for the same city must all appear under the same city group header.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx"
+          "frontend/src/hooks/useQueries.ts"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
     "frontend/src/components/AdminPanel.tsx",
-    "frontend/src/components/CityAlbumManager.tsx",
+    "frontend/src/components/CityloguePanel.tsx",
     "frontend/src/components/LocationInfoDialog.tsx",
+    "frontend/src/components/MusicAlbumManager.tsx",
+    "frontend/src/components/MusicPlayerBar.tsx",
     "frontend/src/components/TravelSpotManager.tsx",
     "frontend/src/components/TraveloguePanel.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
+    "frontend/src/components/itinerary/DoodleItineraryDialogContent.tsx",
+    "frontend/src/components/itinerary/RetroItineraryDialogContent.tsx",
     "frontend/src/hooks/useQueries.ts",
+    "frontend/src/lib/journeyUtils.ts",
+    "frontend/src/pages/LocationMapExplorer.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

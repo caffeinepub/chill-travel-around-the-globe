@@ -11,18 +11,16 @@ import Debug "mo:base/Debug";
 import Float "mo:base/Float";
 import Array "mo:base/Array";
 import Int "mo:base/Int";
-import Migration "migration";
-import Nat "mo:base/Nat";
 
-(with migration = Migration.run)
+
+
 actor {
   transient let textMap = OrderedMap.Make<Text>(Text.compare);
   transient let principalMap = OrderedMap.Make<Principal>(Principal.compare);
-  transient let natMap = OrderedMap.Make<Nat>(Nat.compare);
 
   var countryCoordinates = textMap.empty<(Float, Float)>();
   var locationInfo = textMap.empty<LocationInfo>();
-  var journeysV2 = natMap.empty<Journey>();
+  var journeys = textMap.empty<[Journey]>();
   var userProfiles = principalMap.empty<UserProfile>();
   var cityRatings = textMap.empty<CityRating>();
   var cityAlbums = textMap.empty<CityAlbum>();
@@ -33,16 +31,14 @@ actor {
   var mapBookmarks = textMap.empty<MapBookmark>();
   var geonameCities = textMap.empty<GeonameCity>();
   var timezoneGeoJson : Text = "";
-  var nextJourneyId : Nat = 1;
 
   let registry = Registry.new();
   let accessControlState = AccessControl.initState();
 
   // Journey
   type Journey = {
-    id : Nat;
+    title : Text;
     city : Text;
-    customTitle : ?Text;
     startDate : Time.Time;
     endDate : Time.Time;
     createdAt : Time.Time;
@@ -354,114 +350,129 @@ actor {
   };
 
   // Journey Management (Users only)
-  public shared ({ caller }) func addJourney(city : Text, customTitle : ?Text, startDate : Time.Time, endDate : Time.Time) : async Nat {
+  public shared ({ caller }) func addJourney(title : Text, city : Text, startDate : Time.Time, endDate : Time.Time) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Debug.trap("Unauthorized: Only users can add journeys");
     };
-
     let currentTime = Time.now();
-    let journeyId = nextJourneyId;
     let journey : Journey = {
-      id = journeyId;
+      title;
       city;
-      customTitle;
       startDate;
       endDate;
       createdAt = currentTime;
       updatedAt = currentTime;
     };
 
-    journeysV2 := natMap.put(journeysV2, journeyId, journey);
-    nextJourneyId += 1;
+    let journeysForCity = switch (textMap.get(journeys, city)) {
+      case (null) { [] };
+      case (?existingJourneys) { existingJourneys };
+    };
 
-    journeyId;
+    let updatedJourneysForCity = Array.append(journeysForCity, [journey]);
+    journeys := textMap.put(journeys, city, updatedJourneysForCity);
   };
 
-  public shared ({ caller }) func updateJourney(id : Nat, city : Text, customTitle : ?Text, startDate : Time.Time, endDate : Time.Time) : async Bool {
+  public shared ({ caller }) func updateJourney(city : Text, startDate : Time.Time, endDate : Time.Time) : async Bool {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Debug.trap("Unauthorized: Only users can update journeys");
     };
-    switch (natMap.get(journeysV2, id)) {
+    switch (textMap.get(journeys, city)) {
       case (null) { false };
-      case (?existingJourney) {
-        let updatedJourney : Journey = {
-          existingJourney with
-          city;
-          customTitle;
-          startDate;
-          endDate;
-          updatedAt = Time.now();
-        };
-        journeysV2 := natMap.put(journeysV2, id, updatedJourney);
+      case (?existingJourneys) {
+        let updatedJourneys = Array.map<Journey, Journey>(
+          existingJourneys,
+          func(journey) {
+            { journey with startDate; endDate; updatedAt = Time.now() };
+          },
+        );
+        journeys := textMap.put(journeys, city, updatedJourneys);
         true;
       };
     };
   };
 
-  public shared ({ caller }) func deleteJourney(id : Nat) : async Bool {
+  public shared ({ caller }) func deleteJourney(city : Text) : async Bool {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Debug.trap("Unauthorized: Only users can delete journeys");
     };
-    let (newMap, removedValue) = natMap.remove(journeysV2, id);
-    journeysV2 := newMap;
-    switch (removedValue) {
+    switch (textMap.get(journeys, city)) {
       case (null) { false };
-      case (?_) { true };
+      case (?existingJourneys) {
+        journeys := textMap.put(journeys, city, []);
+        existingJourneys.size() > 0;
+      };
     };
   };
 
-  public query func getJourney(id : Nat) : async ?Journey {
-    natMap.get(journeysV2, id);
+  public query func getJourney(city : Text) : async ?Journey {
+    switch (textMap.get(journeys, city)) {
+      case (null) { null };
+      case (?journeysForCity) {
+        if (journeysForCity.size() > 0) {
+          ?journeysForCity[0];
+        } else {
+          null;
+        };
+      };
+    };
   };
 
   public query func getAllJourneys() : async [Journey] {
-    Iter.toArray(natMap.vals(journeysV2));
-  };
+    var allJourneys = List.nil<Journey>();
 
-  public query func getJourneysByCity(city : Text) : async [Journey] {
-    Array.filter<Journey>(
-      Iter.toArray(natMap.vals(journeysV2)),
-      func(journey) { journey.city == city },
-    );
+    for (journeysForCity in textMap.vals(journeys)) {
+      for (journey in Iter.fromArray(journeysForCity)) {
+        allJourneys := List.push(journey, allJourneys);
+      };
+    };
+
+    List.toArray(allJourneys);
   };
 
   public query func getLiveJourneys() : async [Journey] {
     let currentTime = Time.now();
-    var liveList = List.nil<Journey>();
+    var liveJourneys = List.nil<Journey>();
 
-    for (journey in natMap.vals(journeysV2)) {
-      if (journey.startDate <= currentTime and currentTime <= journey.endDate) {
-        liveList := List.push(journey, liveList);
+    for (journeysForCity in textMap.vals(journeys)) {
+      for (journey in Iter.fromArray(journeysForCity)) {
+        if (journey.startDate <= currentTime and currentTime <= journey.endDate) {
+          liveJourneys := List.push(journey, liveJourneys);
+        };
       };
     };
 
-    List.toArray(liveList);
+    List.toArray(liveJourneys);
   };
 
   public query func getUpcomingJourneys() : async [Journey] {
     let currentTime = Time.now();
-    var upcomingList = List.nil<Journey>();
+    var upcomingJourneys = List.nil<Journey>();
 
-    for (journey in natMap.vals(journeysV2)) {
-      if (journey.startDate > currentTime) {
-        upcomingList := List.push(journey, upcomingList);
+    for (journeysForCity in textMap.vals(journeys)) {
+      for (journey in Iter.fromArray(journeysForCity)) {
+        if (journey.startDate > currentTime) {
+          upcomingJourneys := List.push(journey, upcomingJourneys);
+        };
       };
     };
 
-    List.toArray(upcomingList);
+    List.toArray(upcomingJourneys);
   };
 
   public query func getPreviousJourneys() : async [Journey] {
     let currentTime = Time.now();
-    var previousList = List.nil<Journey>();
+    var previousJourneys = List.nil<Journey>();
 
-    for (journey in natMap.vals(journeysV2)) {
-      if (journey.endDate < currentTime) {
-        previousList := List.push(journey, previousList);
+    for (journeysForCity in textMap.vals(journeys)) {
+      for (journey in Iter.fromArray(journeysForCity)) {
+        if (journey.endDate < currentTime) {
+          previousJourneys := List.push(journey, previousJourneys);
+        };
       };
     };
 
-    List.toArray(previousList);
+    List.toArray(previousJourneys);
   };
 
   // City Rating System (Users only for modifications, public for reading)

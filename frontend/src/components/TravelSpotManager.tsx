@@ -1,12 +1,11 @@
-import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, MapPin, Search, Loader2, Upload, Image, Video, X, Link, Youtube, Instagram, CheckCircle, AlertCircle } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Plus, Trash2, Edit, MapPin, Upload, Link, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import {
   useGetTravelSpots,
@@ -16,634 +15,480 @@ import {
   useDeleteTravelSpot,
   useAddMediaToTravelSpot,
   useAddSocialMediaLinkToTravelSpot,
-  useGetTravelSpotMediaFiles,
-  useGetTravelSpotSocialMediaLinks,
   validateSocialMediaUrl,
 } from '@/hooks/useQueries';
-import { useFileUpload } from '@/blob-storage/FileStorage';
-import { TravelSpot, MediaType, MediaFile, SocialMediaLink } from '@/backend';
-import HeartRating from '@/components/HeartRating';
+import { useFileUpload, useFileUrl, useFileDelete } from '@/blob-storage/FileStorage';
+import { MediaType, TravelSpot } from '@/backend';
 
 interface TravelSpotFormData {
   city: string;
   name: string;
   description: string;
+  latitude: string;
+  longitude: string;
   spotType: string;
-  rating: number;
+  rating: string;
 }
 
-const TRAVEL_SPOT_TYPES = [
-  'City', 'Hotel', 'Restaurant', 'Shopping', 'Heritage',
-  'Relax', 'Beach', 'Transport', 'Airport', 'Others',
-];
+interface MediaFileDisplayProps {
+  path: string;
+}
+
+function MediaFileDisplay({ path }: MediaFileDisplayProps) {
+  const { data: url } = useFileUrl(path);
+  if (!url) return <div className="w-16 h-16 bg-muted rounded animate-pulse" />;
+  const isVideo = path.match(/\.(mp4|webm|ogg|mov)$/i);
+  return isVideo ? (
+    <video src={url} className="w-16 h-16 object-cover rounded" controls />
+  ) : (
+    <img src={url} alt={path} className="w-16 h-16 object-cover rounded" />
+  );
+}
 
 export default function TravelSpotManager() {
-  const [selectedCity, setSelectedCity] = useState<string>('');
-  const [citySearchInput, setCitySearchInput] = useState<string>('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedCity, setSelectedCity] = useState('');
+  const [isAddingSpot, setIsAddingSpot] = useState(false);
   const [editingSpot, setEditingSpot] = useState<TravelSpot | null>(null);
+  const [socialMediaUrl, setSocialMediaUrl] = useState('');
+  const [selectedSpotForMedia, setSelectedSpotForMedia] = useState<TravelSpot | null>(null);
+  const [urlValidation, setUrlValidation] = useState<{ isValid: boolean; platform: string; error?: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const spotTypeSelectRef = useRef<HTMLSelectElement>(null);
+
   const [formData, setFormData] = useState<TravelSpotFormData>({
     city: '',
     name: '',
     description: '',
-    spotType: '',
-    rating: 0,
+    latitude: '',
+    longitude: '',
+    spotType: 'City',
+    rating: '0',
   });
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const [socialMediaUrl, setSocialMediaUrl] = useState<string>('');
-  const [isAddingSocialMedia, setIsAddingSocialMedia] = useState<boolean>(false);
-  const [urlValidation, setUrlValidation] = useState<{ isValid: boolean; platform?: string; error?: string } | null>(null);
-  const [previewMediaFiles, setPreviewMediaFiles] = useState<MediaFile[]>([]);
-  const [previewSocialMediaLinks, setPreviewSocialMediaLinks] = useState<SocialMediaLink[]>([]);
 
-  const { uploadFile } = useFileUpload();
+  const { data: citySpots = [] } = useGetTravelSpots(selectedCity);
+  const { data: allSpots = [] } = useGetAllTravelSpots();
+  const addSpot = useAddTravelSpot();
+  const updateSpot = useUpdateTravelSpot();
+  const deleteSpot = useDeleteTravelSpot();
+  const addMedia = useAddMediaToTravelSpot();
+  const addSocialLink = useAddSocialMediaLinkToTravelSpot();
+  const { uploadFile, isUploading } = useFileUpload();
 
-  const { data: allTravelSpots = [] } = useGetAllTravelSpots();
-  const { data: travelSpots = [], refetch: refetchTravelSpots, isLoading } = useGetTravelSpots(selectedCity);
-  const addTravelSpot = useAddTravelSpot();
-  const updateTravelSpot = useUpdateTravelSpot();
-  const deleteTravelSpot = useDeleteTravelSpot();
-  const addMediaToTravelSpot = useAddMediaToTravelSpot();
-  const addSocialMediaLinkToTravelSpot = useAddSocialMediaLinkToTravelSpot();
+  // Get unique cities from all spots
+  const cities = [...new Set(allSpots.map(s => s.city))].sort();
 
-  const existingCities = Array.from(new Set(allTravelSpots.map(spot => spot.city))).sort();
-
+  // Populate the native select with spot types using useEffect
   useEffect(() => {
-    if (isDialogOpen) {
-      setTimeout(() => {
-        const selectElement = document.getElementById('spotType') as HTMLSelectElement;
-        if (selectElement) {
-          selectElement.innerHTML = '';
-          const placeholderOption = document.createElement('option');
-          placeholderOption.value = '';
-          placeholderOption.textContent = 'Select travel spot type';
-          placeholderOption.disabled = true;
-          placeholderOption.selected = formData.spotType === '';
-          selectElement.appendChild(placeholderOption);
-
-          TRAVEL_SPOT_TYPES.forEach(type => {
-            const option = document.createElement('option');
-            option.value = type;
-            option.textContent = type;
-            if (formData.spotType === type) option.selected = true;
-            selectElement.appendChild(option);
-          });
-
-          selectElement.disabled = false;
-        }
-      }, 50);
-    }
-  }, [isDialogOpen, formData.spotType]);
-
-  const handleCitySelect = (city: string) => {
-    setSelectedCity(city);
-    setCitySearchInput(city);
-  };
-
-  const handleCitySearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (citySearchInput.trim()) setSelectedCity(citySearchInput.trim());
-  };
-
-  const handleSocialMediaUrlChange = (value: string) => {
-    setSocialMediaUrl(value);
-    if (value.trim()) {
-      const validation = validateSocialMediaUrl(value.trim());
-      setUrlValidation(validation);
-    } else {
-      setUrlValidation(null);
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const validFiles = files.filter(file => {
-      const isImage =
-        file.type.startsWith('image/') &&
-        ['image/jpeg', 'image/png', 'image/webp', 'image/avif'].includes(file.type);
-      const isVideo =
-        file.type.startsWith('video/') &&
-        ['video/mp4', 'video/mov', 'video/quicktime'].includes(file.type);
-      return isImage || isVideo;
-    });
-
-    if (validFiles.length !== files.length) {
-      toast.error('Some files were skipped. Only JPEG, PNG, WebP, AVIF, MP4, and MOV files are supported.');
-    }
-    setSelectedFiles(prev => [...prev, ...validFiles]);
-  };
-
-  const removeFile = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const uploadTravelSpotMedia = async (spotName: string, city: string) => {
-    if (selectedFiles.length === 0) return [];
-    setIsUploading(true);
-    const uploadedMediaFiles: MediaFile[] = [];
-
-    try {
-      for (const file of selectedFiles) {
-        const mediaType = file.type.startsWith('image/') ? MediaType.image : MediaType.video;
-        const fileExtension = file.name.split('.').pop() || 'unknown';
-        const fileName = `${spotName.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.${fileExtension}`;
-        const filePath = `travel-spots/${city}/${spotName}/${fileName}`;
-
-        const uploadResult = await uploadFile(filePath, file, progress => {
-          console.log(`Upload progress for ${file.name}: ${progress}%`);
-        });
-
-        const mediaFile: MediaFile = {
-          path: uploadResult.path,
-          mediaType,
-          format: fileExtension,
-          uploadedAt: BigInt(Date.now() * 1000000),
-        };
-
-        await addMediaToTravelSpot.mutateAsync({ city, spotName, mediaFile });
-        uploadedMediaFiles.push(mediaFile);
-      }
-    } finally {
-      setIsUploading(false);
-    }
-
-    return uploadedMediaFiles;
-  };
-
-  const handleAddSocialMediaLink = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!socialMediaUrl.trim()) {
-      toast.error('Please enter a social media URL');
-      return;
-    }
-
-    const validation = validateSocialMediaUrl(socialMediaUrl.trim());
-    if (!validation.isValid) {
-      toast.error(validation.error || 'Invalid social media URL');
-      return;
-    }
-
-    if (!editingSpot) {
-      const newLink: SocialMediaLink = {
-        url: socialMediaUrl.trim(),
-        platform: validation.platform,
-        addedAt: BigInt(Date.now() * 1000000),
-      };
-      setPreviewSocialMediaLinks(prev => [...prev, newLink]);
-      setSocialMediaUrl('');
-      setUrlValidation(null);
-      toast.success('Social media link added to preview');
-      return;
-    }
-
-    setIsAddingSocialMedia(true);
-    try {
-      const socialMediaLink: SocialMediaLink = {
-        url: socialMediaUrl.trim(),
-        platform: validation.platform,
-        addedAt: BigInt(Date.now() * 1000000),
-      };
-      await addSocialMediaLinkToTravelSpot.mutateAsync({
-        city: editingSpot.city,
-        spotName: editingSpot.name,
-        socialMediaLink,
+    const spotTypes = ['City', 'Hotel', 'Restaurant', 'Shopping', 'Heritage', 'Relax', 'Beach', 'Transport', 'Airport', 'Others'];
+    if (spotTypeSelectRef.current) {
+      spotTypeSelectRef.current.innerHTML = '';
+      spotTypes.forEach(type => {
+        const option = document.createElement('option');
+        option.value = type;
+        option.textContent = type;
+        spotTypeSelectRef.current!.appendChild(option);
       });
-      toast.success('Social media link added successfully');
-      setSocialMediaUrl('');
-      setUrlValidation(null);
-      refetchTravelSpots();
-    } catch (error) {
-      toast.error('Failed to add social media link');
-    } finally {
-      setIsAddingSocialMedia(false);
+      spotTypeSelectRef.current.value = formData.spotType;
     }
-  };
+  }, [isAddingSpot, editingSpot]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!formData.city.trim() || !formData.name.trim() || !formData.spotType) {
+    if (!formData.city || !formData.name || !formData.latitude || !formData.longitude) {
       toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const lat = parseFloat(formData.latitude);
+    const lng = parseFloat(formData.longitude);
+    if (isNaN(lat) || isNaN(lng)) {
+      toast.error('Invalid coordinates');
       return;
     }
 
     try {
       if (editingSpot) {
-        await updateTravelSpot.mutateAsync({
-          city: formData.city.trim(),
-          name: formData.name.trim(),
-          description: formData.description.trim() || null,
-          coordinates: editingSpot.coordinates,
+        await updateSpot.mutateAsync({
+          city: formData.city,
+          name: formData.name,
+          description: formData.description || null,
+          coordinates: [lat, lng],
           spotType: formData.spotType,
-          rating: formData.rating,
+          rating: parseFloat(formData.rating) || 0,
         });
-        toast.success('Travel spot updated successfully!');
+        toast.success('Travel spot updated successfully');
+        setEditingSpot(null);
       } else {
-        let coordinates: [number, number] = [0, 0];
-        try {
-          const query = encodeURIComponent(`${formData.name.trim()}, ${formData.city.trim()}`);
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`,
-            { headers: { 'User-Agent': 'LocationMapExplorer/1.0' } }
-          );
-          if (response.ok) {
-            const data = await response.json();
-            if (data && data.length > 0) {
-              coordinates = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-            }
-          }
-        } catch {
-          // use default coordinates
-        }
-
-        await addTravelSpot.mutateAsync({
-          city: formData.city.trim(),
-          name: formData.name.trim(),
-          description: formData.description.trim() || null,
-          coordinates,
+        await addSpot.mutateAsync({
+          city: formData.city,
+          name: formData.name,
+          description: formData.description || null,
+          coordinates: [lat, lng],
           spotType: formData.spotType,
-          rating: formData.rating,
+          rating: parseFloat(formData.rating) || 0,
         });
-
-        if (selectedFiles.length > 0) {
-          await uploadTravelSpotMedia(formData.name.trim(), formData.city.trim());
-        }
-
-        for (const link of previewSocialMediaLinks) {
-          await addSocialMediaLinkToTravelSpot.mutateAsync({
-            city: formData.city.trim(),
-            spotName: formData.name.trim(),
-            socialMediaLink: link,
-          });
-        }
-
-        toast.success('Travel spot added successfully!');
+        toast.success('Travel spot added successfully');
+        setIsAddingSpot(false);
       }
-
-      setIsDialogOpen(false);
-      setEditingSpot(null);
-      setFormData({ city: '', name: '', description: '', spotType: '', rating: 0 });
-      setSelectedFiles([]);
-      setPreviewMediaFiles([]);
-      setPreviewSocialMediaLinks([]);
-      refetchTravelSpots();
+      setFormData({ city: '', name: '', description: '', latitude: '', longitude: '', spotType: 'City', rating: '0' });
     } catch (error) {
       console.error('Error saving travel spot:', error);
       toast.error('Failed to save travel spot');
     }
   };
 
-  const handleEdit = (spot: TravelSpot) => {
+  const handleDeleteSpot = async (city: string, name: string) => {
+    if (!confirm(`Delete "${name}"?`)) return;
+    try {
+      await deleteSpot.mutateAsync({ city, name });
+      toast.success('Travel spot deleted');
+    } catch (error) {
+      console.error('Error deleting spot:', error);
+      toast.error('Failed to delete travel spot');
+    }
+  };
+
+  const handleEditSpot = (spot: TravelSpot) => {
     setEditingSpot(spot);
     setFormData({
       city: spot.city,
       name: spot.name,
       description: spot.description || '',
+      latitude: spot.coordinates[0].toString(),
+      longitude: spot.coordinates[1].toString(),
       spotType: spot.spotType,
-      rating: spot.rating,
+      rating: spot.rating.toString(),
     });
-    setIsDialogOpen(true);
+    setIsAddingSpot(true);
   };
 
-  const handleDelete = async (spot: TravelSpot) => {
-    if (!confirm(`Are you sure you want to delete "${spot.name}"?`)) return;
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !selectedSpotForMedia) return;
 
-    try {
-      await deleteTravelSpot.mutateAsync({ city: spot.city, name: spot.name });
-      toast.success('Travel spot deleted successfully!');
-      refetchTravelSpots();
-    } catch (error) {
-      toast.error('Failed to delete travel spot');
+    for (const file of Array.from(files)) {
+      try {
+        const filePath = `travel-spots/${selectedSpotForMedia.city}/${selectedSpotForMedia.name}/${Date.now()}-${file.name}`;
+        await uploadFile(filePath, file);
+
+        const isVideo = file.type.startsWith('video/');
+        const isAudio = file.type.startsWith('audio/');
+        const mediaTypeEnum = isVideo ? MediaType.video : isAudio ? MediaType.audio : MediaType.image;
+
+        await addMedia.mutateAsync({
+          city: selectedSpotForMedia.city,
+          spotName: selectedSpotForMedia.name,
+          mediaFile: {
+            path: filePath,
+            mediaType: mediaTypeEnum,
+            format: file.type,
+            uploadedAt: BigInt(Date.now() * 1000000),
+          },
+        });
+        toast.success(`${file.name} uploaded`);
+      } catch (error) {
+        console.error('Upload error:', error);
+        toast.error(`Failed to upload ${file.name}`);
+      }
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleUrlChange = (url: string) => {
+    setSocialMediaUrl(url);
+    if (url.trim()) {
+      setUrlValidation(validateSocialMediaUrl(url.trim()));
+    } else {
+      setUrlValidation(null);
     }
   };
 
-  const handleDialogClose = () => {
-    setIsDialogOpen(false);
-    setEditingSpot(null);
-    setFormData({ city: '', name: '', description: '', spotType: '', rating: 0 });
-    setSelectedFiles([]);
-    setPreviewMediaFiles([]);
-    setPreviewSocialMediaLinks([]);
-    setSocialMediaUrl('');
-    setUrlValidation(null);
+  const handleAddSocialLink = async () => {
+    if (!selectedSpotForMedia || !socialMediaUrl.trim()) return;
+    const validation = validateSocialMediaUrl(socialMediaUrl.trim());
+    if (!validation.isValid) {
+      toast.error(validation.error || 'Invalid URL');
+      return;
+    }
+    try {
+      await addSocialLink.mutateAsync({
+        city: selectedSpotForMedia.city,
+        spotName: selectedSpotForMedia.name,
+        socialMediaLink: {
+          url: socialMediaUrl.trim(),
+          platform: validation.platform,
+          addedAt: BigInt(Date.now() * 1000000),
+        },
+      });
+      setSocialMediaUrl('');
+      setUrlValidation(null);
+      toast.success('Social media link added');
+    } catch (error) {
+      console.error('Error adding social link:', error);
+      toast.error('Failed to add social media link');
+    }
   };
 
+  const displaySpots = selectedCity ? citySpots : allSpots;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Travel Spots</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage travel spots, hotels, restaurants, and other points of interest
-          </p>
-        </div>
-        <Dialog
-          open={isDialogOpen}
-          onOpenChange={open => { if (!open) handleDialogClose(); else setIsDialogOpen(true); }}
+    <div className="space-y-4">
+      {/* City filter */}
+      <div className="flex gap-2 items-center">
+        <Label className="text-xs shrink-0">Filter by city:</Label>
+        <select
+          value={selectedCity}
+          onChange={(e) => setSelectedCity(e.target.value)}
+          className="flex-1 h-8 text-xs border border-input rounded-md px-2 bg-background"
         >
-          <DialogTrigger asChild>
-            <Button
-              onClick={() => {
-                setEditingSpot(null);
-                setFormData({ city: selectedCity, name: '', description: '', spotType: '', rating: 0 });
-                setIsDialogOpen(true);
-              }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Travel Spot
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{editingSpot ? 'Edit Travel Spot' : 'Add Travel Spot'}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="city">City *</Label>
-                  <Input
-                    id="city"
-                    value={formData.city}
-                    onChange={e => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                    placeholder="e.g., Tokyo"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g., Shibuya Crossing"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="spotType">Type *</Label>
-                <select
-                  id="spotType"
-                  className="w-full h-10 px-3 py-2 text-sm border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-                  value={formData.spotType}
-                  onChange={e => setFormData(prev => ({ ...prev, spotType: e.target.value }))}
-                  required
-                >
-                  <option value="" disabled>Select travel spot type</option>
-                  {TRAVEL_SPOT_TYPES.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Optional description..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Rating</Label>
-                <HeartRating
-                  rating={formData.rating}
-                  onRatingChange={rating => setFormData(prev => ({ ...prev, rating }))}
-                />
-              </div>
-
-              {/* Media Upload */}
-              <div className="space-y-2">
-                <Label>Media Files</Label>
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center">
-                  <input
-                    type="file"
-                    id="spotFileUpload"
-                    multiple
-                    accept="image/jpeg,image/jpg,image/png,image/webp,image/avif,video/mp4,video/quicktime,video/mov"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-                  <label htmlFor="spotFileUpload" className="cursor-pointer">
-                    <Upload className="h-6 w-6 mx-auto mb-1 text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground">Click to select media files</p>
-                  </label>
-                </div>
-                {selectedFiles.length > 0 && (
-                  <div className="space-y-1">
-                    {selectedFiles.map((file, index) => (
-                      <div key={index} className="flex items-center gap-2 text-sm">
-                        {file.type.startsWith('video/') ? (
-                          <Video className="h-3 w-3 text-blue-500" />
-                        ) : (
-                          <Image className="h-3 w-3 text-green-500" />
-                        )}
-                        <span className="flex-1 truncate">{file.name}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5"
-                          onClick={() => removeFile(index)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Social Media Links */}
-              <div className="space-y-2">
-                <Label>Social Media Links</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="url"
-                    placeholder="YouTube or Instagram URL..."
-                    value={socialMediaUrl}
-                    onChange={e => handleSocialMediaUrlChange(e.target.value)}
-                    className={
-                      urlValidation
-                        ? urlValidation.isValid
-                          ? 'border-green-500'
-                          : 'border-red-500'
-                        : ''
-                    }
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleAddSocialMediaLink}
-                    disabled={!urlValidation?.isValid || isAddingSocialMedia}
-                  >
-                    {isAddingSocialMedia ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Plus className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-                {urlValidation && !urlValidation.isValid && (
-                  <p className="text-xs text-red-500">{urlValidation.error}</p>
-                )}
-                {previewSocialMediaLinks.length > 0 && (
-                  <div className="space-y-1">
-                    {previewSocialMediaLinks.map((link, index) => (
-                      <div key={index} className="flex items-center gap-2 text-sm">
-                        {link.platform === 'youtube' ? (
-                          <Youtube className="h-3 w-3 text-red-500" />
-                        ) : (
-                          <Instagram className="h-3 w-3 text-pink-500" />
-                        )}
-                        <span className="flex-1 truncate">{link.url}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5"
-                          onClick={() =>
-                            setPreviewSocialMediaLinks(prev => prev.filter((_, i) => i !== index))
-                          }
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <Button type="button" variant="outline" onClick={handleDialogClose} className="flex-1">
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="flex-1"
-                  disabled={addTravelSpot.isPending || updateTravelSpot.isPending || isUploading}
-                >
-                  {addTravelSpot.isPending || updateTravelSpot.isPending || isUploading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {editingSpot ? 'Updating...' : 'Adding...'}
-                    </>
-                  ) : (
-                    editingSpot ? 'Update Spot' : 'Add Spot'
-                  )}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+          <option value="">All cities</option>
+          {cities.map(city => (
+            <option key={city} value={city}>{city}</option>
+          ))}
+        </select>
       </div>
 
-      {/* City Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
-            Filter by City
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {existingCities.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={selectedCity === '' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => { setSelectedCity(''); setCitySearchInput(''); }}
-              >
-                All Cities
-              </Button>
-              {existingCities.map(city => (
-                <Button
-                  key={city}
-                  variant={selectedCity === city ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => handleCitySelect(city)}
-                >
-                  {city}
-                </Button>
-              ))}
-            </div>
-          )}
-          <form onSubmit={handleCitySearchSubmit} className="flex gap-2">
-            <Input
-              type="text"
-              placeholder="Search by city..."
-              value={citySearchInput}
-              onChange={e => setCitySearchInput(e.target.value)}
-              className="flex-1"
-            />
-            <Button type="submit" variant="outline">
-              <Search className="h-4 w-4" />
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      {/* Add/Edit form toggle */}
+      <Button
+        size="sm"
+        variant={isAddingSpot ? 'secondary' : 'default'}
+        className="w-full h-8 text-xs"
+        onClick={() => {
+          if (isAddingSpot) {
+            setIsAddingSpot(false);
+            setEditingSpot(null);
+            setFormData({ city: '', name: '', description: '', latitude: '', longitude: '', spotType: 'City', rating: '0' });
+          } else {
+            setIsAddingSpot(true);
+          }
+        }}
+      >
+        <Plus className="w-3 h-3 mr-1" />
+        {isAddingSpot ? 'Cancel' : 'Add Travel Spot'}
+      </Button>
 
-      {/* Travel Spots List */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      ) : travelSpots.length === 0 && selectedCity ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>No travel spots found for {selectedCity}</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {travelSpots.map((spot, index) => (
-            <Card key={index}>
-              <CardContent className="pt-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-semibold">{spot.name}</h4>
-                      <Badge variant="outline" className="text-xs">{spot.spotType}</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">{spot.city}</p>
-                    {spot.description && (
-                      <p className="text-sm mt-1 line-clamp-2">{spot.description}</p>
-                    )}
-                    <div className="mt-2">
-                      <HeartRating rating={spot.rating} readonly />
-                    </div>
-                  </div>
-                  <div className="flex gap-1 shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleEdit(spot)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(spot)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      {/* Form */}
+      {isAddingSpot && (
+        <form onSubmit={handleFormSubmit} className="space-y-2 border rounded-lg p-3">
+          <h4 className="text-xs font-semibold">{editingSpot ? 'Edit' : 'New'} Travel Spot</h4>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="col-span-2">
+              <Label className="text-xs">City *</Label>
+              <Input
+                value={formData.city}
+                onChange={(e) => setFormData(f => ({ ...f, city: e.target.value }))}
+                placeholder="e.g. Paris"
+                className="h-8 text-xs"
+                required
+              />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-xs">Name *</Label>
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))}
+                placeholder="e.g. Eiffel Tower"
+                className="h-8 text-xs"
+                required
+              />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-xs">Description</Label>
+              <Input
+                value={formData.description}
+                onChange={(e) => setFormData(f => ({ ...f, description: e.target.value }))}
+                placeholder="Optional description"
+                className="h-8 text-xs"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Latitude *</Label>
+              <Input
+                type="number"
+                step="any"
+                value={formData.latitude}
+                onChange={(e) => setFormData(f => ({ ...f, latitude: e.target.value }))}
+                placeholder="48.8584"
+                className="h-8 text-xs"
+                required
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Longitude *</Label>
+              <Input
+                type="number"
+                step="any"
+                value={formData.longitude}
+                onChange={(e) => setFormData(f => ({ ...f, longitude: e.target.value }))}
+                placeholder="2.2945"
+                className="h-8 text-xs"
+                required
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Type</Label>
+              <select
+                ref={spotTypeSelectRef}
+                value={formData.spotType}
+                onChange={(e) => setFormData(f => ({ ...f, spotType: e.target.value }))}
+                className="w-full h-8 text-xs border border-input rounded-md px-2 bg-background"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Rating (0-10)</Label>
+              <Input
+                type="number"
+                min="0"
+                max="10"
+                step="0.1"
+                value={formData.rating}
+                onChange={(e) => setFormData(f => ({ ...f, rating: e.target.value }))}
+                className="h-8 text-xs"
+              />
+            </div>
+          </div>
+          <Button
+            type="submit"
+            size="sm"
+            className="w-full h-8 text-xs"
+            disabled={addSpot.isPending || updateSpot.isPending}
+          >
+            {editingSpot ? 'Update' : 'Add'} Spot
+          </Button>
+        </form>
       )}
+
+      {/* Spots list */}
+      <div className="space-y-2">
+        <p className="text-xs text-muted-foreground">{displaySpots.length} spot(s)</p>
+        {displaySpots.map((spot, idx) => (
+          <Card key={`${spot.city}-${spot.name}-${idx}`} className="overflow-hidden">
+            <CardContent className="p-3 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <span className="font-medium text-sm">{spot.name}</span>
+                    <Badge variant="outline" className="text-xs">{spot.spotType}</Badge>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                    <MapPin className="w-3 h-3 shrink-0" />
+                    <span>{spot.city}</span>
+                    {spot.rating > 0 && <span>· ⭐ {spot.rating}</span>}
+                  </div>
+                  {spot.description && (
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{spot.description}</p>
+                  )}
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0"
+                    onClick={() => handleEditSpot(spot)}
+                  >
+                    <Edit className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                    onClick={() => handleDeleteSpot(spot.city, spot.name)}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Media preview */}
+              {spot.mediaFiles && spot.mediaFiles.length > 0 && (
+                <div className="flex gap-1 flex-wrap">
+                  {spot.mediaFiles.slice(0, 4).map((file, i) => (
+                    <MediaFileDisplay key={i} path={file.path} />
+                  ))}
+                  {spot.mediaFiles.length > 4 && (
+                    <div className="w-16 h-16 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                      +{spot.mediaFiles.length - 4}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Media upload section */}
+              <div className="border-t pt-2 space-y-2">
+                <div className="flex gap-2 items-center">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,video/*"
+                    multiple
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => {
+                      setSelectedSpotForMedia(spot);
+                      fileInputRef.current?.click();
+                    }}
+                    disabled={isUploading}
+                  >
+                    <Upload className="w-3 h-3" />
+                    {isUploading && selectedSpotForMedia?.name === spot.name ? 'Uploading...' : 'Upload Media'}
+                  </Button>
+                </div>
+
+                {/* Social media link */}
+                {selectedSpotForMedia?.name === spot.name && (
+                  <div className="space-y-1">
+                    <div className="flex gap-1">
+                      <Input
+                        value={socialMediaUrl}
+                        onChange={(e) => handleUrlChange(e.target.value)}
+                        placeholder="YouTube or Instagram URL"
+                        className="h-7 text-xs flex-1"
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2"
+                        onClick={handleAddSocialLink}
+                        disabled={!urlValidation?.isValid || addSocialLink.isPending}
+                      >
+                        <Link className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    {urlValidation && (
+                      <p className={`text-xs ${urlValidation.isValid ? 'text-green-600' : 'text-red-600'}`}>
+                        {urlValidation.isValid ? `✓ Valid ${urlValidation.platform} URL` : urlValidation.error}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Social links preview */}
+                {spot.socialMediaLinks && spot.socialMediaLinks.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {spot.socialMediaLinks.map((link, i) => (
+                      <a
+                        key={i}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs text-primary hover:underline"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        {link.platform}
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

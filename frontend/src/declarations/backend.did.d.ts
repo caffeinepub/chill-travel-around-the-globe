@@ -36,12 +36,11 @@ export interface GeonameCity {
   'classification' : string,
 }
 export interface Journey {
-  'id' : bigint,
+  'title' : string,
   'endDate' : Time,
   'city' : string,
   'createdAt' : Time,
   'updatedAt' : Time,
-  'customTitle' : [] | [string],
   'startDate' : Time,
 }
 export interface LocationInfo {
@@ -163,7 +162,7 @@ export interface _SERVICE {
     undefined
   >,
   'addCityRating' : ActorMethod<[string, number, string], undefined>,
-  'addJourney' : ActorMethod<[string, [] | [string], Time, Time], bigint>,
+  'addJourney' : ActorMethod<[string, string, Time, Time], undefined>,
   'addLocationInfo' : ActorMethod<
     [string, [number, number], [] | [string]],
     undefined
@@ -200,7 +199,7 @@ export interface _SERVICE {
   'deleteCity' : ActorMethod<[string], boolean>,
   'deleteCityAlbum' : ActorMethod<[string], boolean>,
   'deleteCityRating' : ActorMethod<[string], boolean>,
-  'deleteJourney' : ActorMethod<[bigint], boolean>,
+  'deleteJourney' : ActorMethod<[string], boolean>,
   'deleteLocationInfo' : ActorMethod<[string], boolean>,
   'deleteMapBookmark' : ActorMethod<[string], boolean>,
   'deleteMusicAlbum' : ActorMethod<[string], boolean>,
@@ -270,12 +269,11 @@ export interface _SERVICE {
   'getCountryCoordinates' : ActorMethod<[string], [] | [[number, number]]>,
   'getDisplaySettings' : ActorMethod<[], [] | [boolean]>,
   'getFileReference' : ActorMethod<[string], FileReference>,
-  'getJourney' : ActorMethod<[bigint], [] | [Journey]>,
+  'getJourney' : ActorMethod<[string], [] | [Journey]>,
   'getJourneyScheduleWithDays' : ActorMethod<
     [string],
     Array<[string, Array<ScheduleItem>]>
   >,
-  'getJourneysByCity' : ActorMethod<[string], Array<Journey>>,
   'getLiveJourneys' : ActorMethod<[], Array<Journey>>,
   'getLocationInfo' : ActorMethod<[string], [] | [LocationInfo]>,
   'getMapBookmarkByCoordinates' : ActorMethod<
@@ -332,10 +330,7 @@ export interface _SERVICE {
   >,
   'updateCityRating' : ActorMethod<[string, number, string], boolean>,
   'updateDashboard' : ActorMethod<[], Array<[string, bigint, bigint]>>,
-  'updateJourney' : ActorMethod<
-    [bigint, string, [] | [string], Time, Time],
-    boolean
-  >,
+  'updateJourney' : ActorMethod<[string, Time, Time], boolean>,
   'updateLocationInfo' : ActorMethod<[string, [] | [string]], boolean>,
   'updateMapBookmark' : ActorMethod<
     [[number, number], string, string, string],

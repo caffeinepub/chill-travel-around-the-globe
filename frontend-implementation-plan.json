@@ -1,60 +1,27 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Allow multiple journeys per city with custom titles and grouped display",
+  "title": "Filter travelogue entries by journey ID so each journey has its own independent travelogue",
   "requirements": [
     {
-      "id": "REQ-2",
-      "summary": "Update frontend mutation hooks to include the optional customTitle field for add and edit journey operations",
+      "id": "REQ-1",
+      "summary": "Filter schedule items by journey ID in TraveloguePanel so each journey displays only its own travelogue entries",
       "acceptanceCriteria": [
-        "The add-journey mutation accepts and forwards a customTitle parameter.",
-        "The edit-journey mutation accepts and forwards a customTitle parameter.",
-        "Journey query results include the customTitle field."
+        "When a journey is selected/expanded in TraveloguePanel, only schedule items whose journeyId matches that journey's ID are shown",
+        "Two journeys to the same city (e.g., two separate 'Paris' trips) each display completely separate, independent travelogue entries",
+        "If a schedule item has no journeyId set, it does not appear under any journey's travelogue (or falls back gracefully without mixing entries)",
+        "The travelogue display in TraveloguePanel correctly updates when switching between journeys"
       ],
       "file_operations": [
+        {
+          "path": "frontend/src/components/TraveloguePanel.tsx",
+          "operation": "modify",
+          "description": "Modify the TraveloguePanel component to filter schedule items by the journey's unique ID when displaying the travelogue for a selected journey. Update the logic that calls useGetScheduleItems to pass the journey's ID as a filter parameter. Ensure that when a journey is expanded, only schedule items associated with that specific journey ID are displayed. Add defensive checks to handle schedule items without a journeyId field, ensuring they do not appear under any journey or are handled gracefully. Update the component state management to properly refresh the filtered schedule items when switching between different journeys."
+        },
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Update useAddJourney and useUpdateJourney mutation hooks to accept and forward an optional customTitle parameter (string | null) to the backend. Update the Journey type usage to include the customTitle field from the backend interface. Ensure that null is passed when no title is provided."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Add an optional 'Journey Title' text input field to the journey creation and editing UI in TraveloguePanel and AdminPanel",
-      "acceptanceCriteria": [
-        "The add-journey form includes an optional 'Journey Title' text input.",
-        "The edit-journey form includes the 'Journey Title' text input pre-populated with the existing title.",
-        "Submitting without a title is allowed; the journey date is used as the display label in that case."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/TraveloguePanel.tsx",
-          "operation": "modify",
-          "description": "Add an optional 'Journey Title' text input field to the add-journey and edit-journey forms within the TraveloguePanel. The input should be labeled clearly (e.g., 'Journey Title (optional)'). When adding a journey, pass the title value (or null if empty) to the useAddJourney mutation. When editing, pre-populate the input with journey.customTitle if it exists. Update form state management to handle the customTitle field."
-        },
-        {
-          "path": "frontend/src/components/AdminPanel.tsx",
-          "operation": "modify",
-          "description": "Add an optional 'Journey Title' text input field to the add-journey form within the AdminPanel calendar popover. The input should be labeled clearly (e.g., 'Journey Title (optional)'). Pass the title value (or null if empty) to the useAddJourney mutation when creating a journey. Update form state management to handle the customTitle field."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Group journeys by city in TraveloguePanel with collapsible city headers showing all journeys per city with their custom title or date fallback",
-      "acceptanceCriteria": [
-        "Journeys with the same city name appear under a single city group header in the panel.",
-        "Each city group is collapsible/expandable.",
-        "Each journey entry within a group displays its custom title, or the journey date if no title is set.",
-        "Adding a second journey to an existing city adds it to the existing city group rather than creating a duplicate group.",
-        "Cities with only one journey still appear within a group header for consistency."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/TraveloguePanel.tsx",
-          "operation": "modify",
-          "description": "Refactor the journey list rendering to group journeys by city name. For each city, render a collapsible group header displaying the city name. Within each group, list all journeys for that city. For each journey entry, display journey.customTitle if available, otherwise fall back to formatting the journey date (startDate or date range) as the label. Use a Map or groupBy utility to aggregate journeys by city. Ensure the collapsible state is managed (e.g., using useState or shadcn/ui Collapsible component). Maintain the existing live/upcoming/past status grouping as a higher-level organization if needed, or integrate city grouping within each status section."
+          "description": "Update the useGetScheduleItems hook to accept an optional journeyId parameter for filtering schedule items. Modify the query function to filter the returned schedule items array by matching journeyId when the parameter is provided. Ensure the query key includes the journeyId parameter so React Query properly caches and invalidates filtered results. Add client-side filtering logic that compares each schedule item's journeyId field with the provided journey ID. Handle cases where schedule items may not have a journeyId field by excluding them from filtered results."
         }
       ]
     }
