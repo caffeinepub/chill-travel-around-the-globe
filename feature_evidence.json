@@ -1,4 +1,66 @@
 {
   "kind": "feature_evidence_report",
-  "features": []
+  "features": [
+    {
+      "featureId": "feature-update-all-relevant-frontend-mutation-hooks-add-journey-edit-journey-in-usequeries-ts-to-include-the-optional-customtitle-field-so-it-is-sent-to-and-received-from-the-backend",
+      "featureTitle": "Update all relevant frontend mutation hooks (add journey, edit journey) in useQueries.ts to include the optional customTitle field so it is sent to and received from the backend.",
+      "files": [
+        "frontend/src/hooks/useQueries.ts"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@1.1.2",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-journey-creation-and-editing-ui-inside-the-div-at-xpath-html-1-body-1-div-5-which-is-the-traveloguepanel-or-equivalent-journey-list-panel-to-include-an-optional-journey-title-text-input-field-this-title-is-used-to-distinguish-multiple-journeys-for-the-same-city",
+      "featureTitle": "Update the journey creation and editing UI (inside the div at XPath /html[1]/body[1]/div[5], which is the TraveloguePanel or equivalent journey list panel) to include an optional 'Journey Title' text input field. This title is used to distinguish multiple journeys for the same city.",
+      "files": [
+        "frontend/src/components/AdminPanel.tsx",
+        "frontend/src/components/TraveloguePanel.tsx"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@1.1.2",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-in-the-journey-list-panel-div-5-corresponding-to-traveloguepanel-group-journeys-by-city-name-each-city-group-should-be-collapsible-and-display-the-city-name-as-a-group-header-within-each-group-list-all-journeys-for-that-city-showing-their-custom-title-or-date-as-fallback-multiple-journeys-for-the-same-city-must-all-appear-under-the-same-city-group-header",
+      "featureTitle": "In the journey list panel (div[5], corresponding to TraveloguePanel), group journeys by city name. Each city group should be collapsible and display the city name as a group header. Within each group, list all journeys for that city showing their custom title (or date as fallback). Multiple journeys for the same city must all appear under the same city group header.",
+      "files": [
+        "frontend/src/components/TraveloguePanel.tsx"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@1.1.2",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    }
+  ]
 }

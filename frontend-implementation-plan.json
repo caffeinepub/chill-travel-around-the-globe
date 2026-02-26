@@ -1,64 +1,60 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Move Real/Hourly/Year buttons and time display into Sun Effects section",
+  "title": "Allow multiple journeys per city with custom titles and grouped display",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Move Real, Hourly, and Year mode buttons with time display from bottom-right floating panel into Sun Effects section of World Controls panel, preserving all functionality",
-      "acceptanceCriteria": [
-        "The Real, Hourly, and Year buttons appear inside the Sun Effects section of the World Controls panel.",
-        "The time display corresponding to the selected mode appears inside the Sun Effects section of the World Controls panel.",
-        "Clicking Real, Hourly, or Year buttons correctly switches the sun simulation mode as before.",
-        "The time display updates correctly according to the selected mode.",
-        "The bottom-right floating panel containing those buttons and time display is fully removed from the UI."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/LocationMapExplorer.tsx",
-          "operation": "modify",
-          "description": "Identify the bottom-right floating panel (the div containing Real/Hourly/Year buttons and time display) and extract its JSX structure and associated state/props. Remove the bottom-right panel rendering from the component tree. Pass the time mode state, time display value, and mode-switching handlers as props to the component that renders the World Controls panel (likely a child component or inline JSX). Ensure all state management for timeMode and timeDisplay remains functional and properly wired to the new location inside the Sun Effects section."
-        },
-        {
-          "path": "frontend/src/components/InteractiveGlobe.tsx",
-          "operation": "modify",
-          "description": "Locate the World Controls panel UI (the collapsible section containing Sun Effects and other controls). Within the Sun Effects section, add a new sub-section that renders the Real/Hourly/Year buttons and the time display. Accept timeMode, timeDisplay, and onModeChange (or equivalent) as props from the parent component. Integrate the buttons and time display into the Sun Effects layout using consistent styling (match existing button and text styles in the panel). Ensure clicking the mode buttons triggers the same mode-switching logic as before. Verify the time display updates reactively based on the current mode and simulation state. Do not alter any other sections of the World Controls panel or the 3D globe rendering logic."
-        }
-      ]
-    },
-    {
       "id": "REQ-2",
-      "summary": "Remove the bottom-right floating panel entirely from the DOM after relocating its contents to Sun Effects",
+      "summary": "Update frontend mutation hooks to include the optional customTitle field for add and edit journey operations",
       "acceptanceCriteria": [
-        "The bottom-right panel is no longer rendered anywhere on the page.",
-        "No empty placeholder or ghost element remains in the bottom-right corner."
+        "The add-journey mutation accepts and forwards a customTitle parameter.",
+        "The edit-journey mutation accepts and forwards a customTitle parameter.",
+        "Journey query results include the customTitle field."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/LocationMapExplorer.tsx",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Confirm that the JSX for the bottom-right floating panel (previously containing Real/Hourly/Year buttons and time display) has been completely removed from the render tree. Ensure no conditional rendering logic, div wrappers, or placeholder elements for that panel remain in the component. Verify no CSS classes or inline styles targeting the removed panel are left orphaned in the component."
+          "description": "Update useAddJourney and useUpdateJourney mutation hooks to accept and forward an optional customTitle parameter (string | null) to the backend. Update the Journey type usage to include the customTitle field from the backend interface. Ensure that null is passed when no title is provided."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Preserve existing UI layout and 3D globe unchanged, ensuring all other controls and panels remain exactly as before",
+      "summary": "Add an optional 'Journey Title' text input field to the journey creation and editing UI in TraveloguePanel and AdminPanel",
       "acceptanceCriteria": [
-        "The 3D globe renders identically to before the change.",
-        "All other World Controls sections (other than Sun Effects receiving new content) are visually and functionally unchanged.",
-        "All other panels and UI elements outside the World Controls panel are unchanged."
+        "The add-journey form includes an optional 'Journey Title' text input.",
+        "The edit-journey form includes the 'Journey Title' text input pre-populated with the existing title.",
+        "Submitting without a title is allowed; the journey date is used as the display label in that case."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/InteractiveGlobe.tsx",
+          "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Verify that no changes are made to the 3D globe rendering logic, camera controls, scene setup, or animation loops. Ensure all existing World Controls sections (other than Sun Effects) retain their original structure, styling, and behavior. Confirm that the addition of the time controls within Sun Effects does not alter spacing, alignment, or layout of other sections in the World Controls panel. Test that all existing interactions (rotation, zoom, marker clicks, timezone overlays) function identically after the change."
+          "description": "Add an optional 'Journey Title' text input field to the add-journey and edit-journey forms within the TraveloguePanel. The input should be labeled clearly (e.g., 'Journey Title (optional)'). When adding a journey, pass the title value (or null if empty) to the useAddJourney mutation. When editing, pre-populate the input with journey.customTitle if it exists. Update form state management to handle the customTitle field."
         },
         {
-          "path": "frontend/src/pages/LocationMapExplorer.tsx",
+          "path": "frontend/src/components/AdminPanel.tsx",
           "operation": "modify",
-          "description": "Ensure that no other UI elements (map, panels, music player, admin controls, etc.) outside of the relocated time controls are modified. Verify that the layout and positioning of all other components remain unchanged. Confirm that removing the bottom-right panel does not create layout shifts or visual artifacts elsewhere on the page."
+          "description": "Add an optional 'Journey Title' text input field to the add-journey form within the AdminPanel calendar popover. The input should be labeled clearly (e.g., 'Journey Title (optional)'). Pass the title value (or null if empty) to the useAddJourney mutation when creating a journey. Update form state management to handle the customTitle field."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Group journeys by city in TraveloguePanel with collapsible city headers showing all journeys per city with their custom title or date fallback",
+      "acceptanceCriteria": [
+        "Journeys with the same city name appear under a single city group header in the panel.",
+        "Each city group is collapsible/expandable.",
+        "Each journey entry within a group displays its custom title, or the journey date if no title is set.",
+        "Adding a second journey to an existing city adds it to the existing city group rather than creating a duplicate group.",
+        "Cities with only one journey still appear within a group header for consistency."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/TraveloguePanel.tsx",
+          "operation": "modify",
+          "description": "Refactor the journey list rendering to group journeys by city name. For each city, render a collapsible group header displaying the city name. Within each group, list all journeys for that city. For each journey entry, display journey.customTitle if available, otherwise fall back to formatting the journey date (startDate or date range) as the label. Use a Map or groupBy utility to aggregate journeys by city. Ensure the collapsible state is managed (e.g., using useState or shadcn/ui Collapsible component). Maintain the existing live/upcoming/past status grouping as a higher-level organization if needed, or integrate city grouping within each status section."
         }
       ]
     }

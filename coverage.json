@@ -1,50 +1,76 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-25T09:44:23.711Z",
+  "generatedAt": "2026-02-25T14:14:42.734Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 0,
+    "total": 4,
+    "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Move the Real, Hourly, and Year mode buttons along with their corresponding time display from the bottom-right floating panel (identified by XPath /html[1]/body[1]/div[1]/div[2]/div[1]/div[4]/div[1]) into the Sun Effects section inside the World Controls panel (identified by XPath /html[1]/body[1]/div[1]/div[1]/div[1]/div[1]/div[2]). The buttons and time display must be rendered as a cohesive sub-section within Sun Effects, preserving all existing functionality (mode switching, time display updates).",
-        "status": "missing",
-        "plannedFiles": [
-          "frontend/src/pages/LocationMapExplorer.tsx",
-          "frontend/src/components/InteractiveGlobe.tsx"
-        ],
+        "summary": "Update the backend Journey data type and storage to allow multiple journeys per city. Remove any uniqueness constraint on city. Add an optional custom title field (Text) to the Journey type. When no custom title is provided, fall back to the journey date as the distinguishing label.",
+        "status": "unknown",
+        "plannedFiles": [],
         "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Remove the bottom-right floating panel (XPath /html[1]/body[1]/div[1]/div[2]/div[1]/div[4]/div[1]) from the DOM entirely after its contents have been relocated to the Sun Effects section.",
-        "status": "missing",
+        "summary": "Update all relevant frontend mutation hooks (add journey, edit journey) in useQueries.ts to include the optional customTitle field so it is sent to and received from the backend.",
+        "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/LocationMapExplorer.tsx"
+          "frontend/src/hooks/useQueries.ts"
         ],
-        "matchedFiles": []
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts"
+        ]
       },
       {
         "id": "REQ-3",
-        "summary": "Preserve the existing UI layout and 3D globe unchanged. All other controls, panels, and the globe rendering must remain exactly as they are before this change.",
-        "status": "missing",
+        "summary": "Update the journey creation and editing UI (inside the div at XPath /html[1]/body[1]/div[5], which is the TraveloguePanel or equivalent journey list panel) to include an optional 'Journey Title' text input field. This title is used to distinguish multiple journeys for the same city.",
+        "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/InteractiveGlobe.tsx",
-          "frontend/src/pages/LocationMapExplorer.tsx"
+          "frontend/src/components/TraveloguePanel.tsx",
+          "frontend/src/components/AdminPanel.tsx"
         ],
-        "matchedFiles": []
+        "matchedFiles": [
+          "frontend/src/components/TraveloguePanel.tsx",
+          "frontend/src/components/AdminPanel.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "In the journey list panel (div[5], corresponding to TraveloguePanel), group journeys by city name. Each city group should be collapsible and display the city name as a group header. Within each group, list all journeys for that city showing their custom title (or date as fallback). Multiple journeys for the same city must all appear under the same city group header.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/TraveloguePanel.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/TraveloguePanel.tsx"
+        ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
+    "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/AdminPanel.tsx",
+    "frontend/src/components/CityAlbumManager.tsx",
+    "frontend/src/components/LocationInfoDialog.tsx",
+    "frontend/src/components/TravelSpotManager.tsx",
+    "frontend/src/components/TraveloguePanel.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useQueries.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

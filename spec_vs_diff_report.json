@@ -1,37 +1,30 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-25T09:44:23.709Z",
-  "summary": "The diff only shows a modification to project_state.json, which is a planning/metadata file. It records the requirements as 'pending' action requests but contains no actual implementation of any frontend changes. None of the three requirements (moving buttons/time display into Sun Effects, removing the bottom-right panel, or preserving layout) have been implemented in any frontend source files.",
-  "missing_requirements": [
+  "generatedAt": "2026-02-25T14:14:42.731Z",
+  "summary": "All four requirements are substantially implemented in the diff. REQ-1 is covered by backend/main.mo (new Journey type with id, customTitle, journeysV2 map keyed by Nat removing city uniqueness) and backend/migration.mo. REQ-2 is covered by useQueries.ts (customTitle forwarded in add/edit mutations). REQ-3 is covered by TraveloguePanel.tsx and AdminPanel.tsx (Journey Title input in add/edit forms). REQ-4 is covered by TraveloguePanel.tsx (groupJourneysByCity, collapsible city groups, getJourneyLabel fallback to date). No significant missing requirements or hallucinated features are detected.",
+  "missing_requirements": [],
+  "hallucinated_features": [
     {
-      "id": "REQ-1",
-      "requirement": "Move the Real, Hourly, and Year mode buttons along with their corresponding time display from the bottom-right floating panel into the Sun Effects section inside the World Controls panel, preserving all existing functionality.",
-      "reason": "No frontend source files were modified. The diff only updates project_state.json with a 'pending' status for this requirement. No component or layout file shows the buttons and time display being rendered inside the Sun Effects section.",
+      "description": "A backend/migration.mo module was added to handle migration from the old city-keyed journey map to the new Nat-keyed journeysV2 map.",
+      "reason": "The build request did not request any migration module or migration logic; it only asked to update the Journey type and storage. While the migration may be necessary for production correctness, it was not specified in the requirements.",
       "evidence": [
-        "project_state.json"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "Remove the bottom-right floating panel from the DOM entirely after its contents have been relocated to the Sun Effects section.",
-      "reason": "No frontend source files were modified. The diff only updates project_state.json with a 'pending' status for this requirement. The bottom-right panel removal is not implemented in any component file.",
-      "evidence": [
-        "project_state.json"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "requirement": "Preserve the existing UI layout and 3D globe unchanged. All other controls, panels, and the globe rendering must remain exactly as they are before this change.",
-      "reason": "Since no frontend files were changed, this cannot be verified as implemented. The requirement is also listed as 'pending' in project_state.json.",
-      "evidence": [
-        "project_state.json"
+        "backend/migration.mo",
+        "backend/main.mo"
       ]
     }
   ],
-  "hallucinated_features": [],
-  "confidence": 0.95,
+  "confidence": 0.82,
   "changed_files": [
+    "backend/main.mo",
+    "backend/migration.mo",
+    "frontend-file-summaries.txt",
+    "frontend/src/components/AdminPanel.tsx",
+    "frontend/src/components/CityAlbumManager.tsx",
+    "frontend/src/components/LocationInfoDialog.tsx",
+    "frontend/src/components/TravelSpotManager.tsx",
+    "frontend/src/components/TraveloguePanel.tsx",
+    "frontend/src/hooks/useQueries.ts",
     "project_state.json"
   ]
 }

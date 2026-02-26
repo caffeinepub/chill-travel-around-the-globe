@@ -177,10 +177,12 @@ export interface MusicAlbum {
     updatedAt: Time;
 }
 export interface Journey {
+    id: bigint;
     endDate: Time;
     city: string;
     createdAt: Time;
     updatedAt: Time;
+    customTitle?: string;
     startDate: Time;
 }
 export interface Song {
@@ -237,7 +239,7 @@ export interface backendInterface {
     addCity(city: GeonameCity): Promise<void>;
     addCityAlbum(city: string, mediaFiles: Array<MediaFile>, socialMediaLinks: Array<SocialMediaLink>): Promise<void>;
     addCityRating(city: string, rating: number, comment: string): Promise<void>;
-    addJourney(city: string, startDate: Time, endDate: Time): Promise<void>;
+    addJourney(city: string, customTitle: string | null, startDate: Time, endDate: Time): Promise<bigint>;
     addLocationInfo(name: string, coordinates: [number, number], photoPath: string | null): Promise<void>;
     addMapBookmark(coordinates: [number, number], name: string, description: string, city: string): Promise<void>;
     addMediaToCityAlbum(city: string, mediaFile: MediaFile): Promise<boolean>;
@@ -253,7 +255,7 @@ export interface backendInterface {
     deleteCity(name: string): Promise<boolean>;
     deleteCityAlbum(city: string): Promise<boolean>;
     deleteCityRating(city: string): Promise<boolean>;
-    deleteJourney(city: string): Promise<boolean>;
+    deleteJourney(id: bigint): Promise<boolean>;
     deleteLocationInfo(name: string): Promise<boolean>;
     deleteMapBookmark(name: string): Promise<boolean>;
     deleteMusicAlbum(title: string): Promise<boolean>;
@@ -302,8 +304,9 @@ export interface backendInterface {
     getCountryCoordinates(countryName: string): Promise<[number, number] | null>;
     getDisplaySettings(): Promise<boolean | null>;
     getFileReference(path: string): Promise<FileReference>;
-    getJourney(city: string): Promise<Journey | null>;
+    getJourney(id: bigint): Promise<Journey | null>;
     getJourneyScheduleWithDays(journeyCity: string): Promise<Array<[string, Array<ScheduleItem>]>>;
+    getJourneysByCity(city: string): Promise<Array<Journey>>;
     getLiveJourneys(): Promise<Array<Journey>>;
     getLocationInfo(name: string): Promise<LocationInfo | null>;
     getMapBookmarkByCoordinates(coordinates: [number, number]): Promise<MapBookmark | null>;
@@ -345,7 +348,7 @@ export interface backendInterface {
     updateCityAlbum(city: string, mediaFiles: Array<MediaFile>, socialMediaLinks: Array<SocialMediaLink>): Promise<boolean>;
     updateCityRating(city: string, rating: number, comment: string): Promise<boolean>;
     updateDashboard(): Promise<Array<[string, bigint, bigint]>>;
-    updateJourney(city: string, startDate: Time, endDate: Time): Promise<boolean>;
+    updateJourney(id: bigint, city: string, customTitle: string | null, startDate: Time, endDate: Time): Promise<boolean>;
     updateLocationInfo(name: string, photoPath: string | null): Promise<boolean>;
     updateMapBookmark(coordinates: [number, number], name: string, description: string, city: string): Promise<boolean>;
     updateMusicAlbum(title: string, description: string, songs: Array<Song>): Promise<boolean>;
@@ -468,17 +471,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async addJourney(arg0: string, arg1: Time, arg2: Time): Promise<void> {
+    async addJourney(arg0: string, arg1: string | null, arg2: Time, arg3: Time): Promise<bigint> {
         if (this.processError) {
             try {
-                const result = await this.actor.addJourney(arg0, arg1, arg2);
+                const result = await this.actor.addJourney(arg0, to_candid_opt_n13(this._uploadFile, this._downloadFile, arg1), arg2, arg3);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.addJourney(arg0, arg1, arg2);
+            const result = await this.actor.addJourney(arg0, to_candid_opt_n13(this._uploadFile, this._downloadFile, arg1), arg2, arg3);
             return result;
         }
     }
@@ -692,7 +695,7 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async deleteJourney(arg0: string): Promise<boolean> {
+    async deleteJourney(arg0: bigint): Promise<boolean> {
         if (this.processError) {
             try {
                 const result = await this.actor.deleteJourney(arg0);
@@ -906,28 +909,28 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getAllJourneys();
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getAllJourneys();
-            return result;
-        }
-    }
-    async getAllLocationInfo(): Promise<Array<LocationInfo>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getAllLocationInfo();
                 return from_candid_vec_n34(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getAllLocationInfo();
+            const result = await this.actor.getAllJourneys();
             return from_candid_vec_n34(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getAllLocationInfo(): Promise<Array<LocationInfo>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllLocationInfo();
+                return from_candid_vec_n37(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllLocationInfo();
+            return from_candid_vec_n37(this._uploadFile, this._downloadFile, result);
         }
     }
     async getAllMapBookmarks(): Promise<Array<MapBookmark>> {
@@ -948,14 +951,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getAllMusicAlbums();
-                return from_candid_vec_n37(this._uploadFile, this._downloadFile, result);
+                return from_candid_vec_n40(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getAllMusicAlbums();
-            return from_candid_vec_n37(this._uploadFile, this._downloadFile, result);
+            return from_candid_vec_n40(this._uploadFile, this._downloadFile, result);
         }
     }
     async getAllScheduleItems(): Promise<Array<ScheduleItem>> {
@@ -1074,28 +1077,28 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getCallerUserProfile();
-                return from_candid_opt_n43(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n46(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCallerUserProfile();
-            return from_candid_opt_n43(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n46(this._uploadFile, this._downloadFile, result);
         }
     }
     async getCallerUserRole(): Promise<UserRole> {
         if (this.processError) {
             try {
                 const result = await this.actor.getCallerUserRole();
-                return from_candid_UserRole_n44(this._uploadFile, this._downloadFile, result);
+                return from_candid_UserRole_n47(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCallerUserRole();
-            return from_candid_UserRole_n44(this._uploadFile, this._downloadFile, result);
+            return from_candid_UserRole_n47(this._uploadFile, this._downloadFile, result);
         }
     }
     async getCitiesByCoordinates(arg0: number, arg1: number, arg2: number, arg3: number): Promise<Array<GeonameCity>> {
@@ -1200,42 +1203,42 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getCity(arg0);
-                return from_candid_opt_n46(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n49(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCity(arg0);
-            return from_candid_opt_n46(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n49(this._uploadFile, this._downloadFile, result);
         }
     }
     async getCityAlbum(arg0: string): Promise<CityAlbum | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getCityAlbum(arg0);
-                return from_candid_opt_n47(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n50(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCityAlbum(arg0);
-            return from_candid_opt_n47(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n50(this._uploadFile, this._downloadFile, result);
         }
     }
     async getCityAlbumForPopup(arg0: string): Promise<CityAlbum | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getCityAlbumForPopup(arg0);
-                return from_candid_opt_n47(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n50(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCityAlbumForPopup(arg0);
-            return from_candid_opt_n47(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n50(this._uploadFile, this._downloadFile, result);
         }
     }
     async getCityComments(arg0: string): Promise<Array<string>> {
@@ -1284,14 +1287,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getCityRating(arg0);
-                return from_candid_opt_n48(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n51(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCityRating(arg0);
-            return from_candid_opt_n48(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n51(this._uploadFile, this._downloadFile, result);
         }
     }
     async getCityRatingForPopup(arg0: string): Promise<number | null> {
@@ -1340,14 +1343,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getCountryCoordinates(arg0);
-                return from_candid_opt_n49(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n52(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCountryCoordinates(arg0);
-            return from_candid_opt_n49(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n52(this._uploadFile, this._downloadFile, result);
         }
     }
     async getDisplaySettings(): Promise<boolean | null> {
@@ -1378,18 +1381,18 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getJourney(arg0: string): Promise<Journey | null> {
+    async getJourney(arg0: bigint): Promise<Journey | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getJourney(arg0);
-                return from_candid_opt_n50(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n53(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getJourney(arg0);
-            return from_candid_opt_n50(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n53(this._uploadFile, this._downloadFile, result);
         }
     }
     async getJourneyScheduleWithDays(arg0: string): Promise<Array<[string, Array<ScheduleItem>]>> {
@@ -1406,46 +1409,60 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getJourneysByCity(arg0: string): Promise<Array<Journey>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getJourneysByCity(arg0);
+                return from_candid_vec_n34(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getJourneysByCity(arg0);
+            return from_candid_vec_n34(this._uploadFile, this._downloadFile, result);
+        }
+    }
     async getLiveJourneys(): Promise<Array<Journey>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getLiveJourneys();
-                return result;
+                return from_candid_vec_n34(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getLiveJourneys();
-            return result;
+            return from_candid_vec_n34(this._uploadFile, this._downloadFile, result);
         }
     }
     async getLocationInfo(arg0: string): Promise<LocationInfo | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getLocationInfo(arg0);
-                return from_candid_opt_n51(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n54(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getLocationInfo(arg0);
-            return from_candid_opt_n51(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n54(this._uploadFile, this._downloadFile, result);
         }
     }
     async getMapBookmarkByCoordinates(arg0: [number, number]): Promise<MapBookmark | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getMapBookmarkByCoordinates(arg0);
-                return from_candid_opt_n52(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n55(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getMapBookmarkByCoordinates(arg0);
-            return from_candid_opt_n52(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n55(this._uploadFile, this._downloadFile, result);
         }
     }
     async getMapBookmarks(): Promise<Array<MapBookmark>> {
@@ -1480,42 +1497,42 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getMusicAlbum(arg0);
-                return from_candid_opt_n53(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n56(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getMusicAlbum(arg0);
-            return from_candid_opt_n53(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n56(this._uploadFile, this._downloadFile, result);
         }
     }
     async getMusicAlbumSongs(arg0: string): Promise<Array<Song>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getMusicAlbumSongs(arg0);
-                return from_candid_vec_n40(this._uploadFile, this._downloadFile, result);
+                return from_candid_vec_n43(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getMusicAlbumSongs(arg0);
-            return from_candid_vec_n40(this._uploadFile, this._downloadFile, result);
+            return from_candid_vec_n43(this._uploadFile, this._downloadFile, result);
         }
     }
     async getPreviousJourneys(): Promise<Array<Journey>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getPreviousJourneys();
-                return result;
+                return from_candid_vec_n34(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getPreviousJourneys();
-            return result;
+            return from_candid_vec_n34(this._uploadFile, this._downloadFile, result);
         }
     }
     async getRippleSize(): Promise<number> {
@@ -1662,28 +1679,28 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getUpcomingJourneys();
-                return result;
+                return from_candid_vec_n34(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getUpcomingJourneys();
-            return result;
+            return from_candid_vec_n34(this._uploadFile, this._downloadFile, result);
         }
     }
     async getUserProfile(arg0: Principal): Promise<UserProfile | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getUserProfile(arg0);
-                return from_candid_opt_n43(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n46(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getUserProfile(arg0);
-            return from_candid_opt_n43(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n46(this._uploadFile, this._downloadFile, result);
         }
     }
     async getVibesByCity(): Promise<Array<[string, Array<VibeItem>]>> {
@@ -1704,14 +1721,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getWebsiteLayoutSettings();
-                return from_candid_opt_n54(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n57(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getWebsiteLayoutSettings();
-            return from_candid_opt_n54(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n57(this._uploadFile, this._downloadFile, result);
         }
     }
     async importCities(arg0: Array<GeonameCity>): Promise<void> {
@@ -1980,17 +1997,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async updateJourney(arg0: string, arg1: Time, arg2: Time): Promise<boolean> {
+    async updateJourney(arg0: bigint, arg1: string, arg2: string | null, arg3: Time, arg4: Time): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor.updateJourney(arg0, arg1, arg2);
+                const result = await this.actor.updateJourney(arg0, arg1, to_candid_opt_n13(this._uploadFile, this._downloadFile, arg2), arg3, arg4);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updateJourney(arg0, arg1, arg2);
+            const result = await this.actor.updateJourney(arg0, arg1, to_candid_opt_n13(this._uploadFile, this._downloadFile, arg2), arg3, arg4);
             return result;
         }
     }
@@ -2082,8 +2099,11 @@ export class Backend implements backendInterface {
 function from_candid_CityAlbum_n32(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _CityAlbum): CityAlbum {
     return from_candid_record_n33(_uploadFile, _downloadFile, value);
 }
-function from_candid_LocationInfo_n35(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _LocationInfo): LocationInfo {
+function from_candid_Journey_n35(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Journey): Journey {
     return from_candid_record_n36(_uploadFile, _downloadFile, value);
+}
+function from_candid_LocationInfo_n38(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _LocationInfo): LocationInfo {
+    return from_candid_record_n39(_uploadFile, _downloadFile, value);
 }
 function from_candid_MediaFile_n27(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _MediaFile): MediaFile {
     return from_candid_record_n28(_uploadFile, _downloadFile, value);
@@ -2091,17 +2111,17 @@ function from_candid_MediaFile_n27(_uploadFile: (file: ExternalBlob) => Promise<
 function from_candid_MediaType_n29(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _MediaType): MediaType {
     return from_candid_variant_n30(_uploadFile, _downloadFile, value);
 }
-function from_candid_MusicAlbum_n38(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _MusicAlbum): MusicAlbum {
-    return from_candid_record_n39(_uploadFile, _downloadFile, value);
-}
-function from_candid_Song_n41(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Song): Song {
+function from_candid_MusicAlbum_n41(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _MusicAlbum): MusicAlbum {
     return from_candid_record_n42(_uploadFile, _downloadFile, value);
+}
+function from_candid_Song_n44(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Song): Song {
+    return from_candid_record_n45(_uploadFile, _downloadFile, value);
 }
 function from_candid_TravelSpot_n23(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _TravelSpot): TravelSpot {
     return from_candid_record_n24(_uploadFile, _downloadFile, value);
 }
-function from_candid_UserRole_n44(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
-    return from_candid_variant_n45(_uploadFile, _downloadFile, value);
+function from_candid_UserRole_n47(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
+    return from_candid_variant_n48(_uploadFile, _downloadFile, value);
 }
 function from_candid__CaffeineStorageRefillResult_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: __CaffeineStorageRefillResult): _CaffeineStorageRefillResult {
     return from_candid_record_n5(_uploadFile, _downloadFile, value);
@@ -2112,34 +2132,34 @@ function from_candid_opt_n21(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
 function from_candid_opt_n25(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [string]): string | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n43(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
+function from_candid_opt_n46(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n46(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_GeonameCity]): GeonameCity | null {
+function from_candid_opt_n49(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_GeonameCity]): GeonameCity | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n47(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_CityAlbum]): CityAlbum | null {
+function from_candid_opt_n50(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_CityAlbum]): CityAlbum | null {
     return value.length === 0 ? null : from_candid_CityAlbum_n32(_uploadFile, _downloadFile, value[0]);
 }
-function from_candid_opt_n48(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_CityRating]): CityRating | null {
+function from_candid_opt_n51(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_CityRating]): CityRating | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n49(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [[number, number]]): [number, number] | null {
+function from_candid_opt_n52(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [[number, number]]): [number, number] | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n50(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Journey]): Journey | null {
+function from_candid_opt_n53(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Journey]): Journey | null {
+    return value.length === 0 ? null : from_candid_Journey_n35(_uploadFile, _downloadFile, value[0]);
+}
+function from_candid_opt_n54(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_LocationInfo]): LocationInfo | null {
+    return value.length === 0 ? null : from_candid_LocationInfo_n38(_uploadFile, _downloadFile, value[0]);
+}
+function from_candid_opt_n55(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_MapBookmark]): MapBookmark | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n51(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_LocationInfo]): LocationInfo | null {
-    return value.length === 0 ? null : from_candid_LocationInfo_n35(_uploadFile, _downloadFile, value[0]);
+function from_candid_opt_n56(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_MusicAlbum]): MusicAlbum | null {
+    return value.length === 0 ? null : from_candid_MusicAlbum_n41(_uploadFile, _downloadFile, value[0]);
 }
-function from_candid_opt_n52(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_MapBookmark]): MapBookmark | null {
-    return value.length === 0 ? null : value[0];
-}
-function from_candid_opt_n53(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_MusicAlbum]): MusicAlbum | null {
-    return value.length === 0 ? null : from_candid_MusicAlbum_n38(_uploadFile, _downloadFile, value[0]);
-}
-function from_candid_opt_n54(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_WebsiteLayoutSettings]): WebsiteLayoutSettings | null {
+function from_candid_opt_n57(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_WebsiteLayoutSettings]): WebsiteLayoutSettings | null {
     return value.length === 0 ? null : value[0];
 }
 function from_candid_opt_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [boolean]): boolean | null {
@@ -2224,6 +2244,33 @@ function from_candid_record_n33(_uploadFile: (file: ExternalBlob) => Promise<Uin
     };
 }
 function from_candid_record_n36(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    id: bigint;
+    endDate: _Time;
+    city: string;
+    createdAt: _Time;
+    updatedAt: _Time;
+    customTitle: [] | [string];
+    startDate: _Time;
+}): {
+    id: bigint;
+    endDate: Time;
+    city: string;
+    createdAt: Time;
+    updatedAt: Time;
+    customTitle?: string;
+    startDate: Time;
+} {
+    return {
+        id: value.id,
+        endDate: value.endDate,
+        city: value.city,
+        createdAt: value.createdAt,
+        updatedAt: value.updatedAt,
+        customTitle: record_opt_to_undefined(from_candid_opt_n25(_uploadFile, _downloadFile, value.customTitle)),
+        startDate: value.startDate
+    };
+}
+function from_candid_record_n39(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     photoPath: [] | [string];
     name: string;
     createdAt: _Time;
@@ -2244,7 +2291,7 @@ function from_candid_record_n36(_uploadFile: (file: ExternalBlob) => Promise<Uin
         coordinates: value.coordinates
     };
 }
-function from_candid_record_n39(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n42(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     title: string;
     createdAt: _Time;
     description: string;
@@ -2261,11 +2308,11 @@ function from_candid_record_n39(_uploadFile: (file: ExternalBlob) => Promise<Uin
         title: value.title,
         createdAt: value.createdAt,
         description: value.description,
-        songs: from_candid_vec_n40(_uploadFile, _downloadFile, value.songs),
+        songs: from_candid_vec_n43(_uploadFile, _downloadFile, value.songs),
         updatedAt: value.updatedAt
     };
 }
-function from_candid_record_n42(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n45(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     title: [] | [string];
     album: string;
     filePath: string;
@@ -2314,7 +2361,7 @@ function from_candid_variant_n30(_uploadFile: (file: ExternalBlob) => Promise<Ui
 }): MediaType {
     return "audio" in value ? MediaType.audio : "video" in value ? MediaType.video : "image" in value ? MediaType.image : value;
 }
-function from_candid_variant_n45(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n48(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     admin: null;
 } | {
     user: null;
@@ -2335,14 +2382,17 @@ function from_candid_vec_n26(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
 function from_candid_vec_n31(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_CityAlbum>): Array<CityAlbum> {
     return value.map((x)=>from_candid_CityAlbum_n32(_uploadFile, _downloadFile, x));
 }
-function from_candid_vec_n34(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_LocationInfo>): Array<LocationInfo> {
-    return value.map((x)=>from_candid_LocationInfo_n35(_uploadFile, _downloadFile, x));
+function from_candid_vec_n34(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Journey>): Array<Journey> {
+    return value.map((x)=>from_candid_Journey_n35(_uploadFile, _downloadFile, x));
 }
-function from_candid_vec_n37(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_MusicAlbum>): Array<MusicAlbum> {
-    return value.map((x)=>from_candid_MusicAlbum_n38(_uploadFile, _downloadFile, x));
+function from_candid_vec_n37(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_LocationInfo>): Array<LocationInfo> {
+    return value.map((x)=>from_candid_LocationInfo_n38(_uploadFile, _downloadFile, x));
 }
-function from_candid_vec_n40(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Song>): Array<Song> {
-    return value.map((x)=>from_candid_Song_n41(_uploadFile, _downloadFile, x));
+function from_candid_vec_n40(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_MusicAlbum>): Array<MusicAlbum> {
+    return value.map((x)=>from_candid_MusicAlbum_n41(_uploadFile, _downloadFile, x));
+}
+function from_candid_vec_n43(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Song>): Array<Song> {
+    return value.map((x)=>from_candid_Song_n44(_uploadFile, _downloadFile, x));
 }
 function to_candid_MediaFile_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: MediaFile): _MediaFile {
     return to_candid_record_n10(_uploadFile, _downloadFile, value);

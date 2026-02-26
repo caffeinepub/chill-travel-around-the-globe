@@ -1,77 +1,96 @@
 {
   "kind": "build_request",
-  "title": "Move Real/Hourly/Year buttons and time display into Sun Effects section",
+  "title": "Allow multiple journeys per city with custom titles and grouped display",
   "projectName": "World Clock Globe",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Move the Real, Hourly, and Year mode buttons along with their corresponding time display from the bottom-right floating panel (identified by XPath /html[1]/body[1]/div[1]/div[2]/div[1]/div[4]/div[1]) into the Sun Effects section inside the World Controls panel (identified by XPath /html[1]/body[1]/div[1]/div[1]/div[1]/div[1]/div[2]). The buttons and time display must be rendered as a cohesive sub-section within Sun Effects, preserving all existing functionality (mode switching, time display updates).",
-      "target": "frontend",
+      "text": "Update the backend Journey data type and storage to allow multiple journeys per city. Remove any uniqueness constraint on city. Add an optional custom title field (Text) to the Journey type. When no custom title is provided, fall back to the journey date as the distinguishing label.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1",
-          "msg-2"
+          "msg-recent"
         ],
         "quotes": [
-          "Move the bottom right selected panel (Real Button, Hourly button, Year Button, and the corresponding time display) into the Sun Effects of the world controls button."
+          "Multiple journeys per city — each journey can have a custom title (e.g., 'Paris - Summer 2024'), with date as a fallback if no title is provided"
         ]
       },
       "acceptanceCriteria": [
-        "The Real, Hourly, and Year buttons appear inside the Sun Effects section of the World Controls panel.",
-        "The time display corresponding to the selected mode appears inside the Sun Effects section of the World Controls panel.",
-        "Clicking Real, Hourly, or Year buttons correctly switches the sun simulation mode as before.",
-        "The time display updates correctly according to the selected mode.",
-        "The bottom-right floating panel containing those buttons and time display is fully removed from the UI."
+        "The backend accepts and stores multiple Journey records with the same city name.",
+        "Each Journey record has an optional customTitle field.",
+        "Creating two journeys with the same city but different custom titles succeeds without error.",
+        "Querying all journeys returns all records including duplicates for the same city."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Remove the bottom-right floating panel (XPath /html[1]/body[1]/div[1]/div[2]/div[1]/div[4]/div[1]) from the DOM entirely after its contents have been relocated to the Sun Effects section.",
+      "text": "Update all relevant frontend mutation hooks (add journey, edit journey) in useQueries.ts to include the optional customTitle field so it is sent to and received from the backend.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-recent"
         ],
         "quotes": [
-          "Move the bottom right selected panel (Real Button, Hourly button, Year Button, and the corresponding time display) into the Sun Effects of the world controls button."
+          "each journey can have a custom title"
         ]
       },
       "acceptanceCriteria": [
-        "The bottom-right panel is no longer rendered anywhere on the page.",
-        "No empty placeholder or ghost element remains in the bottom-right corner."
+        "The add-journey mutation accepts and forwards a customTitle parameter.",
+        "The edit-journey mutation accepts and forwards a customTitle parameter.",
+        "Journey query results include the customTitle field."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Preserve the existing UI layout and 3D globe unchanged. All other controls, panels, and the globe rendering must remain exactly as they are before this change.",
+      "text": "Update the journey creation and editing UI (inside the div at XPath /html[1]/body[1]/div[5], which is the TraveloguePanel or equivalent journey list panel) to include an optional 'Journey Title' text input field. This title is used to distinguish multiple journeys for the same city.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-recent"
         ],
         "quotes": [
-          "Do not change the current UI layout and the 3d globe. All should remain unchanged"
+          "it would be good if it can be distinguished by a custom title"
         ]
       },
       "acceptanceCriteria": [
-        "The 3D globe renders identically to before the change.",
-        "All other World Controls sections (other than Sun Effects receiving new content) are visually and functionally unchanged.",
-        "All other panels and UI elements outside the World Controls panel are unchanged."
+        "The add-journey form includes an optional 'Journey Title' text input.",
+        "The edit-journey form includes the 'Journey Title' text input pre-populated with the existing title.",
+        "Submitting without a title is allowed; the journey date is used as the display label in that case."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "In the journey list panel (div[5], corresponding to TraveloguePanel), group journeys by city name. Each city group should be collapsible and display the city name as a group header. Within each group, list all journeys for that city showing their custom title (or date as fallback). Multiple journeys for the same city must all appear under the same city group header.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent"
+        ],
+        "quotes": [
+          "it would be good if can group them together",
+          "journeys for the same city will be grouped together in the journey list/panel"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Journeys with the same city name appear under a single city group header in the panel.",
+        "Each city group is collapsible/expandable.",
+        "Each journey entry within a group displays its custom title, or the journey date if no title is set.",
+        "Adding a second journey to an existing city adds it to the existing city group rather than creating a duplicate group.",
+        "Cities with only one journey still appear within a group header for consistency."
       ]
     }
   ],
   "constraints": [
-    "Do not alter the 3D globe component or its rendering logic.",
-    "Do not modify any UI layout outside of moving the specified controls into Sun Effects.",
-    "Do not change existing button functionality or state management logic.",
-    "Immutable frontend paths (hooks, ui components, main.tsx) must not be edited."
+    "The XPath /html[1]/body[1]/div[5] targets the journey list panel — all journey list UI changes must be scoped to this element.",
+    "Do not modify files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui.",
+    "All Motoko logic must remain in backend/main.mo as a single actor."
   ],
   "nonGoals": [
-    "Redesigning the Sun Effects section beyond accommodating the moved controls.",
-    "Adding new sun simulation modes or time display features.",
-    "Changing the World Controls panel layout beyond inserting the moved controls.",
-    "Any backend changes."
+    "Automatic deduplication or merging of existing journeys with the same city.",
+    "Sorting or filtering journeys beyond the city grouping.",
+    "Any changes to the Sun Effects panel or time/button controls.",
+    "Changes to the 3D globe or map components."
   ],
   "imageRequirements": {
     "required": [],
