@@ -1,12 +1,10 @@
 # Specification
 
 ## Summary
-**Goal:** Filter travelogue entries in TraveloguePanel by the selected journey's unique ID so that each journey displays only its own independent travelogue entries.
+**Goal:** Update the travelogue fetch/read logic to query travelogue entries by `journeyId` instead of by city name or a global key.
 
 **Planned changes:**
-- In `TraveloguePanel.tsx`, filter displayed schedule items by matching their `journeyId` to the currently selected journey's ID
-- Ensure two journeys to the same city each show completely separate travelogue entries
-- Schedule items without a `journeyId` are excluded or handled gracefully without mixing into any journey's travelogue
-- Travelogue display updates correctly when switching between journeys
+- Update the travelogue fetch function/hook to accept and use `journeyId` as the lookup key when querying the backend
+- Ensure each journey fetches its own independent travelogue entries, so two journeys sharing the same city return separate data
 
-**User-visible outcome:** Each journey's travelogue panel shows only its own entries, so two trips to the same city no longer share or mix travelogue items.
+**User-visible outcome:** Each journey displays its own travelogue entries independently, without mixing data from other journeys that share the same city.

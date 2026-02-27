@@ -16,15 +16,15 @@ interface MusicPlayerBarProps {
 export default function MusicPlayerBar({ className = '', currentSong: externalCurrentSong, onSongChange }: MusicPlayerBarProps) {
   const { identity } = useInternetIdentity();
   const isAuthenticated = !!identity;
-
+  
   const { data: musicAlbums = [] } = useGetAllMusicAlbums();
   const { data: layoutPreferences } = useGetWebsiteLayoutPreferences();
-
+  
   // Check if music player should be visible based on user preferences
-  const isMusicPlayerVisible = layoutPreferences?.showMusicPlayer !== false;
-
+  const isMusicPlayerVisible = layoutPreferences?.showMusicPlayer !== false; // Default to true if not set
+  
   // Get all songs from all albums
-  const allSongs = musicAlbums.flatMap(album =>
+  const allSongs = musicAlbums.flatMap(album => 
     album.songs.map(song => ({
       ...song,
       albumTitle: album.title
@@ -38,13 +38,13 @@ export default function MusicPlayerBar({ className = '', currentSong: externalCu
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(1);
-
+  
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Use external current song if provided, otherwise use internal state
   const currentSong = externalCurrentSong || allSongs[internalCurrentSongIndex];
-  const currentSongIndex = externalCurrentSong
+  const currentSongIndex = externalCurrentSong 
     ? allSongs.findIndex(song => song.filePath === externalCurrentSong.filePath)
     : internalCurrentSongIndex;
 
@@ -70,9 +70,9 @@ export default function MusicPlayerBar({ className = '', currentSong: externalCu
 
       const audio = new Audio(currentSongUrl);
       audioRef.current = audio;
-
+      
       audio.volume = isMuted ? 0 : volume;
-
+      
       audio.addEventListener('loadedmetadata', () => {
         setDuration(audio.duration);
       });
@@ -81,7 +81,8 @@ export default function MusicPlayerBar({ className = '', currentSong: externalCu
         handleNext();
       });
 
-      audio.addEventListener('error', () => {
+      audio.addEventListener('error', (e) => {
+        console.error('Audio error:', e);
         setIsPlaying(false);
       });
 
@@ -90,23 +91,26 @@ export default function MusicPlayerBar({ className = '', currentSong: externalCu
         audio.addEventListener('canplay', () => {
           audio.play().then(() => {
             setIsPlaying(true);
-          }).catch(() => {
+          }).catch((error) => {
+            console.error('Auto-play failed:', error);
             setIsPlaying(false);
           });
-        }, { once: true });
+        });
       }
+
+      return () => {
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+        }
+        audio.pause();
+        audio.remove();
+      };
     }
+  }, [currentSongUrl, currentSong?.filePath, externalCurrentSong]);
 
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-    };
-  }, [currentSongUrl]);
-
-  // Progress tracking
+  // Update progress
   useEffect(() => {
-    if (isPlaying) {
+    if (isPlaying && audioRef.current) {
       progressIntervalRef.current = setInterval(() => {
         if (audioRef.current) {
           setCurrentTime(audioRef.current.currentTime);
@@ -115,6 +119,7 @@ export default function MusicPlayerBar({ className = '', currentSong: externalCu
     } else {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
       }
     }
 
@@ -125,54 +130,58 @@ export default function MusicPlayerBar({ className = '', currentSong: externalCu
     };
   }, [isPlaying]);
 
-  const handlePlayPause = () => {
-    if (!audioRef.current) return;
+  const handlePlayPause = async () => {
+    if (!audioRef.current || !currentSong) return;
 
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      audioRef.current.play().then(() => {
-        setIsPlaying(true);
-      }).catch(() => {
+    try {
+      if (isPlaying) {
+        audioRef.current.pause();
         setIsPlaying(false);
-      });
+      } else {
+        await audioRef.current.play();
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      console.error('Playback error:', error);
+      setIsPlaying(false);
     }
   };
 
   const handleNext = () => {
     if (allSongs.length === 0) return;
     const nextIndex = (currentSongIndex + 1) % allSongs.length;
+    const nextSong = allSongs[nextIndex];
+    
     setInternalCurrentSongIndex(nextIndex);
-    if (onSongChange) {
-      onSongChange(allSongs[nextIndex]);
-    }
     setIsPlaying(false);
     setCurrentTime(0);
+    
+    // Notify parent component if callback is provided
+    if (onSongChange && nextSong) {
+      onSongChange(nextSong);
+    }
   };
 
-  const handlePrev = () => {
+  const handlePrevious = () => {
     if (allSongs.length === 0) return;
-    const prevIndex = (currentSongIndex - 1 + allSongs.length) % allSongs.length;
+    const prevIndex = currentSongIndex === 0 ? allSongs.length - 1 : currentSongIndex - 1;
+    const prevSong = allSongs[prevIndex];
+    
     setInternalCurrentSongIndex(prevIndex);
-    if (onSongChange) {
-      onSongChange(allSongs[prevIndex]);
-    }
     setIsPlaying(false);
     setCurrentTime(0);
+    
+    // Notify parent component if callback is provided
+    if (onSongChange && prevSong) {
+      onSongChange(prevSong);
+    }
   };
 
-  const handleVolumeToggle = () => {
-    if (!audioRef.current) return;
-
-    if (isMuted) {
-      audioRef.current.volume = previousVolume;
-      setVolume(previousVolume);
-      setIsMuted(false);
-    } else {
-      setPreviousVolume(volume);
-      audioRef.current.volume = 0;
-      setIsMuted(true);
+  const handleSeek = (value: number[]) => {
+    const newTime = value[0];
+    if (audioRef.current) {
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
     }
   };
 
@@ -180,101 +189,146 @@ export default function MusicPlayerBar({ className = '', currentSong: externalCu
     const newVolume = value[0];
     setVolume(newVolume);
     if (audioRef.current) {
-      audioRef.current.volume = newVolume;
+      audioRef.current.volume = isMuted ? 0 : newVolume;
     }
-    if (newVolume > 0) {
+    if (newVolume > 0 && isMuted) {
       setIsMuted(false);
     }
   };
 
-  const handleProgressChange = (value: number[]) => {
-    const newTime = value[0];
-    setCurrentTime(newTime);
-    if (audioRef.current) {
-      audioRef.current.currentTime = newTime;
+  const handleMuteToggle = () => {
+    if (isMuted) {
+      setIsMuted(false);
+      if (audioRef.current) {
+        audioRef.current.volume = volume;
+      }
+    } else {
+      setPreviousVolume(volume);
+      setIsMuted(true);
+      if (audioRef.current) {
+        audioRef.current.volume = 0;
+      }
     }
   };
 
   const formatTime = (seconds: number) => {
+    if (isNaN(seconds)) return '0:00';
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (!isAuthenticated || !isMusicPlayerVisible || allSongs.length === 0) {
+  // Don't render if user is not authenticated, has no songs, or has disabled the music player
+  if (!isAuthenticated || allSongs.length === 0 || !isMusicPlayerVisible) {
     return null;
   }
 
   return (
-    <div className={`flex items-center gap-2 px-3 py-1.5 bg-blue-50/90 dark:bg-blue-950/90 backdrop-blur-sm border border-blue-200/50 dark:border-blue-800/50 rounded-full shadow-sm ${className}`}>
-      {/* Song info */}
-      <div className="flex-1 min-w-0 max-w-32">
-        <p className="text-xs font-medium truncate text-blue-900 dark:text-blue-100">
-          {currentSong?.title || 'Unknown'}
-        </p>
-        <p className="text-xs text-blue-600 dark:text-blue-400 truncate">
-          {currentSong?.artist || currentSong?.albumTitle || ''}
-        </p>
-      </div>
+    <div className={`fixed bottom-0 left-0 right-0 z-[2500] light-blue-music-player ${className}`}>
+      <div className="flex items-center gap-3 px-4 py-2 max-w-7xl mx-auto">
+        {/* Song Info - Compact Layout */}
+        <div className="flex-1 min-w-0 max-w-xs">
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <h4 className="font-medium text-sm truncate text-blue-primary leading-tight">
+                {currentSong?.title || 'Unknown Title'}
+              </h4>
+              <div className="flex items-center gap-1 text-xs text-blue-secondary">
+                <span className="truncate">
+                  {currentSong?.artist || 'Unknown Artist'}
+                </span>
+                {currentSong?.albumTitle && (
+                  <>
+                    <span className="text-blue-muted">•</span>
+                    <span className="truncate">
+                      {currentSong.albumTitle}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/* Controls */}
-      <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900"
-          onClick={handlePrev}
-        >
-          <SkipBack className="h-3 w-3" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900"
-          onClick={handlePlayPause}
-        >
-          {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900"
-          onClick={handleNext}
-        >
-          <SkipForward className="h-3 w-3" />
-        </Button>
-      </div>
+        {/* Controls - Compact */}
+        <div className="flex items-center gap-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handlePrevious}
+            disabled={allSongs.length <= 1}
+            className="h-7 w-7 rounded-full light-blue-control-btn"
+          >
+            <SkipBack className="h-3 w-3" />
+          </Button>
+          
+          <Button
+            size="sm"
+            onClick={handlePlayPause}
+            disabled={!currentSong || !currentSongUrl}
+            className="h-8 w-8 rounded-full light-blue-play-btn"
+          >
+            {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+          </Button>
+          
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleNext}
+            disabled={allSongs.length <= 1}
+            className="h-7 w-7 rounded-full light-blue-control-btn"
+          >
+            <SkipForward className="h-3 w-3" />
+          </Button>
+        </div>
 
-      {/* Progress */}
-      <div className="flex items-center gap-1 min-w-0 flex-1">
-        <span className="text-xs text-blue-600 dark:text-blue-400 shrink-0">{formatTime(currentTime)}</span>
-        <Slider
-          value={[currentTime]}
-          max={duration || 100}
-          step={1}
-          onValueChange={handleProgressChange}
-          className="flex-1 min-w-12"
-        />
-        <span className="text-xs text-blue-600 dark:text-blue-400 shrink-0">{formatTime(duration)}</span>
-      </div>
+        {/* Progress Section - Ultra Compact */}
+        <div className="flex-1 flex items-center gap-2 min-w-0">
+          <span className="text-xs text-blue-muted whitespace-nowrap font-mono">
+            {formatTime(currentTime)}
+          </span>
+          
+          <div className="flex-1">
+            <Slider
+              value={[currentTime]}
+              max={duration || 100}
+              step={1}
+              onValueChange={handleSeek}
+              className="light-blue-progress-slider"
+              disabled={!currentSong || !currentSongUrl}
+            />
+          </div>
+          
+          <span className="text-xs text-blue-muted whitespace-nowrap font-mono">
+            {formatTime(duration)}
+          </span>
+        </div>
 
-      {/* Volume */}
-      <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900"
-          onClick={handleVolumeToggle}
-        >
-          {isMuted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
-        </Button>
-        <Slider
-          value={[isMuted ? 0 : volume]}
-          max={1}
-          step={0.05}
-          onValueChange={handleVolumeChange}
-          className="w-16"
-        />
+        {/* Volume Controls - Compact */}
+        <div className="flex items-center gap-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleMuteToggle}
+            className="h-7 w-7 rounded-full light-blue-control-btn"
+          >
+            {isMuted || volume === 0 ? (
+              <VolumeX className="h-3 w-3" />
+            ) : (
+              <Volume2 className="h-3 w-3" />
+            )}
+          </Button>
+          
+          <div className="w-16">
+            <Slider
+              value={[isMuted ? 0 : volume]}
+              max={1}
+              step={0.1}
+              onValueChange={handleVolumeChange}
+              className="light-blue-volume-slider"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

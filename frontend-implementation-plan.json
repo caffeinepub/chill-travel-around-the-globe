@@ -1,27 +1,27 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Filter travelogue entries by journey ID so each journey has its own independent travelogue",
+  "title": "Sub-step 3a: Update travelogue fetch logic to use journeyId",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Filter schedule items by journey ID in TraveloguePanel so each journey displays only its own travelogue entries",
+      "summary": "Update the travelogue data fetch logic so that travelogue entries are queried and loaded by journeyId rather than by city name or any global/shared key",
       "acceptanceCriteria": [
-        "When a journey is selected/expanded in TraveloguePanel, only schedule items whose journeyId matches that journey's ID are shown",
-        "Two journeys to the same city (e.g., two separate 'Paris' trips) each display completely separate, independent travelogue entries",
-        "If a schedule item has no journeyId set, it does not appear under any journey's travelogue (or falls back gracefully without mixing entries)",
-        "The travelogue display in TraveloguePanel correctly updates when switching between journeys"
+        "The travelogue fetch function/hook accepts a journeyId parameter and uses it as the lookup key when calling the backend",
+        "Each journey's travelogue data is fetched independently — two journeys sharing the same city return their own separate travelogue entries",
+        "No other frontend components, panels, layouts, or styles are altered by this change",
+        "The travelogue save, delete, and clear paths remain untouched"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/TraveloguePanel.tsx",
-          "operation": "modify",
-          "description": "Modify the TraveloguePanel component to filter schedule items by the journey's unique ID when displaying the travelogue for a selected journey. Update the logic that calls useGetScheduleItems to pass the journey's ID as a filter parameter. Ensure that when a journey is expanded, only schedule items associated with that specific journey ID are displayed. Add defensive checks to handle schedule items without a journeyId field, ensuring they do not appear under any journey or are handled gracefully. Update the component state management to properly refresh the filtered schedule items when switching between different journeys."
-        },
-        {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Update the useGetScheduleItems hook to accept an optional journeyId parameter for filtering schedule items. Modify the query function to filter the returned schedule items array by matching journeyId when the parameter is provided. Ensure the query key includes the journeyId parameter so React Query properly caches and invalidates filtered results. Add client-side filtering logic that compares each schedule item's journeyId field with the provided journey ID. Handle cases where schedule items may not have a journeyId field by excluding them from filtered results."
+          "description": "Modify the useGetTravelogueEntry hook to accept a journeyId parameter instead of a city parameter. Update the queryKey to use journeyId and change the queryFn to call actor.getTravelogueEntry(journeyId) instead of any city-based lookup. Update the enabled condition to check for journeyId presence. Preserve all other hooks and mutation functions unchanged."
+        },
+        {
+          "path": "frontend/src/components/TraveloguePanel.tsx",
+          "operation": "modify",
+          "description": "Update the TraveloguePanel component to derive journeyId from the selected journey object and pass journeyId to useGetTravelogueEntry instead of city. Ensure the journeyId is extracted from the Journey type (likely journey.title or a computed ID based on title+dates). Do not modify any layout, styling, or unrelated UI elements."
         }
       ]
     }

@@ -1,7 +1,7 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-26T09:57:22.381Z",
+  "generatedAt": "2026-02-27T03:03:41.863Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
@@ -12,35 +12,34 @@
     "items": [
       {
         "id": "REQ-1",
-        "summary": "In TraveloguePanel.tsx, when displaying schedule items for a selected journey, filter the schedule items by the journey's unique ID so that only items belonging to that specific journey are shown. Each journey title must display only its own travelogue entries, independent of other journeys that share the same city.",
+        "summary": "Update the travelogue data fetch logic so that travelogue entries are queried and loaded by journeyId rather than by city name or any global/shared key. This change must be confined strictly to the fetch/read path for travelogue data. No other UI layout, panel, component, or styling must be modified.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/TraveloguePanel.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx",
           "frontend/src/hooks/useQueries.ts"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
     "frontend/src/components/AdminPanel.tsx",
-    "frontend/src/components/CityloguePanel.tsx",
+    "frontend/src/components/CityAlbumManager.tsx",
     "frontend/src/components/LocationInfoDialog.tsx",
-    "frontend/src/components/MusicAlbumManager.tsx",
-    "frontend/src/components/MusicPlayerBar.tsx",
     "frontend/src/components/TravelSpotManager.tsx",
-    "frontend/src/components/TraveloguePanel.tsx",
-    "frontend/src/components/itinerary/DoodleItineraryDialogContent.tsx",
-    "frontend/src/components/itinerary/RetroItineraryDialogContent.tsx",
+    "frontend/src/components/WebsiteLayoutPanel.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/lib/journeyUtils.ts",
     "frontend/src/pages/LocationMapExplorer.tsx",
     "project_state.json",
     "scratch/component-selection.json",

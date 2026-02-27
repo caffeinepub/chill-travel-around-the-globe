@@ -1,115 +1,122 @@
 import React from 'react';
-import { useGetScheduleItems } from '../../hooks/useQueries';
-import type { ScheduleItem } from '../../backend';
+import { Calendar, MapPin, Clock } from 'lucide-react';
+import { useGetJourneyScheduleWithDays } from '@/hooks/useQueries';
+import { Journey } from '@/backend';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface DoodleItineraryDialogContentProps {
-  journeyKey: string;
-  journeyCity: string;
-}
-
-const DOODLE_COLORS = [
-  'bg-yellow-100 border-yellow-300',
-  'bg-pink-100 border-pink-300',
-  'bg-blue-100 border-blue-300',
-  'bg-green-100 border-green-300',
-  'bg-purple-100 border-purple-300',
-  'bg-orange-100 border-orange-300',
-];
-
-const DOODLE_ROTATIONS = ['-rotate-1', 'rotate-1', '-rotate-2', 'rotate-2', 'rotate-0'];
-
-function formatTime(time: string): string {
-  return time || '';
-}
-
-function formatDate(dateNs: bigint): string {
-  const ms = Number(dateNs) / 1_000_000;
-  const d = new Date(ms);
-  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  journey: Journey;
+  formatDate: (timestamp: bigint) => string;
+  formatDateRange: (startTimestamp: bigint, endTimestamp: bigint) => string;
+  formatScheduleDate: (timestamp: bigint) => string;
+  formatTime: (timeString: string) => string;
 }
 
 export default function DoodleItineraryDialogContent({
-  journeyKey,
-  journeyCity,
+  journey,
+  formatDate,
+  formatDateRange,
+  formatScheduleDate,
+  formatTime,
 }: DoodleItineraryDialogContentProps) {
-  const { data: scheduleItems, isLoading } = useGetScheduleItems(journeyKey);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-400" />
-      </div>
-    );
-  }
-
-  if (!scheduleItems || scheduleItems.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="text-6xl mb-4">✏️</div>
-        <p className="text-lg font-semibold text-gray-500">No travelogue entries yet</p>
-        <p className="text-sm text-gray-400 mt-1">
-          Add schedule items for <span className="font-medium">{journeyCity}</span> in the Admin Panel
-        </p>
-      </div>
-    );
-  }
-
-  // Group by date
-  const grouped = scheduleItems.reduce<Record<string, ScheduleItem[]>>((acc, item) => {
-    const dateKey = formatDate(item.date);
-    if (!acc[dateKey]) acc[dateKey] = [];
-    acc[dateKey].push(item);
-    return acc;
-  }, {});
-
-  const sortedDates = Object.keys(grouped).sort((a, b) => {
-    const aMs = Number(scheduleItems.find(i => formatDate(i.date) === a)?.date ?? 0n) / 1_000_000;
-    const bMs = Number(scheduleItems.find(i => formatDate(i.date) === b)?.date ?? 0n) / 1_000_000;
-    return aMs - bMs;
-  });
-
-  let cardIndex = 0;
+  const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.city);
 
   return (
-    <div className="p-4 space-y-6 font-['Patrick_Hand',_cursive,_sans-serif]">
-      {sortedDates.map((dateKey, dayIdx) => (
-        <div key={dateKey}>
-          {/* Day header */}
-          <div className="flex items-center gap-2 mb-3">
-            <div className="bg-red-400 text-white text-xs font-bold px-3 py-1 rounded-full shadow">
-              Day {dayIdx + 1}
+    <div className="relative w-full h-[85vh] overflow-hidden bg-[#fef9f3]">
+      {/* Scrapbook Header */}
+      <div className="relative p-8 bg-gradient-to-br from-amber-50 to-orange-50 border-b-4 border-dashed border-amber-300">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg transform -rotate-6">
+              <Calendar className="h-8 w-8 text-white" />
             </div>
-            <span className="text-sm text-gray-500 font-medium">{dateKey}</span>
-            <div className="flex-1 border-b-2 border-dashed border-gray-200" />
-          </div>
-
-          {/* Cards */}
-          <div className="flex flex-wrap gap-3">
-            {grouped[dateKey]
-              .slice()
-              .sort((a, b) => a.time.localeCompare(b.time))
-              .map((item) => {
-                const colorClass = DOODLE_COLORS[cardIndex % DOODLE_COLORS.length];
-                const rotClass = DOODLE_ROTATIONS[cardIndex % DOODLE_ROTATIONS.length];
-                cardIndex++;
-                return (
-                  <div
-                    key={`${item.date}-${item.time}-${item.location}`}
-                    className={`relative border-2 rounded-lg p-3 shadow-md w-44 ${colorClass} ${rotClass} transition-transform hover:rotate-0 hover:scale-105`}
-                  >
-                    {/* Pin decoration */}
-                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-red-500 rounded-full shadow border-2 border-white" />
-                    <div className="mt-1">
-                      <p className="text-xs font-bold text-gray-600 mb-1">{item.time}</p>
-                      <p className="text-sm font-bold text-gray-800 leading-tight">{item.activity}</p>
-                      <p className="text-xs text-gray-500 mt-1 italic">📍 {item.location}</p>
-                    </div>
-                  </div>
-                );
-              })}
+            <div>
+              <h2 className="text-4xl font-bold text-amber-900 mb-1" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
+                {journey.city} Adventure! ✈️
+              </h2>
+              <p className="text-lg text-amber-700 font-medium">
+                {formatDateRange(journey.startDate, journey.endDate)}
+              </p>
+            </div>
           </div>
         </div>
-      ))}
+      </div>
+
+      {/* Scrapbook Content */}
+      <ScrollArea className="h-[calc(85vh-180px)]">
+        <div className="max-w-4xl mx-auto p-8 space-y-8">
+          {scheduleWithDays.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="w-32 h-32 mx-auto mb-6 bg-gradient-to-br from-amber-200 to-orange-300 rounded-full flex items-center justify-center shadow-lg">
+                <MapPin className="h-16 w-16 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-amber-900 mb-2" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
+                No Schedule Yet!
+              </h3>
+              <p className="text-amber-700">
+                Add some activities to your journey to see them here in your travel scrapbook!
+              </p>
+            </div>
+          ) : (
+            scheduleWithDays.map(([dayLabel, items], dayIndex) => (
+              <div key={dayIndex} className="relative">
+                {/* Day Header - Scrapbook Style */}
+                <div className="relative mb-6">
+                  <div className="inline-block bg-gradient-to-r from-pink-400 to-purple-500 text-white px-6 py-3 rounded-lg shadow-lg transform -rotate-2">
+                    <h3 className="text-2xl font-bold" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
+                      {dayLabel} 🎉
+                    </h3>
+                  </div>
+                  {items.length > 0 && (
+                    <p className="mt-2 text-sm text-amber-700 font-medium ml-2">
+                      {formatScheduleDate(items[0].date)}
+                    </p>
+                  )}
+                </div>
+
+                {/* Schedule Items - Polaroid Style */}
+                <div className="space-y-6 ml-8">
+                  {items.map((item, itemIndex) => (
+                    <div
+                      key={itemIndex}
+                      className="relative bg-white p-6 rounded-lg shadow-xl border-4 border-white transform hover:scale-105 transition-transform"
+                      style={{
+                        transform: `rotate(${itemIndex % 2 === 0 ? '-1deg' : '1deg'})`,
+                      }}
+                    >
+                      {/* Tape Effect */}
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-20 h-6 bg-amber-200 opacity-60 rounded-sm"></div>
+                      
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-full flex items-center justify-center shadow-md">
+                          <Clock className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className="text-lg font-bold text-blue-600">
+                              {formatTime(item.time)}
+                            </span>
+                            <span className="text-sm text-gray-500">•</span>
+                            <span className="text-sm font-semibold text-gray-700">
+                              {item.location}
+                            </span>
+                          </div>
+                          <p className="text-gray-800 leading-relaxed">
+                            {item.activity}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Decorative Corner */}
+                      <div className="absolute bottom-2 right-2 w-8 h-8 border-r-4 border-b-4 border-amber-300 rounded-br-lg"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </ScrollArea>
     </div>
   );
 }

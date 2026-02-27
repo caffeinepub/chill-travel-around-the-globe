@@ -134,6 +134,12 @@ export interface LocationInfo {
     updatedAt: Time;
     coordinates: [number, number];
 }
+export interface TravelogueEntry {
+    content: string;
+    createdAt: Time;
+    journeyId: string;
+    updatedAt: Time;
+}
 export interface GeonameCity {
     region: string;
     latitude: number;
@@ -144,13 +150,6 @@ export interface GeonameCity {
     featureCode: string;
     classification: string;
 }
-export interface CityRating {
-    city: string;
-    createdAt: Time;
-    comment: string;
-    updatedAt: Time;
-    rating: number;
-}
 export interface WebsiteLayoutSettings {
     createdAt: Time;
     updatedAt: Time;
@@ -160,6 +159,13 @@ export interface WebsiteLayoutSettings {
     showMusicPlayerBar: boolean;
     defaultSearchPlace: string;
     rippleSize: number;
+}
+export interface CityRating {
+    city: string;
+    createdAt: Time;
+    comment: string;
+    updatedAt: Time;
+    rating: number;
 }
 export interface ScheduleItem {
     date: Time;
@@ -249,17 +255,19 @@ export interface backendInterface {
     addSocialMediaLinkToTravelSpot(city: string, spotName: string, socialMediaLink: SocialMediaLink): Promise<boolean>;
     addSongToMusicAlbum(title: string, song: Song): Promise<boolean>;
     addTravelSpot(city: string, name: string, description: string | null, coordinates: [number, number], spotType: string, rating: number): Promise<void>;
+    addTravelogueEntry(journeyId: string, content: string): Promise<void>;
     addWebsiteLayoutSettings(showMusicPlayerBar: boolean, defaultSearchPlace: string, showAllTravelSpots: boolean, rippleSize: number, cityFontSize: number): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     deleteCity(name: string): Promise<boolean>;
     deleteCityAlbum(city: string): Promise<boolean>;
     deleteCityRating(city: string): Promise<boolean>;
-    deleteJourney(city: string): Promise<boolean>;
+    deleteJourney(title: string): Promise<boolean>;
     deleteLocationInfo(name: string): Promise<boolean>;
     deleteMapBookmark(name: string): Promise<boolean>;
     deleteMusicAlbum(title: string): Promise<boolean>;
     deleteScheduleItem(journeyCity: string, date: Time, time: string): Promise<boolean>;
     deleteTravelSpot(city: string, name: string): Promise<boolean>;
+    deleteTravelogueEntry(journeyId: string): Promise<boolean>;
     deleteWebsiteLayoutSettings(): Promise<boolean>;
     dropFileReference(path: string): Promise<void>;
     getAdmins(): Promise<Array<Principal>>;
@@ -277,6 +285,7 @@ export interface backendInterface {
     getAllScheduleItemsWithCoordinates(): Promise<Array<[ScheduleItem, [number, number]]>>;
     getAllTravelSpots(): Promise<Array<TravelSpot>>;
     getAllTravelSpotsForMap(): Promise<Array<TravelSpot>>;
+    getAllTravelogueEntries(): Promise<Array<TravelogueEntry>>;
     getAllVibes(): Promise<Array<VibeItem>>;
     getAllWebsiteLayoutSettings(): Promise<Array<WebsiteLayoutSettings>>;
     getAverageCityRating(city: string): Promise<number>;
@@ -303,7 +312,7 @@ export interface backendInterface {
     getCountryCoordinates(countryName: string): Promise<[number, number] | null>;
     getDisplaySettings(): Promise<boolean | null>;
     getFileReference(path: string): Promise<FileReference>;
-    getJourney(city: string): Promise<Journey | null>;
+    getJourney(title: string): Promise<Journey | null>;
     getJourneyScheduleWithDays(journeyCity: string): Promise<Array<[string, Array<ScheduleItem>]>>;
     getLiveJourneys(): Promise<Array<Journey>>;
     getLocationInfo(name: string): Promise<LocationInfo | null>;
@@ -323,6 +332,8 @@ export interface backendInterface {
     getTravelSpotTypes(): Promise<Array<string>>;
     getTravelSpots(city: string): Promise<Array<TravelSpot>>;
     getTravelSpotsByCityAndType(city: string, spotType: string): Promise<Array<TravelSpot>>;
+    getTravelogueEntriesByJourney(journeyId: string): Promise<Array<TravelogueEntry>>;
+    getTravelogueEntry(journeyId: string): Promise<TravelogueEntry | null>;
     getUpcomingJourneys(): Promise<Array<Journey>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     getVibesByCity(): Promise<Array<[string, Array<VibeItem>]>>;
@@ -346,15 +357,16 @@ export interface backendInterface {
     updateCityAlbum(city: string, mediaFiles: Array<MediaFile>, socialMediaLinks: Array<SocialMediaLink>): Promise<boolean>;
     updateCityRating(city: string, rating: number, comment: string): Promise<boolean>;
     updateDashboard(): Promise<Array<[string, bigint, bigint]>>;
-    updateJourney(city: string, startDate: Time, endDate: Time): Promise<boolean>;
+    updateJourney(title: string, startDate: Time, endDate: Time): Promise<boolean>;
     updateLocationInfo(name: string, photoPath: string | null): Promise<boolean>;
     updateMapBookmark(coordinates: [number, number], name: string, description: string, city: string): Promise<boolean>;
     updateMusicAlbum(title: string, description: string, songs: Array<Song>): Promise<boolean>;
     updateScheduleItem(journeyCity: string, date: Time, time: string, location: string, activity: string): Promise<boolean>;
     updateTravelSpot(city: string, name: string, description: string | null, coordinates: [number, number], spotType: string, rating: number): Promise<boolean>;
+    updateTravelogueEntry(journeyId: string, content: string): Promise<boolean>;
     updateWebsiteLayoutSettings(showMusicPlayerBar: boolean, defaultSearchPlace: string, showAllTravelSpots: boolean, rippleSize: number, cityFontSize: number): Promise<boolean>;
 }
-import type { CityAlbum as _CityAlbum, CityRating as _CityRating, GeonameCity as _GeonameCity, Journey as _Journey, LocationInfo as _LocationInfo, MapBookmark as _MapBookmark, MediaFile as _MediaFile, MediaType as _MediaType, MusicAlbum as _MusicAlbum, SocialMediaLink as _SocialMediaLink, Song as _Song, Time as _Time, TravelSpot as _TravelSpot, UserProfile as _UserProfile, UserRole as _UserRole, WebsiteLayoutSettings as _WebsiteLayoutSettings, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
+import type { CityAlbum as _CityAlbum, CityRating as _CityRating, GeonameCity as _GeonameCity, Journey as _Journey, LocationInfo as _LocationInfo, MapBookmark as _MapBookmark, MediaFile as _MediaFile, MediaType as _MediaType, MusicAlbum as _MusicAlbum, SocialMediaLink as _SocialMediaLink, Song as _Song, Time as _Time, TravelSpot as _TravelSpot, TravelogueEntry as _TravelogueEntry, UserProfile as _UserProfile, UserRole as _UserRole, WebsiteLayoutSettings as _WebsiteLayoutSettings, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _caffeineStorageBlobsToDelete(): Promise<Array<string>> {
@@ -623,6 +635,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async addTravelogueEntry(arg0: string, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addTravelogueEntry(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addTravelogueEntry(arg0, arg1);
+            return result;
+        }
+    }
     async addWebsiteLayoutSettings(arg0: boolean, arg1: string, arg2: boolean, arg3: number, arg4: number): Promise<void> {
         if (this.processError) {
             try {
@@ -774,6 +800,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.deleteTravelSpot(arg0, arg1);
+            return result;
+        }
+    }
+    async deleteTravelogueEntry(arg0: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteTravelogueEntry(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteTravelogueEntry(arg0);
             return result;
         }
     }
@@ -1013,6 +1053,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getAllTravelSpotsForMap();
             return from_candid_vec_n22(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getAllTravelogueEntries(): Promise<Array<TravelogueEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllTravelogueEntries();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllTravelogueEntries();
+            return result;
         }
     }
     async getAllVibes(): Promise<Array<VibeItem>> {
@@ -1659,6 +1713,34 @@ export class Backend implements backendInterface {
             return from_candid_vec_n22(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getTravelogueEntriesByJourney(arg0: string): Promise<Array<TravelogueEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getTravelogueEntriesByJourney(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getTravelogueEntriesByJourney(arg0);
+            return result;
+        }
+    }
+    async getTravelogueEntry(arg0: string): Promise<TravelogueEntry | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getTravelogueEntry(arg0);
+                return from_candid_opt_n54(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getTravelogueEntry(arg0);
+            return from_candid_opt_n54(this._uploadFile, this._downloadFile, result);
+        }
+    }
     async getUpcomingJourneys(): Promise<Array<Journey>> {
         if (this.processError) {
             try {
@@ -1705,14 +1787,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getWebsiteLayoutSettings();
-                return from_candid_opt_n54(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n55(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getWebsiteLayoutSettings();
-            return from_candid_opt_n54(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n55(this._uploadFile, this._downloadFile, result);
         }
     }
     async importCities(arg0: Array<GeonameCity>): Promise<void> {
@@ -2065,6 +2147,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async updateTravelogueEntry(arg0: string, arg1: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateTravelogueEntry(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateTravelogueEntry(arg0, arg1);
+            return result;
+        }
+    }
     async updateWebsiteLayoutSettings(arg0: boolean, arg1: string, arg2: boolean, arg3: number, arg4: number): Promise<boolean> {
         if (this.processError) {
             try {
@@ -2140,7 +2236,10 @@ function from_candid_opt_n52(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
 function from_candid_opt_n53(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_MusicAlbum]): MusicAlbum | null {
     return value.length === 0 ? null : from_candid_MusicAlbum_n38(_uploadFile, _downloadFile, value[0]);
 }
-function from_candid_opt_n54(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_WebsiteLayoutSettings]): WebsiteLayoutSettings | null {
+function from_candid_opt_n54(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_TravelogueEntry]): TravelogueEntry | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n55(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_WebsiteLayoutSettings]): WebsiteLayoutSettings | null {
     return value.length === 0 ? null : value[0];
 }
 function from_candid_opt_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [boolean]): boolean | null {

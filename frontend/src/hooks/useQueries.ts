@@ -1,94 +1,52 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type {
-  Journey,
-  LocationInfo,
-  CityRating,
-  CityAlbum,
-  TravelSpot,
-  MusicAlbum,
-  Song,
-  WebsiteLayoutSettings,
-  ScheduleItem,
-  MapBookmark,
-  MediaFile,
-  SocialMediaLink,
-  GeonameCity,
-  UserProfile,
-  VibeItem,
-} from '../backend';
+import type { Journey, TravelogueEntry, CityRating, CityAlbum, TravelSpot, MusicAlbum, Song, ScheduleItem, MapBookmark, GeonameCity, MediaFile, SocialMediaLink, LocationInfo } from '../backend';
 
-// ─── Supported Countries ──────────────────────────────────────────────────────
-
-export const SUPPORTED_COUNTRIES = [
-  'United States', 'Canada', 'Brazil', 'United Kingdom', 'France',
-  'Germany', 'India', 'China', 'Australia', 'Japan',
-];
+// ─── Country / Location helpers ───────────────────────────────────────────────
 
 const COUNTRY_NAME_MAP: Record<string, string> = {
-  'united states': 'United States', 'canada': 'Canada', 'brazil': 'Brazil',
-  'united kingdom': 'United Kingdom', 'france': 'France', 'germany': 'Germany',
-  'india': 'India', 'china': 'China', 'australia': 'Australia', 'japan': 'Japan',
-  'usa': 'United States', 'us': 'United States', 'america': 'United States',
-  'united states of america': 'United States', 'uk': 'United Kingdom',
-  'britain': 'United Kingdom', 'great britain': 'United Kingdom',
-  'england': 'United Kingdom', 'deutschland': 'Germany', 'nippon': 'Japan',
-  'nihon': 'Japan', "people's republic of china": 'China', 'prc': 'China',
-  'republic of india': 'India', 'bharat': 'India',
-  'commonwealth of australia': 'Australia', 'aussie': 'Australia', 'oz': 'Australia',
-  'french republic': 'France', 'federal republic of germany': 'Germany',
-  'federative republic of brazil': 'Brazil', 'brasil': 'Brazil',
+  'united states': 'United States',
+  'canada': 'Canada',
+  'brazil': 'Brazil',
+  'united kingdom': 'United Kingdom',
+  'france': 'France',
+  'germany': 'Germany',
+  'india': 'India',
+  'china': 'China',
+  'australia': 'Australia',
+  'japan': 'Japan',
+  'usa': 'United States',
+  'us': 'United States',
+  'america': 'United States',
+  'united states of america': 'United States',
+  'uk': 'United Kingdom',
+  'britain': 'United Kingdom',
+  'great britain': 'United Kingdom',
+  'england': 'United Kingdom',
+  'deutschland': 'Germany',
+  'nippon': 'Japan',
+  'nihon': 'Japan',
+  "people's republic of china": 'China',
+  'prc': 'China',
+  'republic of india': 'India',
+  'bharat': 'India',
+  'commonwealth of australia': 'Australia',
+  'aussie': 'Australia',
+  'oz': 'Australia',
+  'french republic': 'France',
+  'federal republic of germany': 'Germany',
+  'federative republic of brazil': 'Brazil',
+  'brasil': 'Brazil',
 };
+
+export const SUPPORTED_COUNTRIES: string[] = Array.from(
+  new Set(Object.values(COUNTRY_NAME_MAP))
+).sort();
 
 function normalizeCountryName(input: string): string | null {
   const normalized = input.toLowerCase().trim();
   return COUNTRY_NAME_MAP[normalized] || null;
 }
-
-// ─── Social Media URL Validation ──────────────────────────────────────────────
-
-export function validateSocialMediaUrl(url: string): { isValid: boolean; platform: string; error?: string } {
-  try {
-    const urlObj = new URL(url);
-    const hostname = urlObj.hostname.toLowerCase();
-
-    if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
-      const youtubePatterns = [
-        /youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/,
-        /youtube\.com\/embed\/([a-zA-Z0-9_-]+)/,
-        /youtu\.be\/([a-zA-Z0-9_-]+)/,
-      ];
-      const hasValidPattern = youtubePatterns.some((p) => p.test(url));
-      if (!hasValidPattern) {
-        return { isValid: false, platform: 'youtube', error: 'Invalid YouTube video URL format' };
-      }
-      return { isValid: true, platform: 'youtube' };
-    }
-
-    if (hostname.includes('instagram.com')) {
-      const instagramPatterns = [
-        /instagram\.com\/p\/([a-zA-Z0-9_-]+)/,
-        /instagram\.com\/reel\/([a-zA-Z0-9_-]+)/,
-        /instagram\.com\/tv\/([a-zA-Z0-9_-]+)/,
-      ];
-      const hasValidPattern = instagramPatterns.some((p) => p.test(url));
-      if (!hasValidPattern) {
-        return {
-          isValid: false,
-          platform: 'instagram',
-          error: 'Invalid Instagram video URL format. Please use post, reel, or IGTV URLs.',
-        };
-      }
-      return { isValid: true, platform: 'instagram' };
-    }
-
-    return { isValid: false, platform: 'unknown', error: 'Only YouTube and Instagram video URLs are supported' };
-  } catch {
-    return { isValid: false, platform: 'unknown', error: 'Invalid URL format' };
-  }
-}
-
-// ─── Location Search / Geocoding ──────────────────────────────────────────────
 
 interface LocationResult {
   coordinates: [number, number];
@@ -109,51 +67,24 @@ async function geocodeLocation(query: string): Promise<LocationResult | null> {
     if (!response.ok) throw new Error('Geocoding request failed');
     const data = await response.json();
     if (!data || data.length === 0) return null;
-
     const result = data[0];
     const lat = parseFloat(result.lat);
     const lng = parseFloat(result.lon);
     if (isNaN(lat) || isNaN(lng)) return null;
-
     let locationType: 'country' | 'city' | 'town' | 'village' = 'city';
-    if (result.type === 'country' || result.class === 'boundary') {
-      locationType = 'country';
-    } else if (result.type === 'village' || result.type === 'hamlet') {
-      locationType = 'village';
-    } else if (result.type === 'town') {
-      locationType = 'town';
-    }
-
+    if (result.type === 'country' || result.class === 'boundary') locationType = 'country';
+    else if (result.type === 'village' || result.type === 'hamlet') locationType = 'village';
+    else if (result.type === 'town') locationType = 'town';
     const address = result.address || {};
     const name = address.city || address.town || address.village || address.country || result.name || query;
-
-    return {
-      coordinates: [lat, lng],
-      name,
-      searchQuery: query,
-      type: locationType,
-      country: address.country,
-      state: address.state || address.region,
-    };
+    return { coordinates: [lat, lng], name, searchQuery: query, type: locationType, country: address.country, state: address.state || address.region };
   } catch {
     return null;
   }
 }
 
-export async function validateLocationSearchable(location: string): Promise<boolean> {
-  if (!location || location.trim() === '') return false;
-  try {
-    if (normalizeCountryName(location)) return true;
-    const result = await geocodeLocation(location.trim());
-    return result !== null;
-  } catch {
-    return false;
-  }
-}
-
 export function useSearchLocation() {
   const { actor } = useActor();
-
   return useMutation<LocationResult | null, Error, string>({
     mutationFn: async (locationName: string) => {
       const normalizedCountryName = normalizeCountryName(locationName);
@@ -168,84 +99,49 @@ export function useSearchLocation() {
           // fall through to geocoding
         }
       }
-      return await geocodeLocation(locationName);
+      return geocodeLocation(locationName);
     },
   });
 }
 
-// ─── Website Layout Preferences (alias for WebsiteLayoutSettings) ─────────────
+// ─── Social media URL validation ──────────────────────────────────────────────
 
-interface WebsiteLayoutPreferences {
-  showMusicPlayer: boolean;
-  defaultSearchPlace: string;
-  showAllTravelSpots: boolean;
-  rippleSize?: number;
-  cityFontSize?: number;
+export function validateSocialMediaUrl(url: string): { isValid: boolean; platform: string; error?: string } {
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.toLowerCase();
+    if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
+      const youtubePatterns = [
+        /youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/,
+        /youtube\.com\/embed\/([a-zA-Z0-9_-]+)/,
+        /youtu\.be\/([a-zA-Z0-9_-]+)/,
+      ];
+      if (!youtubePatterns.some(p => p.test(url))) {
+        return { isValid: false, platform: 'youtube', error: 'Invalid YouTube video URL format' };
+      }
+      return { isValid: true, platform: 'youtube' };
+    }
+    if (hostname.includes('instagram.com')) {
+      const instagramPatterns = [
+        /instagram\.com\/p\/([a-zA-Z0-9_-]+)/,
+        /instagram\.com\/reel\/([a-zA-Z0-9_-]+)/,
+        /instagram\.com\/tv\/([a-zA-Z0-9_-]+)/,
+      ];
+      if (!instagramPatterns.some(p => p.test(url))) {
+        return { isValid: false, platform: 'instagram', error: 'Invalid Instagram video URL format. Please use post, reel, or IGTV URLs.' };
+      }
+      return { isValid: true, platform: 'instagram' };
+    }
+    return { isValid: false, platform: 'unknown', error: 'Only YouTube and Instagram video URLs are supported' };
+  } catch {
+    return { isValid: false, platform: 'unknown', error: 'Invalid URL format' };
+  }
 }
 
-export function useGetWebsiteLayoutPreferences() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<WebsiteLayoutPreferences | null>({
-    queryKey: ['websiteLayoutPreferences'],
-    queryFn: async () => {
-      if (!actor) return null;
-      const settings = await actor.getWebsiteLayoutSettings();
-      if (!settings) return null;
-      return {
-        showMusicPlayer: settings.showMusicPlayerBar,
-        defaultSearchPlace: settings.defaultSearchPlace,
-        showAllTravelSpots: settings.showAllTravelSpots,
-        rippleSize: settings.rippleSize,
-        cityFontSize: settings.cityFontSize,
-      };
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-// ─── User Profile ─────────────────────────────────────────────────────────────
-
-export function useGetCallerUserProfile() {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  const query = useQuery<UserProfile | null>({
-    queryKey: ['currentUserProfile'],
-    queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.getCallerUserProfile();
-    },
-    enabled: !!actor && !actorFetching,
-    retry: false,
-  });
-
-  return {
-    ...query,
-    isLoading: actorFetching || query.isLoading,
-    isFetched: !!actor && query.isFetched,
-  };
-}
-
-export function useSaveCallerUserProfile() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (profile: UserProfile) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.saveCallerUserProfile(profile);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
-    },
-  });
-}
-
-// ─── Journeys ─────────────────────────────────────────────────────────────────
+// ─── Journeys ────────────────────────────────────────────────────────────────
 
 export function useGetAllJourneys() {
   const { actor, isFetching } = useActor();
-
   return useQuery<Journey[]>({
     queryKey: ['journeys'],
     queryFn: async () => {
@@ -258,7 +154,6 @@ export function useGetAllJourneys() {
 
 export function useGetLiveJourneys() {
   const { actor, isFetching } = useActor();
-
   return useQuery<Journey[]>({
     queryKey: ['liveJourneys'],
     queryFn: async () => {
@@ -271,7 +166,6 @@ export function useGetLiveJourneys() {
 
 export function useGetUpcomingJourneys() {
   const { actor, isFetching } = useActor();
-
   return useQuery<Journey[]>({
     queryKey: ['upcomingJourneys'],
     queryFn: async () => {
@@ -284,7 +178,6 @@ export function useGetUpcomingJourneys() {
 
 export function useGetPreviousJourneys() {
   const { actor, isFetching } = useActor();
-
   return useQuery<Journey[]>({
     queryKey: ['previousJourneys'],
     queryFn: async () => {
@@ -298,31 +191,10 @@ export function useGetPreviousJourneys() {
 export function useAddJourney() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      title, city, startDate, endDate,
-    }: { title: string; city: string; startDate: bigint; endDate: bigint }) => {
+    mutationFn: async ({ title, city, startDate, endDate }: { title: string; city: string; startDate: bigint; endDate: bigint }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.addJourney(title, city, startDate, endDate);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['journeys'] });
-      queryClient.invalidateQueries({ queryKey: ['liveJourneys'] });
-      queryClient.invalidateQueries({ queryKey: ['upcomingJourneys'] });
-      queryClient.invalidateQueries({ queryKey: ['previousJourneys'] });
-    },
-  });
-}
-
-export function useDeleteJourney() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (city: string) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.deleteJourney(city);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['journeys'] });
@@ -336,13 +208,10 @@ export function useDeleteJourney() {
 export function useUpdateJourney() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      city, startDate, endDate,
-    }: { city: string; startDate: bigint; endDate: bigint }) => {
+    mutationFn: async ({ title, startDate, endDate }: { title: string; startDate: bigint; endDate: bigint }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.updateJourney(city, startDate, endDate);
+      return actor.updateJourney(title, startDate, endDate);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['journeys'] });
@@ -353,79 +222,77 @@ export function useUpdateJourney() {
   });
 }
 
-// ─── Location Info ─────────────────────────────────────────────────────────────
-
-export function useGetAllLocationInfo() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<LocationInfo[]>({
-    queryKey: ['locationInfo'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllLocationInfo();
+export function useDeleteJourney() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (title: string) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.deleteJourney(title);
     },
-    enabled: !!actor && !isFetching,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['journeys'] });
+      queryClient.invalidateQueries({ queryKey: ['liveJourneys'] });
+      queryClient.invalidateQueries({ queryKey: ['upcomingJourneys'] });
+      queryClient.invalidateQueries({ queryKey: ['previousJourneys'] });
+    },
   });
 }
 
-export function useGetLocationInfo(locationName: string) {
-  const { actor, isFetching } = useActor();
+// ─── Travelogue ───────────────────────────────────────────────────────────────
 
-  return useQuery<LocationInfo | null>({
-    queryKey: ['locationInfo', locationName],
+// Sub-step 3a: fetch by journeyId (journey.title) instead of city
+export function useGetTravelogueEntry(journeyId: string) {
+  const { actor, isFetching } = useActor();
+  return useQuery<TravelogueEntry | null>({
+    queryKey: ['travelogueEntry', journeyId],
     queryFn: async () => {
       if (!actor) return null;
-      return actor.getLocationInfo(locationName);
+      const result = await actor.getTravelogueEntry(journeyId);
+      return result ?? null;
     },
-    enabled: !!actor && !isFetching && !!locationName,
+    enabled: !!actor && !isFetching && !!journeyId,
   });
 }
 
-export function useAddLocationInfo() {
+export function useAddTravelogueEntry() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      name, coordinates, photoPath,
-    }: { name: string; coordinates: [number, number]; photoPath: string | null }) => {
+    mutationFn: async ({ journeyId, content }: { journeyId: string; content: string }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.addLocationInfo(name, coordinates, photoPath);
+      return actor.addTravelogueEntry(journeyId, content);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['locationInfo'] });
-    },
-  });
-}
-
-export function useUpdateLocationInfo() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      name, photoPath,
-    }: { name: string; photoPath: string | null }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.updateLocationInfo(name, photoPath);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['locationInfo'] });
+    onSuccess: (_, { journeyId }) => {
+      queryClient.invalidateQueries({ queryKey: ['travelogueEntry', journeyId] });
     },
   });
 }
 
-export function useDeleteLocationInfo() {
+export function useUpdateTravelogueEntry() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (name: string) => {
+    mutationFn: async ({ journeyId, content }: { journeyId: string; content: string }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.deleteLocationInfo(name);
+      return actor.updateTravelogueEntry(journeyId, content);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['locationInfo'] });
+    onSuccess: (_, { journeyId }) => {
+      queryClient.invalidateQueries({ queryKey: ['travelogueEntry', journeyId] });
+    },
+  });
+}
+
+export function useDeleteTravelogueEntry() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (journeyId: string) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.deleteTravelogueEntry(journeyId);
+    },
+    onSuccess: (_, journeyId) => {
+      queryClient.invalidateQueries({ queryKey: ['travelogueEntry', journeyId] });
     },
   });
 }
@@ -434,7 +301,6 @@ export function useDeleteLocationInfo() {
 
 export function useGetAllCityRatings() {
   const { actor, isFetching } = useActor();
-
   return useQuery<CityRating[]>({
     queryKey: ['cityRatings'],
     queryFn: async () => {
@@ -447,12 +313,12 @@ export function useGetAllCityRatings() {
 
 export function useGetCityRating(city: string) {
   const { actor, isFetching } = useActor();
-
   return useQuery<CityRating | null>({
     queryKey: ['cityRating', city],
     queryFn: async () => {
       if (!actor) return null;
-      return actor.getCityRating(city);
+      const result = await actor.getCityRating(city);
+      return result ?? null;
     },
     enabled: !!actor && !isFetching && !!city,
   });
@@ -460,12 +326,12 @@ export function useGetCityRating(city: string) {
 
 export function useGetCityRatingForPopup(city: string) {
   const { actor, isFetching } = useActor();
-
   return useQuery<number | null>({
     queryKey: ['cityRatingForPopup', city],
     queryFn: async () => {
       if (!actor) return null;
-      return actor.getCityRatingForPopup(city);
+      const result = await actor.getCityRatingForPopup(city);
+      return result ?? null;
     },
     enabled: !!actor && !isFetching && !!city,
   });
@@ -474,16 +340,15 @@ export function useGetCityRatingForPopup(city: string) {
 export function useAddCityRating() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      city, rating, comment,
-    }: { city: string; rating: number; comment: string }) => {
+    mutationFn: async ({ city, rating, comment }: { city: string; rating: number; comment: string }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.addCityRating(city, rating, comment);
     },
-    onSuccess: () => {
+    onSuccess: (_, { city }) => {
       queryClient.invalidateQueries({ queryKey: ['cityRatings'] });
+      queryClient.invalidateQueries({ queryKey: ['cityRating', city] });
+      queryClient.invalidateQueries({ queryKey: ['cityRatingForPopup', city] });
     },
   });
 }
@@ -491,16 +356,15 @@ export function useAddCityRating() {
 export function useUpdateCityRating() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      city, rating, comment,
-    }: { city: string; rating: number; comment: string }) => {
+    mutationFn: async ({ city, rating, comment }: { city: string; rating: number; comment: string }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.updateCityRating(city, rating, comment);
     },
-    onSuccess: () => {
+    onSuccess: (_, { city }) => {
       queryClient.invalidateQueries({ queryKey: ['cityRatings'] });
+      queryClient.invalidateQueries({ queryKey: ['cityRating', city] });
+      queryClient.invalidateQueries({ queryKey: ['cityRatingForPopup', city] });
     },
   });
 }
@@ -508,23 +372,36 @@ export function useUpdateCityRating() {
 export function useDeleteCityRating() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (city: string) => {
       if (!actor) throw new Error('Actor not available');
       return actor.deleteCityRating(city);
     },
-    onSuccess: () => {
+    onSuccess: (_, city) => {
       queryClient.invalidateQueries({ queryKey: ['cityRatings'] });
+      queryClient.invalidateQueries({ queryKey: ['cityRating', city] });
+      queryClient.invalidateQueries({ queryKey: ['cityRatingForPopup', city] });
     },
   });
 }
 
 // ─── City Albums ──────────────────────────────────────────────────────────────
 
+export function useGetCityAlbum(city: string) {
+  const { actor, isFetching } = useActor();
+  return useQuery<CityAlbum | null>({
+    queryKey: ['cityAlbum', city],
+    queryFn: async () => {
+      if (!actor) return null;
+      const result = await actor.getCityAlbum(city);
+      return result ?? null;
+    },
+    enabled: !!actor && !isFetching && !!city,
+  });
+}
+
 export function useGetAllCityAlbums() {
   const { actor, isFetching } = useActor();
-
   return useQuery<CityAlbum[]>({
     queryKey: ['cityAlbums'],
     queryFn: async () => {
@@ -535,32 +412,17 @@ export function useGetAllCityAlbums() {
   });
 }
 
-export function useGetCityAlbum(city: string) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<CityAlbum | null>({
-    queryKey: ['cityAlbum', city],
-    queryFn: async () => {
-      if (!actor) return null;
-      return actor.getCityAlbum(city);
-    },
-    enabled: !!actor && !isFetching && !!city,
-  });
-}
-
 export function useAddCityAlbum() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      city, mediaFiles, socialMediaLinks,
-    }: { city: string; mediaFiles: MediaFile[]; socialMediaLinks: SocialMediaLink[] }) => {
+    mutationFn: async ({ city, mediaFiles, socialMediaLinks }: { city: string; mediaFiles: MediaFile[]; socialMediaLinks: SocialMediaLink[] }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.addCityAlbum(city, mediaFiles, socialMediaLinks);
     },
-    onSuccess: () => {
+    onSuccess: (_, { city }) => {
       queryClient.invalidateQueries({ queryKey: ['cityAlbums'] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbum', city] });
     },
   });
 }
@@ -568,16 +430,29 @@ export function useAddCityAlbum() {
 export function useUpdateCityAlbum() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      city, mediaFiles, socialMediaLinks,
-    }: { city: string; mediaFiles: MediaFile[]; socialMediaLinks: SocialMediaLink[] }) => {
+    mutationFn: async ({ city, mediaFiles, socialMediaLinks }: { city: string; mediaFiles: MediaFile[]; socialMediaLinks: SocialMediaLink[] }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.updateCityAlbum(city, mediaFiles, socialMediaLinks);
     },
-    onSuccess: () => {
+    onSuccess: (_, { city }) => {
       queryClient.invalidateQueries({ queryKey: ['cityAlbums'] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbum', city] });
+    },
+  });
+}
+
+export function useDeleteCityAlbum() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (city: string) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.deleteCityAlbum(city);
+    },
+    onSuccess: (_, city) => {
+      queryClient.invalidateQueries({ queryKey: ['cityAlbums'] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbum', city] });
     },
   });
 }
@@ -585,17 +460,14 @@ export function useUpdateCityAlbum() {
 export function useAddMediaToCityAlbum() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      city, mediaFile,
-    }: { city: string; mediaFile: MediaFile }) => {
+    mutationFn: async ({ city, mediaFile }: { city: string; mediaFile: MediaFile }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.addMediaToCityAlbum(city, mediaFile);
     },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['cityAlbum', variables.city] });
+    onSuccess: (_, { city }) => {
       queryClient.invalidateQueries({ queryKey: ['cityAlbums'] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbum', city] });
     },
   });
 }
@@ -603,17 +475,14 @@ export function useAddMediaToCityAlbum() {
 export function useRemoveMediaFromCityAlbum() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      city, mediaPath,
-    }: { city: string; mediaPath: string }) => {
+    mutationFn: async ({ city, mediaPath }: { city: string; mediaPath: string }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.removeMediaFromCityAlbum(city, mediaPath);
     },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['cityAlbum', variables.city] });
+    onSuccess: (_, { city }) => {
       queryClient.invalidateQueries({ queryKey: ['cityAlbums'] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbum', city] });
     },
   });
 }
@@ -621,17 +490,14 @@ export function useRemoveMediaFromCityAlbum() {
 export function useAddSocialMediaLinkToCityAlbum() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      city, socialMediaLink,
-    }: { city: string; socialMediaLink: SocialMediaLink }) => {
+    mutationFn: async ({ city, socialMediaLink }: { city: string; socialMediaLink: SocialMediaLink }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.addSocialMediaLinkToCityAlbum(city, socialMediaLink);
     },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['cityAlbum', variables.city] });
+    onSuccess: (_, { city }) => {
       queryClient.invalidateQueries({ queryKey: ['cityAlbums'] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbum', city] });
     },
   });
 }
@@ -639,51 +505,22 @@ export function useAddSocialMediaLinkToCityAlbum() {
 export function useRemoveSocialMediaLinkFromCityAlbum() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async ({ city, url }: { city: string; url: string }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.removeSocialMediaLinkFromCityAlbum(city, url);
     },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['cityAlbum', variables.city] });
+    onSuccess: (_, { city }) => {
       queryClient.invalidateQueries({ queryKey: ['cityAlbums'] });
+      queryClient.invalidateQueries({ queryKey: ['cityAlbum', city] });
     },
   });
 }
 
 // ─── Travel Spots ─────────────────────────────────────────────────────────────
 
-export function useGetAllTravelSpots() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<TravelSpot[]>({
-    queryKey: ['travelSpots'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllTravelSpots();
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-// Alias for map usage
-export function useGetAllTravelSpotsForMap() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<TravelSpot[]>({
-    queryKey: ['travelSpotsForMap'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllTravelSpotsForMap();
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
 export function useGetTravelSpots(city: string) {
   const { actor, isFetching } = useActor();
-
   return useQuery<TravelSpot[]>({
     queryKey: ['travelSpots', city],
     queryFn: async () => {
@@ -694,10 +531,33 @@ export function useGetTravelSpots(city: string) {
   });
 }
 
+export function useGetAllTravelSpots() {
+  const { actor, isFetching } = useActor();
+  return useQuery<TravelSpot[]>({
+    queryKey: ['allTravelSpots'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllTravelSpots();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetAllTravelSpotsForMap() {
+  const { actor, isFetching } = useActor();
+  return useQuery<TravelSpot[]>({
+    queryKey: ['allTravelSpotsForMap'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllTravelSpotsForMap();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
 export function useGetTravelSpotSummaryByCity() {
   const { actor, isFetching } = useActor();
-
-  return useQuery<[string, bigint][]>({
+  return useQuery<Array<[string, bigint]>>({
     queryKey: ['travelSpotSummaryByCity'],
     queryFn: async () => {
       if (!actor) return [];
@@ -709,7 +569,6 @@ export function useGetTravelSpotSummaryByCity() {
 
 export function useGetTravelSpotMediaFiles(city: string, spotName: string) {
   const { actor, isFetching } = useActor();
-
   return useQuery<MediaFile[]>({
     queryKey: ['travelSpotMediaFiles', city, spotName],
     queryFn: async () => {
@@ -722,7 +581,6 @@ export function useGetTravelSpotMediaFiles(city: string, spotName: string) {
 
 export function useGetTravelSpotSocialMediaLinks(city: string, spotName: string) {
   const { actor, isFetching } = useActor();
-
   return useQuery<SocialMediaLink[]>({
     queryKey: ['travelSpotSocialMediaLinks', city, spotName],
     queryFn: async () => {
@@ -736,17 +594,16 @@ export function useGetTravelSpotSocialMediaLinks(city: string, spotName: string)
 export function useAddTravelSpot() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      city, name, description, coordinates, spotType, rating,
-    }: { city: string; name: string; description: string | null; coordinates: [number, number]; spotType: string; rating: number }) => {
+    mutationFn: async ({ city, name, description, coordinates, spotType, rating }: { city: string; name: string; description: string | null; coordinates: [number, number]; spotType: string; rating: number }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.addTravelSpot(city, name, description, coordinates, spotType, rating);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['travelSpots'] });
-      queryClient.invalidateQueries({ queryKey: ['travelSpotsForMap'] });
+    onSuccess: (_, { city }) => {
+      queryClient.invalidateQueries({ queryKey: ['travelSpots', city] });
+      queryClient.invalidateQueries({ queryKey: ['allTravelSpots'] });
+      queryClient.invalidateQueries({ queryKey: ['allTravelSpotsForMap'] });
+      queryClient.invalidateQueries({ queryKey: ['travelSpotSummaryByCity'] });
     },
   });
 }
@@ -754,17 +611,15 @@ export function useAddTravelSpot() {
 export function useUpdateTravelSpot() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      city, name, description, coordinates, spotType, rating,
-    }: { city: string; name: string; description: string | null; coordinates: [number, number]; spotType: string; rating: number }) => {
+    mutationFn: async ({ city, name, description, coordinates, spotType, rating }: { city: string; name: string; description: string | null; coordinates: [number, number]; spotType: string; rating: number }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.updateTravelSpot(city, name, description, coordinates, spotType, rating);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['travelSpots'] });
-      queryClient.invalidateQueries({ queryKey: ['travelSpotsForMap'] });
+    onSuccess: (_, { city }) => {
+      queryClient.invalidateQueries({ queryKey: ['travelSpots', city] });
+      queryClient.invalidateQueries({ queryKey: ['allTravelSpots'] });
+      queryClient.invalidateQueries({ queryKey: ['allTravelSpotsForMap'] });
     },
   });
 }
@@ -772,15 +627,16 @@ export function useUpdateTravelSpot() {
 export function useDeleteTravelSpot() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async ({ city, name }: { city: string; name: string }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.deleteTravelSpot(city, name);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['travelSpots'] });
-      queryClient.invalidateQueries({ queryKey: ['travelSpotsForMap'] });
+    onSuccess: (_, { city }) => {
+      queryClient.invalidateQueries({ queryKey: ['travelSpots', city] });
+      queryClient.invalidateQueries({ queryKey: ['allTravelSpots'] });
+      queryClient.invalidateQueries({ queryKey: ['allTravelSpotsForMap'] });
+      queryClient.invalidateQueries({ queryKey: ['travelSpotSummaryByCity'] });
     },
   });
 }
@@ -788,17 +644,14 @@ export function useDeleteTravelSpot() {
 export function useAddMediaToTravelSpot() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      city, spotName, mediaFile,
-    }: { city: string; spotName: string; mediaFile: MediaFile }) => {
+    mutationFn: async ({ city, spotName, mediaFile }: { city: string; spotName: string; mediaFile: MediaFile }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.addMediaToTravelSpot(city, spotName, mediaFile);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['travelSpots'] });
-      queryClient.invalidateQueries({ queryKey: ['travelSpotsForMap'] });
+    onSuccess: (_, { city, spotName }) => {
+      queryClient.invalidateQueries({ queryKey: ['travelSpotMediaFiles', city, spotName] });
+      queryClient.invalidateQueries({ queryKey: ['travelSpots', city] });
     },
   });
 }
@@ -806,16 +659,14 @@ export function useAddMediaToTravelSpot() {
 export function useRemoveMediaFromTravelSpot() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      city, spotName, mediaPath,
-    }: { city: string; spotName: string; mediaPath: string }) => {
+    mutationFn: async ({ city, spotName, mediaPath }: { city: string; spotName: string; mediaPath: string }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.removeMediaFromTravelSpot(city, spotName, mediaPath);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['travelSpots'] });
+    onSuccess: (_, { city, spotName }) => {
+      queryClient.invalidateQueries({ queryKey: ['travelSpotMediaFiles', city, spotName] });
+      queryClient.invalidateQueries({ queryKey: ['travelSpots', city] });
     },
   });
 }
@@ -823,16 +674,14 @@ export function useRemoveMediaFromTravelSpot() {
 export function useAddSocialMediaLinkToTravelSpot() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      city, spotName, socialMediaLink,
-    }: { city: string; spotName: string; socialMediaLink: SocialMediaLink }) => {
+    mutationFn: async ({ city, spotName, socialMediaLink }: { city: string; spotName: string; socialMediaLink: SocialMediaLink }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.addSocialMediaLinkToTravelSpot(city, spotName, socialMediaLink);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['travelSpots'] });
+    onSuccess: (_, { city, spotName }) => {
+      queryClient.invalidateQueries({ queryKey: ['travelSpotSocialMediaLinks', city, spotName] });
+      queryClient.invalidateQueries({ queryKey: ['travelSpots', city] });
     },
   });
 }
@@ -840,16 +689,14 @@ export function useAddSocialMediaLinkToTravelSpot() {
 export function useRemoveSocialMediaLinkFromTravelSpot() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      city, spotName, url,
-    }: { city: string; spotName: string; url: string }) => {
+    mutationFn: async ({ city, spotName, url }: { city: string; spotName: string; url: string }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.removeSocialMediaLinkFromTravelSpot(city, spotName, url);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['travelSpots'] });
+    onSuccess: (_, { city, spotName }) => {
+      queryClient.invalidateQueries({ queryKey: ['travelSpotSocialMediaLinks', city, spotName] });
+      queryClient.invalidateQueries({ queryKey: ['travelSpots', city] });
     },
   });
 }
@@ -858,7 +705,6 @@ export function useRemoveSocialMediaLinkFromTravelSpot() {
 
 export function useGetAllMusicAlbums() {
   const { actor, isFetching } = useActor();
-
   return useQuery<MusicAlbum[]>({
     queryKey: ['musicAlbums'],
     queryFn: async () => {
@@ -872,11 +718,8 @@ export function useGetAllMusicAlbums() {
 export function useAddMusicAlbum() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      title, description, songs,
-    }: { title: string; description: string; songs: Song[] }) => {
+    mutationFn: async ({ title, description, songs }: { title: string; description: string; songs: Song[] }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.addMusicAlbum(title, description, songs);
     },
@@ -889,11 +732,8 @@ export function useAddMusicAlbum() {
 export function useUpdateMusicAlbum() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      title, description, songs,
-    }: { title: string; description: string; songs: Song[] }) => {
+    mutationFn: async ({ title, description, songs }: { title: string; description: string; songs: Song[] }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.updateMusicAlbum(title, description, songs);
     },
@@ -906,7 +746,6 @@ export function useUpdateMusicAlbum() {
 export function useDeleteMusicAlbum() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (title: string) => {
       if (!actor) throw new Error('Actor not available');
@@ -921,7 +760,6 @@ export function useDeleteMusicAlbum() {
 export function useAddSongToMusicAlbum() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async ({ title, song }: { title: string; song: Song }) => {
       if (!actor) throw new Error('Actor not available');
@@ -936,11 +774,8 @@ export function useAddSongToMusicAlbum() {
 export function useRemoveSongFromMusicAlbum() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      title, songTitle,
-    }: { title: string; songTitle: string }) => {
+    mutationFn: async ({ title, songTitle }: { title: string; songTitle: string }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.removeSongFromMusicAlbum(title, songTitle);
     },
@@ -950,52 +785,62 @@ export function useRemoveSongFromMusicAlbum() {
   });
 }
 
-// ─── Website Layout Settings ──────────────────────────────────────────────────
+// ─── Website Layout ───────────────────────────────────────────────────────────
 
-export function useGetWebsiteLayoutSettings() {
+export type WebsiteLayoutPreferences = {
+  showMusicPlayer: boolean;
+  defaultSearchPlace: string;
+  showAllTravelSpots: boolean;
+  rippleSize: number;
+  cityFontSize: number;
+};
+
+export function useGetWebsiteLayoutPreferences() {
   const { actor, isFetching } = useActor();
-
-  return useQuery<WebsiteLayoutSettings | null>({
-    queryKey: ['websiteLayoutSettings'],
+  return useQuery<WebsiteLayoutPreferences | null>({
+    queryKey: ['websiteLayoutPreferences'],
     queryFn: async () => {
       if (!actor) return null;
-      return actor.getWebsiteLayoutSettings();
+      const result = await actor.getWebsiteLayoutSettings();
+      if (!result) return null;
+      return {
+        showMusicPlayer: result.showMusicPlayerBar,
+        defaultSearchPlace: result.defaultSearchPlace,
+        showAllTravelSpots: result.showAllTravelSpots,
+        rippleSize: result.rippleSize,
+        cityFontSize: result.cityFontSize,
+      };
     },
     enabled: !!actor && !isFetching,
   });
 }
 
-export function useAddWebsiteLayoutSettings() {
+export function useSaveWebsiteLayoutPreferences() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      showMusicPlayerBar, defaultSearchPlace, showAllTravelSpots, rippleSize, cityFontSize,
-    }: { showMusicPlayerBar: boolean; defaultSearchPlace: string; showAllTravelSpots: boolean; rippleSize: number; cityFontSize: number }) => {
+    mutationFn: async (prefs: WebsiteLayoutPreferences) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.addWebsiteLayoutSettings(showMusicPlayerBar, defaultSearchPlace, showAllTravelSpots, rippleSize, cityFontSize);
+      const existing = await actor.getWebsiteLayoutSettings();
+      if (existing) {
+        return actor.updateWebsiteLayoutSettings(
+          prefs.showMusicPlayer,
+          prefs.defaultSearchPlace,
+          prefs.showAllTravelSpots,
+          prefs.rippleSize,
+          prefs.cityFontSize,
+        );
+      } else {
+        return actor.addWebsiteLayoutSettings(
+          prefs.showMusicPlayer,
+          prefs.defaultSearchPlace,
+          prefs.showAllTravelSpots,
+          prefs.rippleSize,
+          prefs.cityFontSize,
+        );
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['websiteLayoutSettings'] });
-      queryClient.invalidateQueries({ queryKey: ['websiteLayoutPreferences'] });
-    },
-  });
-}
-
-export function useUpdateWebsiteLayoutSettings() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      showMusicPlayerBar, defaultSearchPlace, showAllTravelSpots, rippleSize, cityFontSize,
-    }: { showMusicPlayerBar: boolean; defaultSearchPlace: string; showAllTravelSpots: boolean; rippleSize: number; cityFontSize: number }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.updateWebsiteLayoutSettings(showMusicPlayerBar, defaultSearchPlace, showAllTravelSpots, rippleSize, cityFontSize);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['websiteLayoutSettings'] });
       queryClient.invalidateQueries({ queryKey: ['websiteLayoutPreferences'] });
     },
   });
@@ -1003,56 +848,33 @@ export function useUpdateWebsiteLayoutSettings() {
 
 // ─── Schedule Items ───────────────────────────────────────────────────────────
 
-/**
- * Fetch schedule items for a specific journey using its unique journey key.
- * Use getJourneyKey(journey) from journeyUtils.ts to generate the key.
- */
-export function useGetScheduleItems(journeyKey: string) {
+export function useGetScheduleItems(journeyCity: string) {
   const { actor, isFetching } = useActor();
-
   return useQuery<ScheduleItem[]>({
-    queryKey: ['scheduleItems', journeyKey],
+    queryKey: ['scheduleItems', journeyCity],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getScheduleItems(journeyKey);
+      return actor.getScheduleItems(journeyCity);
     },
-    enabled: !!actor && !isFetching && !!journeyKey,
+    enabled: !!actor && !isFetching && !!journeyCity,
   });
 }
 
-/**
- * Fetch schedule items grouped by day for a specific journey using its unique journey key.
- */
-export function useGetJourneyScheduleWithDays(journeyKey: string) {
+export function useGetJourneyScheduleWithDays(journeyCity: string) {
   const { actor, isFetching } = useActor();
-
   return useQuery<[string, ScheduleItem[]][]>({
-    queryKey: ['journeyScheduleWithDays', journeyKey],
+    queryKey: ['journeyScheduleWithDays', journeyCity],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getJourneyScheduleWithDays(journeyKey);
+      return actor.getJourneyScheduleWithDays(journeyCity);
     },
-    enabled: !!actor && !isFetching && !!journeyKey,
-  });
-}
-
-export function useGetAllScheduleItems() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<ScheduleItem[]>({
-    queryKey: ['allScheduleItems'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllScheduleItems();
-    },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !isFetching && !!journeyCity,
   });
 }
 
 export function useGetAllScheduleItemsWithCoordinates() {
   const { actor, isFetching } = useActor();
-
-  return useQuery<[ScheduleItem, [number, number]][]>({
+  return useQuery<Array<[ScheduleItem, [number, number]]>>({
     queryKey: ['allScheduleItemsWithCoordinates'],
     queryFn: async () => {
       if (!actor) return [];
@@ -1065,18 +887,14 @@ export function useGetAllScheduleItemsWithCoordinates() {
 export function useAddScheduleItem() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      journeyKey, date, time, location, activity,
-    }: { journeyKey: string; date: bigint; time: string; location: string; activity: string }) => {
+    mutationFn: async ({ journeyCity, date, time, location, activity }: { journeyCity: string; date: bigint; time: string; location: string; activity: string }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.addScheduleItem(journeyKey, date, time, location, activity);
+      return actor.addScheduleItem(journeyCity, date, time, location, activity);
     },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['scheduleItems', variables.journeyKey] });
-      queryClient.invalidateQueries({ queryKey: ['journeyScheduleWithDays', variables.journeyKey] });
-      queryClient.invalidateQueries({ queryKey: ['allScheduleItems'] });
+    onSuccess: (_, { journeyCity }) => {
+      queryClient.invalidateQueries({ queryKey: ['scheduleItems', journeyCity] });
+      queryClient.invalidateQueries({ queryKey: ['journeyScheduleWithDays', journeyCity] });
       queryClient.invalidateQueries({ queryKey: ['allScheduleItemsWithCoordinates'] });
     },
   });
@@ -1085,18 +903,14 @@ export function useAddScheduleItem() {
 export function useUpdateScheduleItem() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      journeyKey, date, time, location, activity,
-    }: { journeyKey: string; date: bigint; time: string; location: string; activity: string }) => {
+    mutationFn: async ({ journeyCity, date, time, location, activity }: { journeyCity: string; date: bigint; time: string; location: string; activity: string }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.updateScheduleItem(journeyKey, date, time, location, activity);
+      return actor.updateScheduleItem(journeyCity, date, time, location, activity);
     },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['scheduleItems', variables.journeyKey] });
-      queryClient.invalidateQueries({ queryKey: ['journeyScheduleWithDays', variables.journeyKey] });
-      queryClient.invalidateQueries({ queryKey: ['allScheduleItems'] });
+    onSuccess: (_, { journeyCity }) => {
+      queryClient.invalidateQueries({ queryKey: ['scheduleItems', journeyCity] });
+      queryClient.invalidateQueries({ queryKey: ['journeyScheduleWithDays', journeyCity] });
       queryClient.invalidateQueries({ queryKey: ['allScheduleItemsWithCoordinates'] });
     },
   });
@@ -1105,37 +919,15 @@ export function useUpdateScheduleItem() {
 export function useDeleteScheduleItem() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      journeyKey, date, time,
-    }: { journeyKey: string; date: bigint; time: string }) => {
+    mutationFn: async ({ journeyCity, date, time }: { journeyCity: string; date: bigint; time: string }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.deleteScheduleItem(journeyKey, date, time);
+      return actor.deleteScheduleItem(journeyCity, date, time);
     },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['scheduleItems', variables.journeyKey] });
-      queryClient.invalidateQueries({ queryKey: ['journeyScheduleWithDays', variables.journeyKey] });
-      queryClient.invalidateQueries({ queryKey: ['allScheduleItems'] });
+    onSuccess: (_, { journeyCity }) => {
+      queryClient.invalidateQueries({ queryKey: ['scheduleItems', journeyCity] });
+      queryClient.invalidateQueries({ queryKey: ['journeyScheduleWithDays', journeyCity] });
       queryClient.invalidateQueries({ queryKey: ['allScheduleItemsWithCoordinates'] });
-    },
-  });
-}
-
-export function useReorderScheduleItems() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      journeyKey, newOrder,
-    }: { journeyKey: string; newOrder: ScheduleItem[] }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.reorderScheduleItems(journeyKey, newOrder);
-    },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['scheduleItems', variables.journeyKey] });
-      queryClient.invalidateQueries({ queryKey: ['journeyScheduleWithDays', variables.journeyKey] });
     },
   });
 }
@@ -1144,7 +936,6 @@ export function useReorderScheduleItems() {
 
 export function useGetMapBookmarks() {
   const { actor, isFetching } = useActor();
-
   return useQuery<MapBookmark[]>({
     queryKey: ['mapBookmarks'],
     queryFn: async () => {
@@ -1155,33 +946,16 @@ export function useGetMapBookmarks() {
   });
 }
 
-export function useGetAllMapBookmarks() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<MapBookmark[]>({
-    queryKey: ['allMapBookmarks'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllMapBookmarks();
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
 export function useAddMapBookmark() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      coordinates, name, description, city,
-    }: { coordinates: [number, number]; name: string; description: string; city: string }) => {
+    mutationFn: async ({ coordinates, name, description, city }: { coordinates: [number, number]; name: string; description: string; city: string }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.addMapBookmark(coordinates, name, description, city);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mapBookmarks'] });
-      queryClient.invalidateQueries({ queryKey: ['allMapBookmarks'] });
     },
   });
 }
@@ -1189,17 +963,13 @@ export function useAddMapBookmark() {
 export function useUpdateMapBookmark() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      coordinates, name, description, city,
-    }: { coordinates: [number, number]; name: string; description: string; city: string }) => {
+    mutationFn: async ({ coordinates, name, description, city }: { coordinates: [number, number]; name: string; description: string; city: string }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.updateMapBookmark(coordinates, name, description, city);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mapBookmarks'] });
-      queryClient.invalidateQueries({ queryKey: ['allMapBookmarks'] });
     },
   });
 }
@@ -1207,7 +977,6 @@ export function useUpdateMapBookmark() {
 export function useDeleteMapBookmark() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (name: string) => {
       if (!actor) throw new Error('Actor not available');
@@ -1215,18 +984,14 @@ export function useDeleteMapBookmark() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mapBookmarks'] });
-      queryClient.invalidateQueries({ queryKey: ['allMapBookmarks'] });
     },
   });
 }
 
-// ─── Vibes ────────────────────────────────────────────────────────────────────
-
 export function useGetAllBookmarksAndTravelSpotsByCity() {
   const { actor, isFetching } = useActor();
-
-  return useQuery<[string, VibeItem[]][]>({
-    queryKey: ['bookmarksAndTravelSpotsByCity'],
+  return useQuery<Array<[string, import('../backend').VibeItem[]]>>({
+    queryKey: ['allBookmarksAndTravelSpotsByCity'],
     queryFn: async () => {
       if (!actor) return [];
       return actor.getAllBookmarksAndTravelSpotsByCity();
@@ -1235,39 +1000,24 @@ export function useGetAllBookmarksAndTravelSpotsByCity() {
   });
 }
 
-export function useGetAllCitiesWithRatingsAndTravelSpots() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<[string, number | null, TravelSpot[]][]>({
-    queryKey: ['citiesWithRatingsAndTravelSpots'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllCitiesWithRatingsAndTravelSpots();
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
 // ─── Geoname Cities ───────────────────────────────────────────────────────────
 
-export function useGetAllCities() {
+export function useSearchCities(searchTerm: string, page: number = 0, pageSize: number = 20) {
   const { actor, isFetching } = useActor();
-
   return useQuery<GeonameCity[]>({
-    queryKey: ['geonameCities'],
+    queryKey: ['searchCities', searchTerm, page, pageSize],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getAllCities();
+      return actor.searchCities(searchTerm, BigInt(page), BigInt(pageSize));
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !isFetching && searchTerm.trim().length > 0,
   });
 }
 
-export function useGetCitiesPaginated(page: number, pageSize: number) {
+export function useGetCitiesPaginated(page: number = 0, pageSize: number = 20) {
   const { actor, isFetching } = useActor();
-
   return useQuery<GeonameCity[]>({
-    queryKey: ['geonameCitiesPaginated', page, pageSize],
+    queryKey: ['citiesPaginated', page, pageSize],
     queryFn: async () => {
       if (!actor) return [];
       return actor.getCitiesPaginated(BigInt(page), BigInt(pageSize));
@@ -1276,31 +1026,17 @@ export function useGetCitiesPaginated(page: number, pageSize: number) {
   });
 }
 
-export function useSearchCities(searchTerm: string, page: number, pageSize: number) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<GeonameCity[]>({
-    queryKey: ['searchCities', searchTerm, page, pageSize],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.searchCities(searchTerm, BigInt(page), BigInt(pageSize));
-    },
-    enabled: !!actor && !isFetching && !!searchTerm,
-  });
-}
-
 export function useImportCities() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (cities: GeonameCity[]) => {
       if (!actor) throw new Error('Actor not available');
       return actor.importCities(cities);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['geonameCities'] });
-      queryClient.invalidateQueries({ queryKey: ['geonameCitiesPaginated'] });
+      queryClient.invalidateQueries({ queryKey: ['citiesPaginated'] });
+      queryClient.invalidateQueries({ queryKey: ['searchCities'] });
     },
   });
 }
@@ -1308,15 +1044,14 @@ export function useImportCities() {
 export function useAddCity() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (city: GeonameCity) => {
       if (!actor) throw new Error('Actor not available');
       return actor.addCity(city);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['geonameCities'] });
-      queryClient.invalidateQueries({ queryKey: ['geonameCitiesPaginated'] });
+      queryClient.invalidateQueries({ queryKey: ['citiesPaginated'] });
+      queryClient.invalidateQueries({ queryKey: ['searchCities'] });
     },
   });
 }
@@ -1324,15 +1059,14 @@ export function useAddCity() {
 export function useUpdateCity() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async ({ name, city }: { name: string; city: GeonameCity }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.updateCity(name, city);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['geonameCities'] });
-      queryClient.invalidateQueries({ queryKey: ['geonameCitiesPaginated'] });
+      queryClient.invalidateQueries({ queryKey: ['citiesPaginated'] });
+      queryClient.invalidateQueries({ queryKey: ['searchCities'] });
     },
   });
 }
@@ -1340,32 +1074,70 @@ export function useUpdateCity() {
 export function useDeleteCity() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (name: string) => {
       if (!actor) throw new Error('Actor not available');
       return actor.deleteCity(name);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['geonameCities'] });
-      queryClient.invalidateQueries({ queryKey: ['geonameCitiesPaginated'] });
+      queryClient.invalidateQueries({ queryKey: ['citiesPaginated'] });
+      queryClient.invalidateQueries({ queryKey: ['searchCities'] });
     },
   });
 }
 
-// ─── Timezone ─────────────────────────────────────────────────────────────────
+// ─── Location Info ────────────────────────────────────────────────────────────
 
-export function useSetTimezoneGeoJson() {
+export function useGetAllLocationInfo() {
+  const { actor, isFetching } = useActor();
+  return useQuery<LocationInfo[]>({
+    queryKey: ['locationInfo'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllLocationInfo();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useAddLocationInfo() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (json: string) => {
+    mutationFn: async ({ name, coordinates, photoPath }: { name: string; coordinates: [number, number]; photoPath: string | null }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.setTimezoneGeoJson(json);
+      return actor.addLocationInfo(name, coordinates, photoPath);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['timezoneGeoJson'] });
+      queryClient.invalidateQueries({ queryKey: ['locationInfo'] });
+    },
+  });
+}
+
+export function useUpdateLocationInfo() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ name, photoPath }: { name: string; photoPath: string | null }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.updateLocationInfo(name, photoPath);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['locationInfo'] });
+    },
+  });
+}
+
+export function useDeleteLocationInfo() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (name: string) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.deleteLocationInfo(name);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['locationInfo'] });
     },
   });
 }

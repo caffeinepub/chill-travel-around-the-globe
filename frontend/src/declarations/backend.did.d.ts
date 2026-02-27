@@ -107,6 +107,12 @@ export interface TravelSpot {
   'mediaFiles' : Array<MediaFile>,
   'coordinates' : [number, number],
 }
+export interface TravelogueEntry {
+  'content' : string,
+  'createdAt' : Time,
+  'journeyId' : string,
+  'updatedAt' : Time,
+}
 export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
@@ -191,6 +197,7 @@ export interface _SERVICE {
     [string, string, [] | [string], [number, number], string, number],
     undefined
   >,
+  'addTravelogueEntry' : ActorMethod<[string, string], undefined>,
   'addWebsiteLayoutSettings' : ActorMethod<
     [boolean, string, boolean, number, number],
     undefined
@@ -205,6 +212,7 @@ export interface _SERVICE {
   'deleteMusicAlbum' : ActorMethod<[string], boolean>,
   'deleteScheduleItem' : ActorMethod<[string, Time, string], boolean>,
   'deleteTravelSpot' : ActorMethod<[string, string], boolean>,
+  'deleteTravelogueEntry' : ActorMethod<[string], boolean>,
   'deleteWebsiteLayoutSettings' : ActorMethod<[], boolean>,
   'dropFileReference' : ActorMethod<[string], undefined>,
   'getAdmins' : ActorMethod<[], Array<Principal>>,
@@ -234,6 +242,7 @@ export interface _SERVICE {
   >,
   'getAllTravelSpots' : ActorMethod<[], Array<TravelSpot>>,
   'getAllTravelSpotsForMap' : ActorMethod<[], Array<TravelSpot>>,
+  'getAllTravelogueEntries' : ActorMethod<[], Array<TravelogueEntry>>,
   'getAllVibes' : ActorMethod<[], Array<VibeItem>>,
   'getAllWebsiteLayoutSettings' : ActorMethod<[], Array<WebsiteLayoutSettings>>,
   'getAverageCityRating' : ActorMethod<[string], number>,
@@ -301,6 +310,11 @@ export interface _SERVICE {
     [string, string],
     Array<TravelSpot>
   >,
+  'getTravelogueEntriesByJourney' : ActorMethod<
+    [string],
+    Array<TravelogueEntry>
+  >,
+  'getTravelogueEntry' : ActorMethod<[string], [] | [TravelogueEntry]>,
   'getUpcomingJourneys' : ActorMethod<[], Array<Journey>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'getVibesByCity' : ActorMethod<[], Array<[string, Array<VibeItem>]>>,
@@ -345,6 +359,7 @@ export interface _SERVICE {
     [string, string, [] | [string], [number, number], string, number],
     boolean
   >,
+  'updateTravelogueEntry' : ActorMethod<[string, string], boolean>,
   'updateWebsiteLayoutSettings' : ActorMethod<
     [boolean, string, boolean, number, number],
     boolean

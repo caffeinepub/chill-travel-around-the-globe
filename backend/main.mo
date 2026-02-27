@@ -12,15 +12,13 @@ import Float "mo:base/Float";
 import Array "mo:base/Array";
 import Int "mo:base/Int";
 
-
-
 actor {
   transient let textMap = OrderedMap.Make<Text>(Text.compare);
   transient let principalMap = OrderedMap.Make<Principal>(Principal.compare);
 
   var countryCoordinates = textMap.empty<(Float, Float)>();
   var locationInfo = textMap.empty<LocationInfo>();
-  var journeys = textMap.empty<[Journey]>();
+  var journeys = textMap.empty<Journey>();
   var userProfiles = principalMap.empty<UserProfile>();
   var cityRatings = textMap.empty<CityRating>();
   var cityAlbums = textMap.empty<CityAlbum>();
@@ -181,6 +179,14 @@ actor {
     population : Int;
     featureCode : Text;
     classification : Text;
+  };
+
+  // Travelogue Entry
+  type TravelogueEntry = {
+    journeyId : Text;
+    content : Text;
+    createdAt : Time.Time;
+    updatedAt : Time.Time;
   };
 
   // Access Control Functions
@@ -363,116 +369,85 @@ actor {
       createdAt = currentTime;
       updatedAt = currentTime;
     };
-
-    let journeysForCity = switch (textMap.get(journeys, city)) {
-      case (null) { [] };
-      case (?existingJourneys) { existingJourneys };
-    };
-
-    let updatedJourneysForCity = Array.append(journeysForCity, [journey]);
-    journeys := textMap.put(journeys, city, updatedJourneysForCity);
+    journeys := textMap.put(journeys, title, journey);
   };
 
-  public shared ({ caller }) func updateJourney(city : Text, startDate : Time.Time, endDate : Time.Time) : async Bool {
+  public shared ({ caller }) func updateJourney(title : Text, startDate : Time.Time, endDate : Time.Time) : async Bool {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Debug.trap("Unauthorized: Only users can update journeys");
     };
-    switch (textMap.get(journeys, city)) {
+    switch (textMap.get(journeys, title)) {
       case (null) { false };
-      case (?existingJourneys) {
-        let updatedJourneys = Array.map<Journey, Journey>(
-          existingJourneys,
-          func(journey) {
-            { journey with startDate; endDate; updatedAt = Time.now() };
-          },
-        );
-        journeys := textMap.put(journeys, city, updatedJourneys);
+      case (?existingJourney) {
+        let updatedJourney : Journey = {
+          existingJourney with
+          startDate;
+          endDate;
+          updatedAt = Time.now();
+        };
+        journeys := textMap.put(journeys, title, updatedJourney);
         true;
       };
     };
   };
 
-  public shared ({ caller }) func deleteJourney(city : Text) : async Bool {
+  public shared ({ caller }) func deleteJourney(title : Text) : async Bool {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Debug.trap("Unauthorized: Only users can delete journeys");
     };
-    switch (textMap.get(journeys, city)) {
+    let (newMap, removedValue) = textMap.remove(journeys, title);
+    journeys := newMap;
+    switch (removedValue) {
       case (null) { false };
-      case (?existingJourneys) {
-        journeys := textMap.put(journeys, city, []);
-        existingJourneys.size() > 0;
-      };
+      case (?_) { true };
     };
   };
 
-  public query func getJourney(city : Text) : async ?Journey {
-    switch (textMap.get(journeys, city)) {
-      case (null) { null };
-      case (?journeysForCity) {
-        if (journeysForCity.size() > 0) {
-          ?journeysForCity[0];
-        } else {
-          null;
-        };
-      };
-    };
+  public query func getJourney(title : Text) : async ?Journey {
+    textMap.get(journeys, title);
   };
 
   public query func getAllJourneys() : async [Journey] {
-    var allJourneys = List.nil<Journey>();
-
-    for (journeysForCity in textMap.vals(journeys)) {
-      for (journey in Iter.fromArray(journeysForCity)) {
-        allJourneys := List.push(journey, allJourneys);
-      };
-    };
-
-    List.toArray(allJourneys);
+    Iter.toArray(textMap.vals(journeys));
   };
 
   public query func getLiveJourneys() : async [Journey] {
     let currentTime = Time.now();
-    var liveJourneys = List.nil<Journey>();
+    var liveList = List.nil<Journey>();
 
-    for (journeysForCity in textMap.vals(journeys)) {
-      for (journey in Iter.fromArray(journeysForCity)) {
-        if (journey.startDate <= currentTime and currentTime <= journey.endDate) {
-          liveJourneys := List.push(journey, liveJourneys);
-        };
+    for (journey in textMap.vals(journeys)) {
+      if (journey.startDate <= currentTime and currentTime <= journey.endDate) {
+        liveList := List.push(journey, liveList);
       };
     };
 
-    List.toArray(liveJourneys);
+    List.toArray(liveList);
   };
 
   public query func getUpcomingJourneys() : async [Journey] {
     let currentTime = Time.now();
-    var upcomingJourneys = List.nil<Journey>();
+    var upcomingList = List.nil<Journey>();
 
-    for (journeysForCity in textMap.vals(journeys)) {
-      for (journey in Iter.fromArray(journeysForCity)) {
-        if (journey.startDate > currentTime) {
-          upcomingJourneys := List.push(journey, upcomingJourneys);
-        };
+    for (journey in textMap.vals(journeys)) {
+      if (journey.startDate > currentTime) {
+        upcomingList := List.push(journey, upcomingList);
       };
     };
 
-    List.toArray(upcomingJourneys);
+    List.toArray(upcomingList);
   };
 
   public query func getPreviousJourneys() : async [Journey] {
     let currentTime = Time.now();
-    var previousJourneys = List.nil<Journey>();
+    var previousList = List.nil<Journey>();
 
-    for (journeysForCity in textMap.vals(journeys)) {
-      for (journey in Iter.fromArray(journeysForCity)) {
-        if (journey.endDate < currentTime) {
-          previousJourneys := List.push(journey, previousJourneys);
-        };
+    for (journey in textMap.vals(journeys)) {
+      if (journey.endDate < currentTime) {
+        previousList := List.push(journey, previousList);
       };
     };
 
-    List.toArray(previousJourneys);
+    List.toArray(previousList);
   };
 
   // City Rating System (Users only for modifications, public for reading)
@@ -746,6 +721,68 @@ actor {
       case (?album) { album.socialMediaLinks };
     };
   };
+
+  // Travelogue Management (CRUD operations)
+  public shared ({ caller }) func addTravelogueEntry(journeyId : Text, content : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Debug.trap("Unauthorized: Only users can add travelogue entries");
+    };
+    let currentTime = Time.now();
+    let entry : TravelogueEntry = {
+      journeyId;
+      content;
+      createdAt = currentTime;
+      updatedAt = currentTime;
+    };
+    travelogueEntries := textMap.put(travelogueEntries, journeyId, entry);
+  };
+
+  public shared ({ caller }) func updateTravelogueEntry(journeyId : Text, content : Text) : async Bool {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Debug.trap("Unauthorized: Only users can update travelogue entries");
+    };
+    switch (textMap.get(travelogueEntries, journeyId)) {
+      case (null) { false };
+      case (?existingEntry) {
+        let updatedEntry : TravelogueEntry = {
+          existingEntry with
+          content;
+          updatedAt = Time.now();
+        };
+        travelogueEntries := textMap.put(travelogueEntries, journeyId, updatedEntry);
+        true;
+      };
+    };
+  };
+
+  public shared ({ caller }) func deleteTravelogueEntry(journeyId : Text) : async Bool {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Debug.trap("Unauthorized: Only users can delete travelogue entries");
+    };
+    let (newMap, removedValue) = textMap.remove(travelogueEntries, journeyId);
+    travelogueEntries := newMap;
+    switch (removedValue) {
+      case (null) { false };
+      case (?_) { true };
+    };
+  };
+
+  public query func getTravelogueEntry(journeyId : Text) : async ?TravelogueEntry {
+    textMap.get(travelogueEntries, journeyId);
+  };
+
+  public query func getAllTravelogueEntries() : async [TravelogueEntry] {
+    Iter.toArray(textMap.vals(travelogueEntries));
+  };
+
+  public query func getTravelogueEntriesByJourney(journeyId : Text) : async [TravelogueEntry] {
+    Array.filter<TravelogueEntry>(
+      Iter.toArray(textMap.vals(travelogueEntries)),
+      func(entry) { entry.journeyId == journeyId },
+    );
+  };
+
+  var travelogueEntries = textMap.empty<TravelogueEntry>();
 
   // Travel Spot Management (Users only for modifications, public for reading)
   public shared ({ caller }) func addTravelSpot(city : Text, name : Text, description : ?Text, coordinates : (Float, Float), spotType : Text, rating : Float) : async () {

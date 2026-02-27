@@ -1,20 +1,20 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Travel journey app where users can create multiple journeys per city, each with their own independent travelogue. Currently working on scoping travelogue/schedule items per journey ID so each journey title has its own entries.",
+  "summary": "Travel journey app where users can create multiple journeys for the same city. Working on travelogue data isolation (Step 3) to ensure each journey's travelogue is fetched and stored by journey ID. Currently executing Sub-step 3a: update travelogue fetch logic to use journeyId.",
   "architectural_notes": [
-    "Travelogue/schedule items should be keyed by journeyId (not cityId) so multiple journeys to the same city each have independent entries",
-    "Journey ID (tied to journey title) is the primary key for scoping all travelogue entries"
+    "Each implementation step must only change the specific logic/UI area targeted — no unrelated layout, panel, or component changes allowed.",
+    "Multiple journeys per city are now supported (Step 1 complete); backend allows duplicate city journeys.",
+    "Travelogue data must be keyed and isolated by journeyId, not by city name or global key."
   ],
   "known_issues": [
-    "Multiple journeys for the same city currently share the same travelogue/schedule items instead of having independent ones",
-    "Repeated AI context limit failures when attempting backend data model changes to scope items per journey"
+    "Step 3 travelogue data isolation hitting repeated internal LLM errors when attempted as a single pass; split into sub-steps 3a/3b/3c."
   ],
-  "isFixRequest": true,
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-in-traveloguepanel-tsx-when-displaying-schedule-items-for-a-selected-journey-filter-the-schedule-items-by-the-journey-s-unique-id-so-that-only-items-belonging-to-that-specific-journey-are-shown-each-journey-title-must-display-only-its-own-travelogue-entries-independent-of-other-journeys-that-share-the-same-city",
-      "title": "In TraveloguePanel.tsx, when displaying schedule items for a selected journey, filter the schedule items by the journey's unique ID so that only items belonging to that specific journey are shown. Each journey title must display only its own travelogue entries, independent of other journeys that share the same city.",
+      "id": "feature-update-the-travelogue-data-fetch-logic-so-that-travelogue-entries-are-queried-and-loaded-by-journeyid-rather-than-by-city-name-or-any-global-shared-key-this-change-must-be-confined-strictly-to-the-fetch-read-path-for-travelogue-data-no-other-ui-layout-panel-component-or-styling-must-be-modified",
+      "title": "Update the travelogue data fetch logic so that travelogue entries are queried and loaded by journeyId rather than by city name or any global/shared key. This change must be confined strictly to the fetch/read path for travelogue data. No other UI layout, panel, component, or styling must be modified.",
       "reqIds": [
         "REQ-1"
       ],
@@ -24,13 +24,25 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Scope travelogue entries by journey ID on the frontend so each journey has its own independent travelogue",
+      "summary": "Travelogue data isolation: fetch travelogue by journeyId (Sub-step 3a)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Travelogue data isolation: save travelogue by journeyId (Sub-step 3b)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Travelogue data isolation: delete/clear travelogue by journeyId (Sub-step 3c)",
       "reqIds": [],
       "status": "pending"
     }
   ],
   "gameProjectType": "none",
-  "projectName": "Travel Journeys",
+  "projectName": "Travel Travelogue Globe",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

@@ -2,10 +2,9 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-in-traveloguepanel-tsx-when-displaying-schedule-items-for-a-selected-journey-filter-the-schedule-items-by-the-journey-s-unique-id-so-that-only-items-belonging-to-that-specific-journey-are-shown-each-journey-title-must-display-only-its-own-travelogue-entries-independent-of-other-journeys-that-share-the-same-city",
-      "featureTitle": "In TraveloguePanel.tsx, when displaying schedule items for a selected journey, filter the schedule items by the journey's unique ID so that only items belonging to that specific journey are shown. Each journey title must display only its own travelogue entries, independent of other journeys that share the same city.",
+      "featureId": "feature-update-the-travelogue-data-fetch-logic-so-that-travelogue-entries-are-queried-and-loaded-by-journeyid-rather-than-by-city-name-or-any-global-shared-key-this-change-must-be-confined-strictly-to-the-fetch-read-path-for-travelogue-data-no-other-ui-layout-panel-component-or-styling-must-be-modified",
+      "featureTitle": "Update the travelogue data fetch logic so that travelogue entries are queried and loaded by journeyId rather than by city name or any global/shared key. This change must be confined strictly to the fetch/read path for travelogue data. No other UI layout, panel, component, or styling must be modified.",
       "files": [
-        "frontend/src/components/TraveloguePanel.tsx",
         "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
