@@ -1,34 +1,31 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-28T02:58:29.373Z",
-  "summary": "The diff implements TimeControls component insertion below the Global Control button in the left panel of LocationMapExplorer.tsx, with time state management and animation logic. REQ-1 and REQ-2 appear substantially addressed, but there is a critical gap: InteractiveGlobe is not shown receiving the currentTime/tcCurrentDate prop for terminator positioning, which is the core wiring requirement of REQ-2. The diff also shows an unused showTimeControls state variable that may indicate incomplete toggle logic.",
+  "generatedAt": "2026-02-28T01:41:58.057Z",
+  "summary": "The diff adds `frontend/src/components/TimeControls.tsx` as a new standalone React component with props for time state and handlers, and exports a default `TimeControls` component. `InteractiveGlobe.tsx` is not present in the modified files list. The component covers Real/Hourly/Yearly mode controls and a time display. However, the spec requires encapsulating 'the time button (the button that opens/toggles the time picker or time mode)' — the diff's props interface and rendered output don't clearly include a dedicated time-picker toggle button. Also, the spec says props should mirror what is currently used in InteractiveGlobe.tsx, but the diff uses a different prop shape that may or may not match.",
   "missing_requirements": [
     {
-      "id": "REQ-2",
-      "requirement": "Wire up the time state from LocationMapExplorer so the terminator on the InteractiveGlobe updates in response to the time controls.",
-      "reason": "The diff shows time state (tcCurrentDate) managed in LocationMapExplorer.tsx and the animation loop in place, but there is no evidence in the truncated diff that InteractiveGlobe receives the currentTime/tcCurrentDate prop or that InteractiveGlobe.tsx was modified to accept and use a time prop for terminator positioning. InteractiveGlobe.tsx does not appear in the modified files list at all.",
+      "id": "REQ-1",
+      "requirement": "The component must encapsulate the time button (the button that opens/toggles the time picker or time mode)",
+      "reason": "The diff shows controls for Real/Hourly/Yearly animation modes and a clock display, but no explicit time button that opens or toggles a time picker is visible in the component code. The spec specifically calls out this button as a required element.",
       "evidence": [
-        "frontend/src/pages/LocationMapExplorer.tsx",
         "frontend/src/components/TimeControls.tsx"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "A showTimeControls toggle state variable is declared, implying a toggle/visibility control for the TimeControls section itself.",
-      "reason": "The build request specifies inserting TimeControls directly below the Global Control button with no mention of a toggle or conditional visibility mechanism for the TimeControls section.",
+      "description": "Custom prop shape using formatHourlyDate and formatYearlyDate callbacks passed as props",
+      "reason": "The spec requires props mirroring what is currently used in InteractiveGlobe.tsx (citing examples like timeMode, onTimeModeChange, currentTime, onTimeChange). Passing date-formatting functions as props is an abstraction not mentioned in the spec and not evidenced as matching the existing InteractiveGlobe.tsx interface.",
       "evidence": [
-        "frontend/src/pages/LocationMapExplorer.tsx"
+        "frontend/src/components/TimeControls.tsx"
       ]
     }
   ],
-  "confidence": 0.72,
+  "confidence": 0.65,
   "changed_files": [
     "frontend-file-summaries.txt",
-    "frontend/src/components/CityloguePanel.tsx",
     "frontend/src/components/TimeControls.tsx",
-    "frontend/src/pages/LocationMapExplorer.tsx",
     "project_state.json"
   ]
 }

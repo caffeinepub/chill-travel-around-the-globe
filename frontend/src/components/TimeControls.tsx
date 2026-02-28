@@ -1,141 +1,115 @@
 import React from 'react';
-import { Play, Pause } from 'lucide-react';
+import { Clock, Play, Pause, RotateCcw, FastForward } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-type TimeMode = 'real' | 'hourly' | 'yearly';
+export type TimeMode = 'real' | 'hourly' | 'yearly';
 
-interface TimeControlsProps {
-  timeMode: TimeMode;
-  isPlaying: boolean;
-  currentTime: Date;
-  onTimeChange: (date: Date) => void;
-  onTimeModeChange: (mode: TimeMode) => void;
-  onPlayPause: () => void;
-  /** When true, renders a compact vertical layout for the left sidebar */
-  compact?: boolean;
+export interface TimeControlsProps {
+  /** The currently displayed date/time */
+  currentDate: Date;
+  /** Whether an animation (hourly or yearly) is currently running */
+  isAnimating: boolean;
+  /** Whether the yearly animation mode is active */
+  isYearlyAnimation: boolean;
+  /** Callback to toggle hourly play/pause */
+  onToggleAnimation: () => void;
+  /** Callback to start/pause the yearly animation */
+  onPlayYearlyAnimation: () => void;
+  /** Callback to pause the yearly animation */
+  onPauseYearlyAnimation: () => void;
+  /** Callback to sync back to real time */
+  onSyncToRealTime: () => void;
+  /** Format a date for hourly display */
+  formatHourlyDate: (date: Date) => string;
+  /** Format a date for yearly display */
+  formatYearlyDate: (date: Date) => string;
 }
 
+/**
+ * Standalone TimeControls component.
+ * Renders the time display, Real/Hourly/Yearly mode buttons, and play/pause controls.
+ * All state and handlers are passed in via props — this component is purely presentational.
+ */
 export default function TimeControls({
-  timeMode,
-  isPlaying,
-  currentTime,
-  onTimeModeChange,
-  onPlayPause,
-  compact = false,
+  currentDate,
+  isAnimating,
+  isYearlyAnimation,
+  onToggleAnimation,
+  onPlayYearlyAnimation,
+  onPauseYearlyAnimation,
+  onSyncToRealTime,
+  formatHourlyDate,
+  formatYearlyDate,
 }: TimeControlsProps) {
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+  const isHourlyAnimating = isAnimating && !isYearlyAnimation;
+  const isYearlyAnimating = isAnimating && isYearlyAnimation;
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-  };
-
-  const formatYear = (date: Date) => {
-    return date.getFullYear().toString();
-  };
-
-  if (compact) {
-    // Compact vertical layout for the left sidebar (w-14 = 56px wide)
-    return (
-      <div className="w-full flex flex-col items-center gap-1 px-1 py-2 bg-muted/50 rounded-xl border border-border">
-        {/* Current time display */}
-        <div className="flex flex-col items-center leading-tight">
-          <span className="text-[9px] font-bold text-foreground tabular-nums">{formatTime(currentTime)}</span>
-          <span className="text-[8px] text-muted-foreground tabular-nums">{formatDate(currentTime)}</span>
-          <span className="text-[8px] text-muted-foreground tabular-nums">{formatYear(currentTime)}</span>
-        </div>
-
-        {/* Mode buttons — stacked vertically */}
-        <div className="flex flex-col items-center gap-0.5 w-full">
-          {(['real', 'hourly', 'yearly'] as TimeMode[]).map(mode => (
-            <button
-              key={mode}
-              onClick={() => onTimeModeChange(mode)}
-              className={`w-full px-1 py-0.5 rounded text-[8px] font-medium transition-colors capitalize leading-tight ${
-                timeMode === mode
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
-              }`}
-            >
-              {mode}
-            </button>
-          ))}
-        </div>
-
-        {/* Play/Pause button */}
-        <button
-          onClick={onPlayPause}
-          disabled={timeMode === 'real'}
-          className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors mt-0.5 ${
-            timeMode === 'real'
-              ? 'bg-muted text-muted-foreground opacity-40 cursor-not-allowed'
-              : isPlaying
-              ? 'bg-amber-500 text-white hover:bg-amber-600'
-              : 'bg-primary text-primary-foreground hover:bg-primary/90'
-          }`}
-          title={isPlaying ? 'Pause animation' : 'Play animation'}
-        >
-          {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-        </button>
-
-        {/* Status indicator */}
-        <div className="text-[7px] text-muted-foreground text-center leading-tight px-0.5">
-          {timeMode === 'real' && 'Live'}
-          {timeMode === 'hourly' && (isPlaying ? '▶ 24h' : '⏸ 24h')}
-          {timeMode === 'yearly' && (isPlaying ? '▶ yr' : '⏸ yr')}
-        </div>
-      </div>
-    );
-  }
-
-  // Default horizontal layout (kept for potential future use)
   return (
-    <div className="shrink-0 bg-card border-t border-border px-4 py-2 flex items-center gap-4">
-      {/* Current Time */}
-      <div className="flex flex-col leading-tight">
-        <span className="text-sm font-semibold text-foreground">{formatTime(currentTime)}</span>
-        <span className="text-xs text-muted-foreground">{formatDate(currentTime)} {formatYear(currentTime)}</span>
+    <div className="flex flex-col gap-2">
+      {/* Current date/time display */}
+      <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-black/30 backdrop-blur-sm border border-white/20">
+        <Clock className="h-3 w-3 text-white/70 shrink-0" />
+        <span className="text-xs text-white/90 font-mono leading-tight">
+          {isYearlyAnimation
+            ? formatYearlyDate(currentDate)
+            : formatHourlyDate(currentDate)}
+        </span>
       </div>
 
-      {/* Mode Buttons */}
+      {/* Mode buttons row */}
       <div className="flex items-center gap-1">
-        {(['real', 'hourly', 'yearly'] as TimeMode[]).map(mode => (
-          <button
-            key={mode}
-            onClick={() => onTimeModeChange(mode)}
-            className={`px-2 py-1 rounded text-xs font-medium transition-colors capitalize ${
-              timeMode === mode
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-            }`}
-          >
-            {mode}
-          </button>
-        ))}
+        {/* Real-time sync button */}
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={onSyncToRealTime}
+          className="h-7 px-2 text-xs text-white/80 hover:text-white hover:bg-white/20 bg-black/20 backdrop-blur-sm border border-white/20 rounded"
+          title="Sync to real time"
+        >
+          <RotateCcw className="h-3 w-3 mr-1" />
+          Real
+        </Button>
+
+        {/* Hourly animation button */}
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={isHourlyAnimating ? onToggleAnimation : onToggleAnimation}
+          className={`h-7 px-2 text-xs hover:text-white hover:bg-white/20 backdrop-blur-sm border rounded ${
+            isHourlyAnimating
+              ? 'text-white bg-white/30 border-white/40'
+              : 'text-white/80 bg-black/20 border-white/20'
+          }`}
+          title={isHourlyAnimating ? 'Pause hourly animation' : 'Play hourly animation'}
+        >
+          {isHourlyAnimating ? (
+            <Pause className="h-3 w-3 mr-1" />
+          ) : (
+            <Play className="h-3 w-3 mr-1" />
+          )}
+          Hourly
+        </Button>
+
+        {/* Yearly animation button */}
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={isYearlyAnimating ? onPauseYearlyAnimation : onPlayYearlyAnimation}
+          className={`h-7 px-2 text-xs hover:text-white hover:bg-white/20 backdrop-blur-sm border rounded ${
+            isYearlyAnimating
+              ? 'text-white bg-white/30 border-white/40'
+              : 'text-white/80 bg-black/20 border-white/20'
+          }`}
+          title={isYearlyAnimating ? 'Pause yearly animation' : 'Play yearly animation (full year)'}
+        >
+          {isYearlyAnimating ? (
+            <Pause className="h-3 w-3 mr-1" />
+          ) : (
+            <FastForward className="h-3 w-3 mr-1" />
+          )}
+          Yearly
+        </Button>
       </div>
-
-      {/* Play/Pause */}
-      <button
-        onClick={onPlayPause}
-        disabled={timeMode === 'real'}
-        className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
-          timeMode === 'real'
-            ? 'bg-muted text-muted-foreground opacity-40 cursor-not-allowed'
-            : isPlaying
-            ? 'bg-amber-500 text-white hover:bg-amber-600'
-            : 'bg-primary text-primary-foreground hover:bg-primary/90'
-        }`}
-        title={isPlaying ? 'Pause' : 'Play'}
-      >
-        {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-      </button>
-
-      {/* Description */}
-      <span className="text-xs text-muted-foreground hidden sm:block">
-        {timeMode === 'real' && 'Live time — terminator updates in real time'}
-        {timeMode === 'hourly' && 'Hourly — animate terminator through 24h'}
-        {timeMode === 'yearly' && 'Yearly — animate terminator through seasons'}
-      </span>
     </div>
   );
 }

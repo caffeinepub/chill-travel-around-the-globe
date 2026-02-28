@@ -1,29 +1,21 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "3D globe visualization project with day/night terminator, twilight zone controls, and time controls showing terminator movement animation.",
+  "summary": "Interactive Globe app with UI refactoring in progress. Moving time controls (time button + Real/Hourly/Yearly toggles) from bottom-right panel to below Terminator/Twilight Zone controls in the left panel. Using a 3-step atomic approach due to large file size limitations.",
   "architectural_notes": [
-    "UI changes must be surgical — only modify the specific layout area targeted, never alter other layout elements",
-    "Time Controls must be placed: below Global Control button, which is below Day/Night Terminator and Twilight Zone controls"
+    "InteractiveGlobe.tsx is very large and exceeds token/context limits when modified directly — use small atomic changes",
+    "Time controls are being extracted to TimeControls.tsx to allow small, focused changes"
   ],
   "known_issues": [
-    "Version 1155 broke UI layout and was reverted to v1153; v1153 is the current stable base"
+    "Repeated build failures when modifying InteractiveGlobe.tsx directly due to file size"
   ],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-in-the-left-panel-of-locationmapexplorer-tsx-insert-the-timecontrols-component-directly-below-the-global-control-button-section-which-itself-sits-below-the-day-night-terminator-and-twilight-zone-controls-no-other-layout-elements-ordering-styling-or-component-positions-in-the-left-panel-or-elsewhere-in-the-ui-should-be-changed-from-v1153",
-      "title": "In the left panel of LocationMapExplorer.tsx, insert the TimeControls component directly below the Global Control button section, which itself sits below the Day/Night Terminator and Twilight Zone controls. No other layout elements, ordering, styling, or component positions in the left panel or elsewhere in the UI should be changed from v1153.",
+      "id": "feature-create-a-new-standalone-react-component-file-frontend-src-components-timecontrols-tsx-that-encapsulates-the-time-button-the-button-that-opens-toggles-the-time-picker-or-time-mode-and-the-real-hourly-yearly-toggle-controls-the-component-must-accept-all-necessary-state-values-and-handler-callbacks-as-props-e-g-timemode-ontimemodechange-currenttime-ontimechange-or-equivalent-props-mirroring-what-is-currently-used-in-interactiveglobe-tsx-the-component-must-render-identically-to-the-existing-controls-in-the-bottom-right-panel-do-not-modify-interactiveglobe-tsx-in-this-step",
+      "title": "Create a new standalone React component file `frontend/src/components/TimeControls.tsx` that encapsulates the time button (the button that opens/toggles the time picker or time mode) and the Real/Hourly/Yearly toggle controls. The component must accept all necessary state values and handler callbacks as props (e.g., timeMode, onTimeModeChange, currentTime, onTimeChange, or equivalent props mirroring what is currently used in InteractiveGlobe.tsx). The component must render identically to the existing controls in the bottom-right panel. Do NOT modify `InteractiveGlobe.tsx` in this step.",
       "reqIds": [
         "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-ensure-the-timecontrols-component-retains-its-full-original-functionality-it-must-animate-and-display-how-the-solar-terminator-moves-across-the-3d-globe-at-different-times-of-day-including-real-hourly-and-yearly-modes-with-play-pause-controls-wire-up-the-time-state-from-locationmapexplorer-so-the-terminator-on-the-interactiveglobe-updates-in-response-to-the-time-controls",
-      "title": "Ensure the TimeControls component retains its full original functionality: it must animate and display how the solar terminator moves across the 3D globe at different times of day, including Real, Hourly, and Yearly modes with play/pause controls. Wire up the time state from LocationMapExplorer so the terminator on the InteractiveGlobe updates in response to the time controls.",
-      "reqIds": [
-        "REQ-2"
       ],
       "version": 1
     }
@@ -31,13 +23,25 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Add Time Controls button below Global Control button (below Day/Night Terminator and Twilight Zone), preserving terminator animation functionality showing how terminator moves across 3D globe at different times",
+      "summary": "Extract time controls into standalone TimeControls.tsx component (Step 1)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Render TimeControls in both bottom-right panel and below Terminator/Twilight Zone controls (Step 2)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Remove time controls from bottom-right panel after confirming new location works (Step 3)",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "gameProjectType": "3d",
-  "projectName": "Globe Explorer",
+  "gameProjectType": "none",
+  "projectName": "Interactive Globe",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

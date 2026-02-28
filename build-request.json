@@ -1,60 +1,42 @@
 {
   "kind": "build_request",
-  "title": "Add Time Controls below Global Control button (surgical placement only)",
+  "title": "Step 1: Extract TimeControls into standalone component",
   "projectName": "Globe Explorer",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "In the left panel of LocationMapExplorer.tsx, insert the TimeControls component directly below the Global Control button section, which itself sits below the Day/Night Terminator and Twilight Zone controls. No other layout elements, ordering, styling, or component positions in the left panel or elsewhere in the UI should be changed from v1153.",
+      "text": "Create a new standalone React component file `frontend/src/components/TimeControls.tsx` that encapsulates the time button (the button that opens/toggles the time picker or time mode) and the Real/Hourly/Yearly toggle controls. The component must accept all necessary state values and handler callbacks as props (e.g., timeMode, onTimeModeChange, currentTime, onTimeChange, or equivalent props mirroring what is currently used in InteractiveGlobe.tsx). The component must render identically to the existing controls in the bottom-right panel. Do NOT modify `InteractiveGlobe.tsx` in this step.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4",
-          "msg-6"
+          "msg-1",
+          "msg-2"
         ],
         "quotes": [
-          "I want them to below the global control button below the day/night terminator and twilight zone",
-          "I need each step to only change the UI layout affected. you always changed other layout which is not good."
+          "Create a new small file TimeControls.tsx containing just the time button + Real/Hourly/Yearly toggles, accepting the necessary props/handlers. No changes to the main file yet.",
+          "Starting Step 1 — creating the standalone TimeControls.tsx component with the time button and Real/Hourly/Yearly toggles, accepting all necessary props and handlers. No changes to InteractiveGlobe.tsx yet, keeping this change small and focused."
         ]
       },
       "acceptanceCriteria": [
-        "Time Controls section appears directly below the Global Control button in the left panel",
-        "Global Control button remains below the Day/Night Terminator and Twilight Zone controls, as in v1153",
-        "No other panel sections, buttons, or layout elements have moved, been restyled, or been removed compared to v1153",
-        "All other UI elements (map, right panel, top bar, music player, etc.) are pixel-identical to v1153"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Ensure the TimeControls component retains its full original functionality: it must animate and display how the solar terminator moves across the 3D globe at different times of day, including Real, Hourly, and Yearly modes with play/pause controls. Wire up the time state from LocationMapExplorer so the terminator on the InteractiveGlobe updates in response to the time controls.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "the button didn't carry its original features when added, which is it will show how the terminator moves on the 3d globe at different time"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Real, Hourly, and Yearly mode buttons are present and functional in the TimeControls component",
-        "Play/pause control animates the terminator across the 3D globe when activated",
-        "The solar terminator position on the InteractiveGlobe visually updates as time progresses during animation",
-        "Stopping or pausing the animation freezes the terminator at the current time position"
+        "`frontend/src/components/TimeControls.tsx` exists as a new file",
+        "The component exports a default or named `TimeControls` React component",
+        "The component accepts props for all state values and handlers needed to control time mode (Real/Hourly/Yearly) and the time button",
+        "The component renders the time button and Real/Hourly/Yearly toggle controls visually identical to the existing bottom-right panel controls in InteractiveGlobe.tsx",
+        "`InteractiveGlobe.tsx` is NOT modified in this step",
+        "The file compiles without TypeScript errors"
       ]
     }
   ],
   "constraints": [
-    "Only the specific section of the left panel around and below the Global Control button may be modified — no other layout, styling, or component changes are permitted",
-    "v1153 is the stable base; all changes must be strictly additive/positional relative to that version",
-    "Do not alter InteractiveGlobe.tsx internals beyond what is necessary to accept a time prop for terminator positioning"
+    "Do NOT modify InteractiveGlobe.tsx in this step",
+    "Do not touch any immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui"
   ],
   "nonGoals": [
-    "Redesigning or restyling any part of the UI",
-    "Moving or reordering any existing panel sections other than inserting TimeControls in the specified location",
-    "Adding new backend endpoints or data models",
-    "Changes to the right panel, top bar, map component, or music player"
+    "Rendering TimeControls in InteractiveGlobe.tsx (Step 2)",
+    "Removing the bottom-right panel controls (Step 3)",
+    "Any backend changes",
+    "Any other UI modifications"
   ],
   "imageRequirements": {
     "required": [],

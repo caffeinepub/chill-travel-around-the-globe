@@ -1,49 +1,24 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Add Time Controls below Global Control button (surgical placement only)",
+  "title": "Step 1: Extract TimeControls into standalone component",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Insert TimeControls component directly below the Global Control button in the left panel of LocationMapExplorer.tsx, without changing any other layout elements, styling, or component positions from v1153",
+      "summary": "Create a new standalone TimeControls component that encapsulates the time button and Real/Hourly/Yearly toggle controls from InteractiveGlobe.tsx",
       "acceptanceCriteria": [
-        "Time Controls section appears directly below the Global Control button in the left panel",
-        "Global Control button remains below the Day/Night Terminator and Twilight Zone controls, as in v1153",
-        "No other panel sections, buttons, or layout elements have moved, been restyled, or been removed compared to v1153",
-        "All other UI elements (map, right panel, top bar, music player, etc.) are pixel-identical to v1153"
+        "`frontend/src/components/TimeControls.tsx` exists as a new file",
+        "The component exports a default or named `TimeControls` React component",
+        "The component accepts props for all state values and handlers needed to control time mode (Real/Hourly/Yearly) and the time button",
+        "The component renders the time button and Real/Hourly/Yearly toggle controls visually identical to the existing bottom-right panel controls in InteractiveGlobe.tsx",
+        "`InteractiveGlobe.tsx` is NOT modified in this step",
+        "The file compiles without TypeScript errors"
       ],
       "file_operations": [
-        {
-          "path": "frontend/src/pages/LocationMapExplorer.tsx",
-          "operation": "modify",
-          "description": "In the left panel JSX structure, locate the Global Control button section (which sits below the Day/Night Terminator and Twilight Zone controls). Immediately after the closing tag of the Global Control button's parent container, insert the TimeControls component with the exact same props and styling it currently has elsewhere in the file. Remove the TimeControls component from its old location (if it exists elsewhere in the left panel). This is a surgical DOM reordering only — do not modify any other sections, remove any other elements, change class names, or alter styling of any existing controls. Verify the left panel structure matches v1153 except for the TimeControls insertion point."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Ensure the TimeControls component retains its full original functionality including Real, Hourly, and Yearly modes with play/pause controls that animate the solar terminator on the InteractiveGlobe",
-      "acceptanceCriteria": [
-        "Real, Hourly, and Yearly mode buttons are present and functional in the TimeControls component",
-        "Play/pause control animates the terminator across the 3D globe when activated",
-        "The solar terminator position on the InteractiveGlobe visually updates as time progresses during animation",
-        "Stopping or pausing the animation freezes the terminator at the current time position"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/LocationMapExplorer.tsx",
-          "operation": "modify",
-          "description": "Review the state variables and callbacks that drive the TimeControls component (timeMode, isPlaying, currentTime, handleTimeChange, handleTimeModeChange, handlePlayPause). Ensure all these state variables are correctly wired to the TimeControls component via props after the DOM move. Verify that the InteractiveGlobe component receives the currentTime prop so the terminator position updates during animation. If any state wiring is missing or broken after the layout change, restore it to match the working implementation. Do not modify the TimeControls component itself or the InteractiveGlobe's terminator rendering logic."
-        },
         {
           "path": "frontend/src/components/TimeControls.tsx",
-          "operation": "modify",
-          "description": "Review the TimeControls component to confirm it correctly receives and uses all required props (timeMode, isPlaying, currentTime, onTimeChange, onTimeModeChange, onPlayPause). If any prop handling is missing or the component is purely presentational without callbacks, ensure the component dispatches the user's interactions (mode selection, play/pause clicks) back to the parent via the provided callback props. Do not change the component's visual appearance or add new features; only ensure proper event handling and prop usage for full functionality."
-        },
-        {
-          "path": "frontend/src/components/InteractiveGlobe.tsx",
-          "operation": "modify",
-          "description": "Verify that the InteractiveGlobe component accepts a currentTime prop (or similar time state) and uses it to compute and render the solar terminator position on the 3D globe. If the terminator rendering logic exists but is not connected to a time prop, add the prop and wire it into the terminator calculation. Reference the SunCalc library (loaded via CDN in index.html) or the solarCalculations utility for computing sun position based on currentTime. Do not modify the globe's visual style, camera controls, or any other rendering features beyond the terminator position update."
+          "operation": "create",
+          "description": "Create a new standalone React component that encapsulates the time control UI (time button that toggles the time picker/mode and the Real/Hourly/Yearly toggle buttons). The component must accept props including: timeMode (string indicating 'real', 'hourly', or 'yearly'), onTimeModeChange (callback for changing time mode), isTimePickerOpen (boolean), onToggleTimePicker (callback to open/close time picker), currentTime (Date or equivalent), onTimeChange (callback for time changes), and any other state/handlers currently used for time controls in InteractiveGlobe.tsx. The component should render the same button layout and styling as the existing bottom-right time controls panel in InteractiveGlobe.tsx, using Tailwind classes and Lucide icons (Clock, Play, FastForward icons) to maintain visual parity. Include TypeScript prop types. Do not modify InteractiveGlobe.tsx in this file operation."
         }
       ]
     }

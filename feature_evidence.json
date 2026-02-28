@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-in-the-left-panel-of-locationmapexplorer-tsx-insert-the-timecontrols-component-directly-below-the-global-control-button-section-which-itself-sits-below-the-day-night-terminator-and-twilight-zone-controls-no-other-layout-elements-ordering-styling-or-component-positions-in-the-left-panel-or-elsewhere-in-the-ui-should-be-changed-from-v1153",
-      "featureTitle": "In the left panel of LocationMapExplorer.tsx, insert the TimeControls component directly below the Global Control button section, which itself sits below the Day/Night Terminator and Twilight Zone controls. No other layout elements, ordering, styling, or component positions in the left panel or elsewhere in the UI should be changed from v1153.",
+      "featureId": "feature-create-a-new-standalone-react-component-file-frontend-src-components-timecontrols-tsx-that-encapsulates-the-time-button-the-button-that-opens-toggles-the-time-picker-or-time-mode-and-the-real-hourly-yearly-toggle-controls-the-component-must-accept-all-necessary-state-values-and-handler-callbacks-as-props-e-g-timemode-ontimemodechange-currenttime-ontimechange-or-equivalent-props-mirroring-what-is-currently-used-in-interactiveglobe-tsx-the-component-must-render-identically-to-the-existing-controls-in-the-bottom-right-panel-do-not-modify-interactiveglobe-tsx-in-this-step",
+      "featureTitle": "Create a new standalone React component file `frontend/src/components/TimeControls.tsx` that encapsulates the time button (the button that opens/toggles the time picker or time mode) and the Real/Hourly/Yearly toggle controls. The component must accept all necessary state values and handler callbacks as props (e.g., timeMode, onTimeModeChange, currentTime, onTimeChange, or equivalent props mirroring what is currently used in InteractiveGlobe.tsx). The component must render identically to the existing controls in the bottom-right panel. Do NOT modify `InteractiveGlobe.tsx` in this step.",
       "files": [
-        "frontend/src/pages/LocationMapExplorer.tsx"
+        "frontend/src/components/TimeControls.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -18,27 +18,6 @@
       ],
       "testIds": [
         "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-ensure-the-timecontrols-component-retains-its-full-original-functionality-it-must-animate-and-display-how-the-solar-terminator-moves-across-the-3d-globe-at-different-times-of-day-including-real-hourly-and-yearly-modes-with-play-pause-controls-wire-up-the-time-state-from-locationmapexplorer-so-the-terminator-on-the-interactiveglobe-updates-in-response-to-the-time-controls",
-      "featureTitle": "Ensure the TimeControls component retains its full original functionality: it must animate and display how the solar terminator moves across the 3D globe at different times of day, including Real, Hourly, and Yearly modes with play/pause controls. Wire up the time state from LocationMapExplorer so the terminator on the InteractiveGlobe updates in response to the time controls.",
-      "files": [
-        "frontend/src/components/TimeControls.tsx",
-        "frontend/src/pages/LocationMapExplorer.tsx"
-      ],
-      "components": [
-        "authorization@1.0.1",
-        "blob-storage@1.1.2",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-2"
       ],
       "confidence": "high"
     }
