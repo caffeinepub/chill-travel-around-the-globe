@@ -6,20 +6,44 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface DoodleItineraryDialogContentProps {
   journey: Journey;
-  formatDate: (timestamp: bigint) => string;
-  formatDateRange: (startTimestamp: bigint, endTimestamp: bigint) => string;
-  formatScheduleDate: (timestamp: bigint) => string;
-  formatTime: (timeString: string) => string;
 }
 
 export default function DoodleItineraryDialogContent({
   journey,
-  formatDate,
-  formatDateRange,
-  formatScheduleDate,
-  formatTime,
 }: DoodleItineraryDialogContentProps) {
-  const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.city);
+  // Use journey.title as the unique key — not journey.city — so each journey
+  // fetches its own independent schedule data.
+  const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.title);
+
+  const formatDateRange = (startTimestamp: bigint, endTimestamp: bigint) => {
+    const startDate = new Date(Number(startTimestamp) / 1000000);
+    const endDate = new Date(Number(endTimestamp) / 1000000);
+    const formatParts = (date: Date) => {
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        day: '2-digit', month: 'short', year: '2-digit', weekday: 'short'
+      });
+      const parts = formatter.formatToParts(date);
+      const day = parts.find(p => p.type === 'day')?.value || '';
+      const month = parts.find(p => p.type === 'month')?.value || '';
+      const year = parts.find(p => p.type === 'year')?.value || '';
+      const weekday = parts.find(p => p.type === 'weekday')?.value || '';
+      return `${day} ${month} ${year} (${weekday})`;
+    };
+    return `${formatParts(startDate)} ~ ${formatParts(endDate)}`;
+  };
+
+  const formatScheduleDate = (timestamp: bigint) => {
+    const date = new Date(Number(timestamp) / 1000000);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'short', day: 'numeric'
+    });
+  };
+
+  const formatTime = (timeString: string) => {
+    return new Date(`2000-01-01T${timeString}`).toLocaleTimeString('en-US', {
+      hour: 'numeric', minute: '2-digit', hour12: true
+    });
+  };
 
   return (
     <div className="relative w-full h-[85vh] overflow-hidden bg-[#fef9f3]">
@@ -32,7 +56,7 @@ export default function DoodleItineraryDialogContent({
             </div>
             <div>
               <h2 className="text-4xl font-bold text-amber-900 mb-1" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
-                {journey.city} Adventure! ✈️
+                {journey.title || journey.city} Adventure! ✈️
               </h2>
               <p className="text-lg text-amber-700 font-medium">
                 {formatDateRange(journey.startDate, journey.endDate)}
@@ -79,14 +103,14 @@ export default function DoodleItineraryDialogContent({
                   {items.map((item, itemIndex) => (
                     <div
                       key={itemIndex}
-                      className="relative bg-white p-6 rounded-lg shadow-xl border-4 border-white transform hover:scale-105 transition-transform"
+                      className="relative bg-white p-6 rounded-lg shadow-xl border-4 border-white transition-transform hover:scale-105"
                       style={{
                         transform: `rotate(${itemIndex % 2 === 0 ? '-1deg' : '1deg'})`,
                       }}
                     >
                       {/* Tape Effect */}
                       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-20 h-6 bg-amber-200 opacity-60 rounded-sm"></div>
-                      
+
                       <div className="flex items-start gap-4">
                         <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-full flex items-center justify-center shadow-md">
                           <Clock className="h-6 w-6 text-white" />

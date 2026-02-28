@@ -1,27 +1,23 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Sub-step 3a: Update travelogue fetch logic to use journeyId",
+  "title": "Move time button to below Day/Night Terminator and Twilight Zone controls",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Update the travelogue data fetch logic so that travelogue entries are queried and loaded by journeyId rather than by city name or any global/shared key",
+      "summary": "Duplicate the time button from the fixed right bottom panel to the left-side controls panel, positioned directly below the Day/Night Terminator and Twilight Zone toggle controls",
       "acceptanceCriteria": [
-        "The travelogue fetch function/hook accepts a journeyId parameter and uses it as the lookup key when calling the backend",
-        "Each journey's travelogue data is fetched independently — two journeys sharing the same city return their own separate travelogue entries",
-        "No other frontend components, panels, layouts, or styles are altered by this change",
-        "The travelogue save, delete, and clear paths remain untouched"
+        "The time button appears in the left-side controls panel, directly below the Day/Night Terminator and Twilight Zone controls.",
+        "Clicking the time button in its new position behaves identically to clicking it in the original right bottom panel (same state change, same visual feedback).",
+        "The time button still exists in the right bottom panel (it is not removed in this step — only moved/duplicated as the first incremental step).",
+        "No existing controls in the left-side panel are displaced or broken by the addition.",
+        "The new button styling is consistent with the surrounding controls."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/components/InteractiveGlobe.tsx",
           "operation": "modify",
-          "description": "Modify the useGetTravelogueEntry hook to accept a journeyId parameter instead of a city parameter. Update the queryKey to use journeyId and change the queryFn to call actor.getTravelogueEntry(journeyId) instead of any city-based lookup. Update the enabled condition to check for journeyId presence. Preserve all other hooks and mutation functions unchanged."
-        },
-        {
-          "path": "frontend/src/components/TraveloguePanel.tsx",
-          "operation": "modify",
-          "description": "Update the TraveloguePanel component to derive journeyId from the selected journey object and pass journeyId to useGetTravelogueEntry instead of city. Ensure the journeyId is extracted from the Journey type (likely journey.title or a computed ID based on title+dates). Do not modify any layout, styling, or unrelated UI elements."
+          "description": "Locate the time button UI element in the fixed right bottom panel (the button with clock icon and 'Pause Time' / 'Resume Time' text). Add a duplicate of this button in the left-side controls panel positioned directly below the 'Day/Night Terminator' and 'Twilight Zone' toggle buttons. The duplicated button must use the same onClick handler (toggleTimeAnimation), the same state bindings (isTimeAnimating), and maintain visual consistency with the surrounding left panel controls. Ensure the button in the right bottom panel remains unchanged for this incremental step."
         }
       ]
     }

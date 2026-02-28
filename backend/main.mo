@@ -181,14 +181,6 @@ actor {
     classification : Text;
   };
 
-  // Travelogue Entry
-  type TravelogueEntry = {
-    journeyId : Text;
-    content : Text;
-    createdAt : Time.Time;
-    updatedAt : Time.Time;
-  };
-
   // Access Control Functions
   public shared ({ caller }) func initializeAccessControl() : async () {
     AccessControl.initialize(accessControlState, caller);
@@ -360,6 +352,7 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Debug.trap("Unauthorized: Only users can add journeys");
     };
+
     let currentTime = Time.now();
     let journey : Journey = {
       title;
@@ -369,6 +362,7 @@ actor {
       createdAt = currentTime;
       updatedAt = currentTime;
     };
+
     journeys := textMap.put(journeys, title, journey);
   };
 
@@ -721,68 +715,6 @@ actor {
       case (?album) { album.socialMediaLinks };
     };
   };
-
-  // Travelogue Management (CRUD operations)
-  public shared ({ caller }) func addTravelogueEntry(journeyId : Text, content : Text) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Debug.trap("Unauthorized: Only users can add travelogue entries");
-    };
-    let currentTime = Time.now();
-    let entry : TravelogueEntry = {
-      journeyId;
-      content;
-      createdAt = currentTime;
-      updatedAt = currentTime;
-    };
-    travelogueEntries := textMap.put(travelogueEntries, journeyId, entry);
-  };
-
-  public shared ({ caller }) func updateTravelogueEntry(journeyId : Text, content : Text) : async Bool {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Debug.trap("Unauthorized: Only users can update travelogue entries");
-    };
-    switch (textMap.get(travelogueEntries, journeyId)) {
-      case (null) { false };
-      case (?existingEntry) {
-        let updatedEntry : TravelogueEntry = {
-          existingEntry with
-          content;
-          updatedAt = Time.now();
-        };
-        travelogueEntries := textMap.put(travelogueEntries, journeyId, updatedEntry);
-        true;
-      };
-    };
-  };
-
-  public shared ({ caller }) func deleteTravelogueEntry(journeyId : Text) : async Bool {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Debug.trap("Unauthorized: Only users can delete travelogue entries");
-    };
-    let (newMap, removedValue) = textMap.remove(travelogueEntries, journeyId);
-    travelogueEntries := newMap;
-    switch (removedValue) {
-      case (null) { false };
-      case (?_) { true };
-    };
-  };
-
-  public query func getTravelogueEntry(journeyId : Text) : async ?TravelogueEntry {
-    textMap.get(travelogueEntries, journeyId);
-  };
-
-  public query func getAllTravelogueEntries() : async [TravelogueEntry] {
-    Iter.toArray(textMap.vals(travelogueEntries));
-  };
-
-  public query func getTravelogueEntriesByJourney(journeyId : Text) : async [TravelogueEntry] {
-    Array.filter<TravelogueEntry>(
-      Iter.toArray(textMap.vals(travelogueEntries)),
-      func(entry) { entry.journeyId == journeyId },
-    );
-  };
-
-  var travelogueEntries = textMap.empty<TravelogueEntry>();
 
   // Travel Spot Management (Users only for modifications, public for reading)
   public shared ({ caller }) func addTravelSpot(city : Text, name : Text, description : ?Text, coordinates : (Float, Float), spotType : Text, rating : Float) : async () {
@@ -2046,4 +1978,3 @@ actor {
 
   include BlobStorage(registry);
 };
-

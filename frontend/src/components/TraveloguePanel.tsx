@@ -16,7 +16,9 @@ import RetroItineraryDialogContent from './itinerary/RetroItineraryDialogContent
 
 interface TraveloguePanelProps {
   onFlightAnimation?: (fromCity: string, toCity: string, fromCoords: { lat: number; lon: number }, toCoords: { lat: number; lon: number }) => void;
-  onJourney2DMap?: (journeyCity: string) => void;
+  // Receives journey.title (the unique schedule key) so the 2D map can filter
+  // schedule markers correctly even when multiple journeys share the same city.
+  onJourney2DMap?: (journeyId: string) => void;
 }
 
 export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: TraveloguePanelProps) {
@@ -37,11 +39,11 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
   const deleteScheduleItem = useDeleteScheduleItem();
   const addScheduleItem = useAddScheduleItem();
 
-  const toggleJourney = (journeyCity: string) => {
-    setExpandedJourneys(prev => 
-      prev.includes(journeyCity) 
-        ? prev.filter(city => city !== journeyCity)
-        : [...prev, journeyCity]
+  const toggleJourney = (journeyTitle: string) => {
+    setExpandedJourneys(prev =>
+      prev.includes(journeyTitle)
+        ? prev.filter(t => t !== journeyTitle)
+        : [...prev, journeyTitle]
     );
   };
 
@@ -65,18 +67,17 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
   };
 
   const formatTime = (timeString: string) => {
-    return new Date(`2000-01-01T${timeString}`).toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
+    return new Date(`2000-01-01T${timeString}`).toLocaleTimeString('en-US', {
+      hour: 'numeric',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     });
   };
 
-  // Format date range as "DD Mon YY (Ddd) ~ DD Mon YY (Ddd)"
   const formatDateRange = (startTimestamp: bigint, endTimestamp: bigint) => {
     const startDate = new Date(Number(startTimestamp) / 1000000);
     const endDate = new Date(Number(endTimestamp) / 1000000);
-    
+
     const formatParts = (date: Date) => {
       const formatter = new Intl.DateTimeFormat('en-US', {
         day: '2-digit',
@@ -85,45 +86,35 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
         weekday: 'short'
       });
       const parts = formatter.formatToParts(date);
-      
+
       const day = parts.find(p => p.type === 'day')?.value || '';
       const month = parts.find(p => p.type === 'month')?.value || '';
       const year = parts.find(p => p.type === 'year')?.value || '';
       const weekday = parts.find(p => p.type === 'weekday')?.value || '';
-      
+
       return `${day} ${month} ${year} (${weekday})`;
     };
-    
+
     return `${formatParts(startDate)} ~ ${formatParts(endDate)}`;
   };
 
-  // Geocode a city to get coordinates
   const geocodeCity = async (cityName: string): Promise<{ lat: number; lon: number } | null> => {
     try {
       const encodedQuery = encodeURIComponent(cityName);
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodedQuery}&limit=1&addressdetails=1`,
-        {
-          headers: {
-            'User-Agent': 'LocationMapExplorer/1.0'
-          }
-        }
+        { headers: { 'User-Agent': 'LocationMapExplorer/1.0' } }
       );
 
-      if (!response.ok) {
-        throw new Error('Geocoding request failed');
-      }
+      if (!response.ok) throw new Error('Geocoding request failed');
 
       const data = await response.json();
-      
+
       if (data && data.length > 0) {
         const result = data[0];
         const lat = parseFloat(result.lat);
         const lon = parseFloat(result.lon);
-
-        if (!isNaN(lat) && !isNaN(lon)) {
-          return { lat, lon };
-        }
+        if (!isNaN(lat) && !isNaN(lon)) return { lat, lon };
       }
 
       return null;
@@ -133,16 +124,13 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
     }
   };
 
-  // Handle flying button click with toggle logic
   const handleFlyingClick = async (journey: Journey) => {
     if (!onFlightAnimation) return;
 
     const defaultSearchPlace = layoutPreferences?.defaultSearchPlace || 'Zurich';
-    const journeyKey = journey.city;
-    
-    // Check if this journey is currently flying
+    const journeyKey = journey.title;
+
     if (flyingJourneys.has(journeyKey)) {
-      // Stop flying - trigger animation with same journey to stop it
       const fromCoords = await geocodeCity(defaultSearchPlace);
       const toCoords = await geocodeCity(journey.city);
 
@@ -152,17 +140,13 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
       }
 
       onFlightAnimation(defaultSearchPlace, journey.city, fromCoords, toCoords);
-      
-      // Remove from flying set
+
       setFlyingJourneys(prev => {
         const newSet = new Set(prev);
         newSet.delete(journeyKey);
         return newSet;
       });
-      
-      console.log(`[TRAVELOGUE] Stopped flying to ${journey.city}`);
     } else {
-      // Start flying
       const fromCoords = await geocodeCity(defaultSearchPlace);
       const toCoords = await geocodeCity(journey.city);
 
@@ -172,25 +156,21 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
       }
 
       onFlightAnimation(defaultSearchPlace, journey.city, fromCoords, toCoords);
-      
-      // Add to flying set
       setFlyingJourneys(prev => new Set(prev).add(journeyKey));
-      
-      console.log(`[TRAVELOGUE] Started flying to ${journey.city}`);
     }
   };
 
-  // Handle map button click - triggers 2D map view with journey context
+  // FIX: Pass journey.title (the unique schedule storage key) instead of journey.city.
+  // This ensures the 2D map fetches the correct schedule even when multiple journeys
+  // share the same city name.
   const handleMapClick = (e: React.MouseEvent, journey: Journey) => {
     e.preventDefault();
     e.stopPropagation();
-    
     if (onJourney2DMap) {
-      onJourney2DMap(journey.city);
+      onJourney2DMap(journey.title);
     }
   };
 
-  // Filter journeys based on current date
   const now = Date.now();
   const liveJourneys = journeys.filter(journey => {
     const startDate = Number(journey.startDate) / 1000000;
@@ -208,23 +188,15 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
     return endDate < now;
   }).sort((a, b) => Number(b.startDate) - Number(a.startDate));
 
-  // Get filtered journeys based on selected tab
   const getFilteredJourneys = () => {
     switch (filterTab) {
-      case 'live':
-        return liveJourneys;
-      case 'upcoming':
-        return upcomingJourneys;
-      case 'past':
-        return pastJourneys;
-      default:
-        return [];
+      case 'live': return liveJourneys;
+      case 'upcoming': return upcomingJourneys;
+      case 'past': return pastJourneys;
+      default: return [];
     }
   };
 
-  const filteredJourneys = getFilteredJourneys();
-
-  // Handle six-dot button click to open edit popup
   const handleSixDotClick = (item: ScheduleItem, journey: Journey) => {
     setSelectedScheduleItem(item);
     setSelectedJourney(journey);
@@ -240,28 +212,25 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Make location field mandatory in edit form
+
     if (!selectedScheduleItem || !selectedJourney || !editForm.date || !editForm.time || !editForm.location.trim() || !editForm.activity.trim()) {
       toast.error('Please fill in all required fields including location');
       return;
     }
 
-    // Validate date is within journey range - CORRECTED LOGIC
     const newDateTime = new Date(`${editForm.date}T${editForm.time}`);
     const journeyStart = new Date(Number(selectedJourney.startDate) / 1000000);
     const journeyEnd = new Date(Number(selectedJourney.endDate) / 1000000);
 
-    // Schedule must be on or after journey start AND on or before journey end
     if (newDateTime < journeyStart || newDateTime > journeyEnd) {
       toast.error(`Date/time must be between ${journeyStart.toLocaleString()} and ${journeyEnd.toLocaleString()}`);
       return;
     }
 
     try {
-      // Delete the old item
+      // Delete the old item using journey title as journeyId
       await deleteScheduleItem.mutateAsync({
-        journeyCity: selectedJourney.city,
+        journeyId: selectedJourney.title,
         date: selectedScheduleItem.date,
         time: selectedScheduleItem.time
       });
@@ -269,7 +238,7 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
       // Add the item with new details
       const newDateTimestamp = BigInt(newDateTime.getTime() * 1000000);
       await addScheduleItem.mutateAsync({
-        journeyCity: selectedJourney.city,
+        journeyId: selectedJourney.title,
         date: newDateTimestamp,
         time: editForm.time,
         location: editForm.location.trim(),
@@ -287,9 +256,9 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
     }
   };
 
-  // Journey Card Component
-  const JourneyCard = ({ journey, isExpanded, onToggle, onViewFullItinerary, onViewRetroItinerary, onFlyingClick, onMapClick, isFlying, formatDate, formatScheduleDate, formatTime, onSixDotClick, badgeColor, defaultSearchPlace }: any) => {
-    const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.city);
+  // Journey Card Component — uses journey.title as the unique key for schedule data
+  const JourneyCard = ({ journey, isExpanded, onToggle, onViewFullItinerary, onViewRetroItinerary, onFlyingClick, onMapClick, isFlying, formatDate, formatScheduleDate, formatTime, onSixDotClick, badgeColor }: any) => {
+    const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.title);
 
     return (
       <Card>
@@ -304,7 +273,8 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
                 </CollapsibleTrigger>
               </Collapsible>
               <div className="flex-1">
-                <CardTitle className="text-lg">{journey.city}</CardTitle>
+                <CardTitle className="text-lg">{journey.title || journey.city}</CardTitle>
+                <p className="text-xs text-muted-foreground">{journey.city}</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   {formatDate(journey.startDate)} - {formatDate(journey.endDate)}
                 </p>
@@ -415,9 +385,8 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
               Travelogue
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4">
-            {/* Filter Tabs */}
             <Tabs value={filterTab} onValueChange={(value) => setFilterTab(value as 'live' | 'upcoming' | 'past')}>
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="live" className="flex items-center gap-2">
@@ -452,22 +421,21 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
                   </div>
                 ) : (
                   liveJourneys.map((journey) => (
-                    <JourneyCard 
-                      key={journey.city} 
-                      journey={journey} 
-                      isExpanded={expandedJourneys.includes(journey.city)}
-                      onToggle={() => toggleJourney(journey.city)}
+                    <JourneyCard
+                      key={journey.title}
+                      journey={journey}
+                      isExpanded={expandedJourneys.includes(journey.title)}
+                      onToggle={() => toggleJourney(journey.title)}
                       onViewFullItinerary={() => setFullItineraryJourney(journey)}
                       onViewRetroItinerary={() => setRetroItineraryJourney(journey)}
                       onFlyingClick={() => handleFlyingClick(journey)}
                       onMapClick={(e: React.MouseEvent) => handleMapClick(e, journey)}
-                      isFlying={flyingJourneys.has(journey.city)}
+                      isFlying={flyingJourneys.has(journey.title)}
                       formatDate={formatDate}
                       formatScheduleDate={formatScheduleDate}
                       formatTime={formatTime}
                       onSixDotClick={handleSixDotClick}
                       badgeColor="orange"
-                      defaultSearchPlace={layoutPreferences?.defaultSearchPlace || 'Zurich'}
                     />
                   ))
                 )}
@@ -476,28 +444,27 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
               <TabsContent value="upcoming" className="space-y-4 mt-4">
                 {upcomingJourneys.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
-                    <Calendar className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                    <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
                     <p className="text-lg font-medium">No upcoming journeys</p>
-                    <p className="text-sm">Add journeys in Trip Management to see your future travels here!</p>
+                    <p className="text-sm">You don't have any upcoming journeys planned</p>
                   </div>
                 ) : (
                   upcomingJourneys.map((journey) => (
-                    <JourneyCard 
-                      key={journey.city} 
-                      journey={journey} 
-                      isExpanded={expandedJourneys.includes(journey.city)}
-                      onToggle={() => toggleJourney(journey.city)}
+                    <JourneyCard
+                      key={journey.title}
+                      journey={journey}
+                      isExpanded={expandedJourneys.includes(journey.title)}
+                      onToggle={() => toggleJourney(journey.title)}
                       onViewFullItinerary={() => setFullItineraryJourney(journey)}
                       onViewRetroItinerary={() => setRetroItineraryJourney(journey)}
                       onFlyingClick={() => handleFlyingClick(journey)}
                       onMapClick={(e: React.MouseEvent) => handleMapClick(e, journey)}
-                      isFlying={flyingJourneys.has(journey.city)}
+                      isFlying={flyingJourneys.has(journey.title)}
                       formatDate={formatDate}
                       formatScheduleDate={formatScheduleDate}
                       formatTime={formatTime}
                       onSixDotClick={handleSixDotClick}
                       badgeColor="green"
-                      defaultSearchPlace={layoutPreferences?.defaultSearchPlace || 'Zurich'}
                     />
                   ))
                 )}
@@ -506,28 +473,27 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
               <TabsContent value="past" className="space-y-4 mt-4">
                 {pastJourneys.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
-                    <MapPin className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                    <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
                     <p className="text-lg font-medium">No past journeys</p>
-                    <p className="text-sm">Your completed travels will appear here</p>
+                    <p className="text-sm">You haven't completed any journeys yet</p>
                   </div>
                 ) : (
                   pastJourneys.map((journey) => (
-                    <JourneyCard 
-                      key={journey.city} 
-                      journey={journey} 
-                      isExpanded={expandedJourneys.includes(journey.city)}
-                      onToggle={() => toggleJourney(journey.city)}
+                    <JourneyCard
+                      key={journey.title}
+                      journey={journey}
+                      isExpanded={expandedJourneys.includes(journey.title)}
+                      onToggle={() => toggleJourney(journey.title)}
                       onViewFullItinerary={() => setFullItineraryJourney(journey)}
                       onViewRetroItinerary={() => setRetroItineraryJourney(journey)}
                       onFlyingClick={() => handleFlyingClick(journey)}
                       onMapClick={(e: React.MouseEvent) => handleMapClick(e, journey)}
-                      isFlying={flyingJourneys.has(journey.city)}
+                      isFlying={flyingJourneys.has(journey.title)}
                       formatDate={formatDate}
                       formatScheduleDate={formatScheduleDate}
                       formatTime={formatTime}
                       onSixDotClick={handleSixDotClick}
                       badgeColor="blue"
-                      defaultSearchPlace={layoutPreferences?.defaultSearchPlace || 'Zurich'}
                     />
                   ))
                 )}
@@ -537,94 +503,99 @@ export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: T
         </DialogContent>
       </Dialog>
 
-      {/* Full Itinerary Popup - Doodle/Scrapbook Style */}
-      <Dialog open={!!fullItineraryJourney} onOpenChange={() => setFullItineraryJourney(null)}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden z-[3200] p-0 bg-[#fef9f3] border-none">
-          {fullItineraryJourney && (
-            <DoodleItineraryDialogContent 
-              journey={fullItineraryJourney}
-              formatDate={formatDate}
-              formatDateRange={formatDateRange}
-              formatScheduleDate={formatScheduleDate}
-              formatTime={formatTime}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Doodle Itinerary Dialog */}
+      {fullItineraryJourney && (
+        <Dialog open={!!fullItineraryJourney} onOpenChange={(open) => !open && setFullItineraryJourney(null)}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto z-[3200]">
+            <DialogHeader>
+              <DialogTitle>Doodle Itinerary — {fullItineraryJourney.title}</DialogTitle>
+            </DialogHeader>
+            <DoodleItineraryDialogContent journey={fullItineraryJourney} />
+          </DialogContent>
+        </Dialog>
+      )}
 
-      {/* Retro Itinerary Popup - Vintage Postcard Style */}
-      <Dialog open={!!retroItineraryJourney} onOpenChange={() => setRetroItineraryJourney(null)}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden z-[3200] p-0 border-none">
-          {retroItineraryJourney && (
-            <RetroItineraryDialogContent 
-              journey={retroItineraryJourney}
-              formatDate={formatDate}
-              formatDateRange={formatDateRange}
-              formatScheduleDate={formatScheduleDate}
-              formatTime={formatTime}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Retro Itinerary Dialog */}
+      {retroItineraryJourney && (
+        <Dialog open={!!retroItineraryJourney} onOpenChange={(open) => !open && setRetroItineraryJourney(null)}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto z-[3200]">
+            <DialogHeader>
+              <DialogTitle>Retro Itinerary — {retroItineraryJourney.title}</DialogTitle>
+            </DialogHeader>
+            <RetroItineraryDialogContent journey={retroItineraryJourney} />
+          </DialogContent>
+        </Dialog>
+      )}
 
-      {/* Edit Schedule Item Dialog */}
-      <Dialog open={editPopupOpen} onOpenChange={setEditPopupOpen}>
-        <DialogContent className="z-[3300]">
-          <DialogHeader>
-            <DialogTitle>Edit Schedule Item</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleEditSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="edit-date">Date</Label>
-              <Input
-                id="edit-date"
-                type="date"
-                value={editForm.date}
-                onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-time">Time</Label>
-              <Input
-                id="edit-time"
-                type="time"
-                value={editForm.time}
-                onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-location">Location</Label>
-              <Input
-                id="edit-location"
-                value={editForm.location}
-                onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
-                placeholder="Enter location"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-activity">Activity</Label>
-              <Input
-                id="edit-activity"
-                value={editForm.activity}
-                onChange={(e) => setEditForm({ ...editForm, activity: e.target.value })}
-                placeholder="Enter activity"
-                required
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setEditPopupOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                Save Changes
+      {/* Edit Schedule Item Popup */}
+      {editPopupOpen && selectedScheduleItem && selectedJourney && (
+        <div className="fixed inset-0 z-[3300] flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-lg">Edit Schedule Item</h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setEditPopupOpen(false)}
+              >
+                <X className="h-4 w-4" />
               </Button>
             </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="edit-date">Date</Label>
+                <Input
+                  id="edit-date"
+                  type="date"
+                  value={editForm.date}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, date: e.target.value }))}
+                  min={new Date(Number(selectedJourney.startDate) / 1000000).toISOString().split('T')[0]}
+                  max={new Date(Number(selectedJourney.endDate) / 1000000).toISOString().split('T')[0]}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-time">Time</Label>
+                <Input
+                  id="edit-time"
+                  type="time"
+                  value={editForm.time}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, time: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-location">Location</Label>
+                <Input
+                  id="edit-location"
+                  value={editForm.location}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
+                  placeholder="Location name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-activity">Activity</Label>
+                <Input
+                  id="edit-activity"
+                  value={editForm.activity}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, activity: e.target.value }))}
+                  placeholder="Activity description"
+                />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={() => setEditPopupOpen(false)} className="flex-1">
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  disabled={updateScheduleItem.isPending || deleteScheduleItem.isPending || addScheduleItem.isPending}
+                >
+                  {(updateScheduleItem.isPending || deleteScheduleItem.isPending || addScheduleItem.isPending) ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }

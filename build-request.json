@@ -1,42 +1,43 @@
 {
   "kind": "build_request",
-  "title": "Sub-step 3a: Update travelogue fetch logic to use journeyId",
-  "projectName": "Travel Travelogue Globe",
+  "title": "Move time button to below Day/Night Terminator and Twilight Zone controls",
+  "projectName": "Globe Explorer",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Update the travelogue data fetch logic so that travelogue entries are queried and loaded by journeyId rather than by city name or any global/shared key. This change must be confined strictly to the fetch/read path for travelogue data. No other UI layout, panel, component, or styling must be modified.",
-      "target": "both",
+      "text": "In InteractiveGlobe.tsx, locate the time button that currently lives in the fixed right bottom panel and render a duplicate of it in the left-side controls panel, positioned directly below the Day/Night Terminator and Twilight Zone toggle controls. The duplicated button must be fully functional (same onClick handler, same state bindings) and visually consistent with the existing controls in that area.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1",
-          "msg-2"
+          "msg-recent"
         ],
         "quotes": [
-          "Sub-step 3a: Travelogue fetch logic only — updating the fetch/query to use journeyId, with no changes to any unrelated UI layouts, panels, or components",
-          "Update the function/hook that loads travelogue data so it queries by journeyId instead of by city name or a global key"
+          "How about you try moving the time button first ?",
+          "Yes please proceed",
+          "below day/night terminator and twilight zone"
         ]
       },
       "acceptanceCriteria": [
-        "The travelogue fetch function/hook accepts a journeyId parameter and uses it as the lookup key when calling the backend",
-        "Each journey's travelogue data is fetched independently — two journeys sharing the same city return their own separate travelogue entries",
-        "No other frontend components, panels, layouts, or styles are altered by this change",
-        "No backend data model fields are added or removed; only the query/lookup key used for fetching is changed",
-        "The travelogue save, delete, and clear paths remain untouched"
+        "The time button appears in the left-side controls panel, directly below the Day/Night Terminator and Twilight Zone controls.",
+        "Clicking the time button in its new position behaves identically to clicking it in the original right bottom panel (same state change, same visual feedback).",
+        "The time button still exists in the right bottom panel (it is not removed in this step — only moved/duplicated as the first incremental step).",
+        "No existing controls in the left-side panel are displaced or broken by the addition.",
+        "The new button styling is consistent with the surrounding controls."
       ]
     }
   ],
   "constraints": [
-    "Only the travelogue fetch/read logic may be changed — no modifications to save, delete, or clear paths",
-    "No changes to any unrelated UI layouts, panels, components, or styles",
-    "Do not alter backend data model fields or other query hooks outside the travelogue fetch path"
+    "Only move the time button in this build step — do NOT move or remove the Real/Hourly/Yearly toggles yet.",
+    "Do NOT remove the right bottom panel in this step.",
+    "Do not alter backend logic or data models.",
+    "Do not modify any file listed under frontend.immutablePaths."
   ],
   "nonGoals": [
-    "Travelogue save logic (Sub-step 3b — deferred)",
-    "Travelogue delete/clear logic (Sub-step 3c — deferred)",
-    "Any UI layout, panel, or styling changes",
-    "Changes to non-travelogue data queries or hooks"
+    "Moving the Real/Hourly/Yearly toggles (deferred to a future step).",
+    "Removing the right bottom panel (deferred until all controls are successfully moved).",
+    "Any changes to backend Motoko code.",
+    "Redesigning or restyling the existing controls panel."
   ],
   "imageRequirements": {
     "required": [],

@@ -54,12 +54,9 @@ export default function LocationMapExplorer() {
   const [rotationSpeed, setRotationSpeed] = useState<number>(0.0005);
   const [countryFontSize, setCountryFontSize] = useState<number>(8);
   const [flightAnimation, setFlightAnimation] = useState<FlightAnimationData | null>(null);
-  const [selectedJourneyCity, setSelectedJourneyCity] = useState<string | null>(null);
+  // selectedJourneyId stores journey.title (the unique schedule key) for the 2D map filter
+  const [selectedJourneyId, setSelectedJourneyId] = useState<string | undefined>(undefined);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
-
-  // Panel open/close state
-  const [adminPanelOpen, setAdminPanelOpen] = useState(false);
-  const [websiteLayoutPanelOpen, setWebsiteLayoutPanelOpen] = useState(false);
 
   const { mutate: searchLocation, isPending } = useSearchLocation();
   const { data: layoutPreferences } = useGetWebsiteLayoutPreferences();
@@ -71,20 +68,25 @@ export default function LocationMapExplorer() {
     const interval = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
+
     return () => clearInterval(interval);
   }, []);
 
+  // Format a Date object as "Month DD, YYYY at HH:MM AM/PM (UTC ±X)"
   const formatTimeWithOffset = (date: Date, offsetHoursDecimal: number): string => {
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const month = months[date.getMonth()];
     const day = date.getDate();
     const year = date.getFullYear();
+
     let hours = date.getHours();
     const minutes = date.getMinutes();
     const ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12;
     hours = hours ? hours : 12;
     const minutesStr = minutes < 10 ? '0' + minutes : String(minutes);
+
+    // Format the offset label
     const offsetSign = offsetHoursDecimal >= 0 ? '+' : '-';
     const absOffset = Math.abs(offsetHoursDecimal);
     const offsetWholeHours = Math.floor(absOffset);
@@ -92,21 +94,29 @@ export default function LocationMapExplorer() {
     const offsetStr = offsetMinsPart > 0
       ? `${offsetSign}${offsetWholeHours}:${offsetMinsPart < 10 ? '0' + offsetMinsPart : offsetMinsPart}`
       : `${offsetSign}${offsetWholeHours}`;
+
     return `${month} ${day}, ${year} at ${hours}:${minutesStr} ${ampm} (UTC ${offsetStr})`;
   };
 
+  // Format local time with UTC offset
   const formatLocalTime = (): string => {
     const localOffsetMinutes = -currentTime.getTimezoneOffset();
     const localOffsetHours = localOffsetMinutes / 60;
     return formatTimeWithOffset(currentTime, localOffsetHours);
   };
 
+  // Format UTC offset time based on selected offset
   const formatUtcOffsetTime = (): string => {
-    const selectedOffset = offsets[activeOffsetIndex];
-    const localOffsetMinutes = -currentTime.getTimezoneOffset();
-    const selectedOffsetMinutes = selectedOffset * 60;
+    const selectedOffset = offsets[activeOffsetIndex]; // in decimal hours
+    const localOffsetMinutes = -currentTime.getTimezoneOffset(); // local offset in minutes
+    const selectedOffsetMinutes = selectedOffset * 60; // selected offset in minutes
+
+    // Difference in milliseconds between selected offset and local offset
     const diffMs = (selectedOffsetMinutes - localOffsetMinutes) * 60 * 1000;
+
+    // Adjusted time
     const adjustedTime = new Date(currentTime.getTime() + diffMs);
+
     return formatTimeWithOffset(adjustedTime, selectedOffset);
   };
 
@@ -116,7 +126,9 @@ export default function LocationMapExplorer() {
       toast.error('Please enter a location name');
       return;
     }
-    performSearch(searchQuery.trim());
+
+    const query = searchQuery.trim();
+    performSearch(query);
   };
 
   const performSearch = (query: string) => {
@@ -124,20 +136,24 @@ export default function LocationMapExplorer() {
       onSuccess: (result) => {
         if (result) {
           setSelectedLocation(result);
+          // Switch to 2D mode when search is successful
           setViewMode('2D');
+          // Clear focused travel spot and bookmark when performing new search
           setFocusedTravelSpot(null);
           setFocusedBookmark(null);
-          const locationDisplay = result.country && result.name !== result.country
+          const locationDisplay = result.country && result.name !== result.country 
             ? `${result.name}, ${result.country}`
             : result.name;
           toast.success(`Found ${locationDisplay}!`);
         } else {
+          // Provide helpful feedback for unsupported locations
           const suggestions = SUPPORTED_COUNTRIES
-            .filter(country =>
+            .filter(country => 
               country.toLowerCase().includes(query.toLowerCase()) ||
               query.toLowerCase().includes(country.toLowerCase())
             )
             .slice(0, 3);
+          
           if (suggestions.length > 0) {
             toast.error(`"${query}" not found. Did you mean: ${suggestions.join(', ')}?`);
           } else {
@@ -155,119 +171,184 @@ export default function LocationMapExplorer() {
   const handleViewModeChange = (value: string) => {
     if (value && (value === '3D' || value === '2D')) {
       setViewMode(value);
+      
+      // When 2D button is clicked, automatically search for the user's configured default search place
       if (value === '2D') {
         const defaultSearchPlace = layoutPreferences?.defaultSearchPlace || 'Hong Kong';
         setSearchQuery(defaultSearchPlace);
         performSearch(defaultSearchPlace);
-        setSelectedJourneyCity(null);
+        // Clear journey context when manually switching to 2D
+        setSelectedJourneyId(undefined);
       }
     }
   };
 
+  // Handler for city button - toggles the World Travel Hotspot panel
   const handleCityButtonClick = () => {
     setWorldHotspotOpen(prev => !prev);
   };
 
+  // Handler for Show Time Zones button
   const handleShowTimeZonesClick = () => {
     setShowTimeZones(prev => !prev);
     toast.info(showTimeZones ? 'Time zones hidden' : 'Time zones shown');
   };
 
+  // Handler for World button - toggles the World Controls panel
   const handleWorldButtonClick = () => {
     setWorldControlsOpen(prev => !prev);
   };
 
+  // Handle travel spot focus from Vibes panel
   const handleTravelSpotFocus = useCallback((spot: TravelSpot) => {
+    // First, search for the city to ensure we're in the right location
     performSearch(spot.city);
+    
+    // Set the focused travel spot
     setFocusedTravelSpot(spot);
+    
+    // Clear focused bookmark and journey context
     setFocusedBookmark(null);
-    setSelectedJourneyCity(null);
+    setSelectedJourneyId(undefined);
   }, []);
 
+  // Handle bookmark focus from Vibes panel
   const handleBookmarkFocus = useCallback((bookmark: MapBookmark) => {
+    // First, search for the city to ensure we're in the right location
     performSearch(bookmark.city);
+    
+    // Set the focused bookmark
     setFocusedBookmark(bookmark);
+    
+    // Clear focused travel spot and journey context
     setFocusedTravelSpot(null);
-    setSelectedJourneyCity(null);
+    setSelectedJourneyId(undefined);
   }, []);
 
+  // Handle song selection from music panel
   const handleSongSelect = useCallback((song: Song & { albumTitle: string }) => {
     setCurrentSong(song);
   }, []);
 
+  // Handle flight animation trigger from Travelogue panel
   const handleFlightAnimation = useCallback((fromCity: string, toCity: string, fromCoords: { lat: number; lon: number }, toCoords: { lat: number; lon: number }) => {
     setFlightAnimation({ fromCity, toCity, fromCoords, toCoords });
+    // Switch to 3D mode to show the animation
     setViewMode('3D');
     toast.info(`Flying from ${fromCity} to ${toCity}...`);
   }, []);
 
-  const handleJourney2DMap = useCallback((journeyCity: string) => {
+  // Handle 2D Map button click from Travelogue panel.
+  // journeyId is journey.title — the unique schedule storage key.
+  // We search for the journey's city name to center the map, but pass the
+  // title as journeyId so the correct schedule markers are shown.
+  const handleJourney2DMap = useCallback((journeyId: string) => {
+    // Switch to 2D mode
     setViewMode('2D');
-    setSelectedJourneyCity(journeyCity);
-    setSearchQuery(journeyCity);
-    performSearch(journeyCity);
+    
+    // Store the journey title as the schedule filter key
+    setSelectedJourneyId(journeyId);
+    
+    // Search for the journey id (title) to center the map on the city
+    setSearchQuery(journeyId);
+    performSearch(journeyId);
+    
+    // Clear focused travel spot and bookmark
     setFocusedTravelSpot(null);
     setFocusedBookmark(null);
-    toast.info(`Showing 2D map for ${journeyCity}`);
+    
+    toast.info(`Showing 2D map for ${journeyId}`);
   }, []);
 
   const shouldShowGlobe = viewMode === '3D';
   const shouldShowMap = viewMode === '2D' && selectedLocation;
 
+  // Apply bright-background class to document root when showing map
   useEffect(() => {
     if (shouldShowMap) {
       document.documentElement.classList.add('bright-background-mode');
     } else {
       document.documentElement.classList.remove('bright-background-mode');
     }
+    
     return () => {
       document.documentElement.classList.remove('bright-background-mode');
     };
   }, [shouldShowMap]);
 
+  // Close World Travel Hotspot panel when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (worldHotspotOpen) {
         const target = event.target as HTMLElement;
         const cityButton = document.getElementById('city-button');
         const hotspotPanel = document.getElementById('world-hotspot-panel');
-        if (cityButton && hotspotPanel && !cityButton.contains(target) && !hotspotPanel.contains(target)) {
+        
+        if (cityButton && hotspotPanel && 
+            !cityButton.contains(target) && 
+            !hotspotPanel.contains(target)) {
           setWorldHotspotOpen(false);
         }
       }
     };
-    if (worldHotspotOpen) document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    if (worldHotspotOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [worldHotspotOpen]);
 
+  // Close UTC Offset panel when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (showTimeZones) {
         const target = event.target as HTMLElement;
         const timeZonesButton = document.getElementById('show-time-zones-button');
         const utcOffsetPanel = document.getElementById('utc-offset-panel');
-        if (timeZonesButton && utcOffsetPanel && !timeZonesButton.contains(target) && !utcOffsetPanel.contains(target)) {
+        
+        if (timeZonesButton && utcOffsetPanel && 
+            !timeZonesButton.contains(target) && 
+            !utcOffsetPanel.contains(target)) {
           setShowTimeZones(false);
         }
       }
     };
-    if (showTimeZones) document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    if (showTimeZones) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [showTimeZones]);
 
+  // Close World Controls panel when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (worldControlsOpen) {
         const target = event.target as HTMLElement;
         const worldButton = document.getElementById('world-button');
         const worldPanel = document.getElementById('world-controls-panel');
-        if (worldButton && worldPanel && !worldButton.contains(target) && !worldPanel.contains(target)) {
+        
+        if (worldButton && worldPanel && 
+            !worldButton.contains(target) && 
+            !worldPanel.contains(target)) {
           setWorldControlsOpen(false);
         }
       }
     };
-    if (worldControlsOpen) document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    if (worldControlsOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [worldControlsOpen]);
 
   const formatUtcOffsetLabel = (offset: number): string => {
@@ -277,10 +358,10 @@ export default function LocationMapExplorer() {
 
   return (
     <TooltipProvider>
-      {/* Full-screen background container */}
+      {/* Full-screen background container with 3D globe or 2D map */}
       <div className="fixed inset-0 z-0">
         {shouldShowGlobe ? (
-          <InteractiveGlobe
+          <InteractiveGlobe 
             showTimeZones={showTimeZones}
             showCapitals={showCapitals}
             showGlobalCities={showGlobalCities}
@@ -297,15 +378,15 @@ export default function LocationMapExplorer() {
             onFlightAnimationComplete={() => setFlightAnimation(null)}
           />
         ) : shouldShowMap ? (
-          <MapComponent
-            coordinates={selectedLocation.coordinates}
+          <MapComponent 
+            coordinates={selectedLocation.coordinates} 
             locationName={selectedLocation.searchQuery}
             locationType={selectedLocation.type}
             focusedTravelSpot={focusedTravelSpot}
             focusedBookmark={focusedBookmark}
             onTravelSpotFocused={() => setFocusedTravelSpot(null)}
             onBookmarkFocused={() => setFocusedBookmark(null)}
-            journeyCityFilter={selectedJourneyCity}
+            journeyId={selectedJourneyId}
           />
         ) : (
           <div className="h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900">
@@ -320,55 +401,39 @@ export default function LocationMapExplorer() {
         )}
       </div>
 
-      {/* UI Container */}
+      {/* UI Container - Transparent overlay with pointer-events: none */}
       <div className="fixed inset-0 z-10 pointer-events-none">
         <div className="min-h-screen flex flex-col">
-          {/* Panel Icon Buttons */}
+          {/* Panel Icon Buttons Only - positioned absolutely with pointer-events: auto - INCREASED Z-INDEX */}
           <div className="absolute top-4 right-4 z-[10003] pointer-events-auto">
             <div className="flex flex-col items-end gap-2">
-              {/* Admin Panel trigger button */}
-              <Button
-                size="icon"
-                variant="secondary"
-                className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm hover:bg-white/80 dark:hover:bg-slate-800/80 shadow-lg border border-white/40 dark:border-slate-700/60"
-                title="Admin Panel"
-                onClick={() => setAdminPanelOpen(true)}
-              >
-                <Globe className="h-4 w-4" />
-              </Button>
-
-              {/* Travelogue Panel */}
-              <TraveloguePanel
+              {/* Menu Panel - Icon Only */}
+              <AdminPanel />
+              
+              {/* Travelogue Panel - Icon Only */}
+              <TraveloguePanel 
                 onFlightAnimation={handleFlightAnimation}
                 onJourney2DMap={handleJourney2DMap}
               />
 
-              {/* Vibes Panel */}
+              {/* Vibes Panel - Icon Only */}
               <VibesPanel onTravelSpotFocus={handleTravelSpotFocus} onBookmarkFocus={handleBookmarkFocus} />
 
-              {/* Music Panel */}
+              {/* Music Panel - Icon Only */}
               <MusicPanel onSongSelect={handleSongSelect} currentlyPlayingSong={currentSong} />
 
-              {/* Website Layout Panel trigger button */}
-              <Button
-                size="icon"
-                variant="secondary"
-                className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm hover:bg-white/80 dark:hover:bg-slate-800/80 shadow-lg border border-white/40 dark:border-slate-700/60"
-                title="Website Layout"
-                onClick={() => setWebsiteLayoutPanelOpen(true)}
-              >
-                <Search className="h-4 w-4" />
-              </Button>
+              {/* Website Layout Panel - Icon Only */}
+              <WebsiteLayoutPanel />
 
-              {/* Authentication Panel */}
+              {/* Authentication Panel - Icon Only - positioned right below Website Layout */}
               <LoginPanel />
             </div>
           </div>
 
-          {/* Three buttons at upper left */}
+          {/* Three buttons positioned vertically at upper left corner - aligned with search bar at top-4 - INCREASED Z-INDEX */}
           <div className="absolute top-4 left-4 z-[10003] pointer-events-auto">
             <div className="flex flex-col gap-2">
-              <Button
+              <Button 
                 id="city-button"
                 type="button"
                 onClick={handleCityButtonClick}
@@ -378,8 +443,8 @@ export default function LocationMapExplorer() {
               >
                 <Building2 className="h-4 w-4" />
               </Button>
-
-              <Button
+              
+              <Button 
                 id="show-time-zones-button"
                 type="button"
                 onClick={handleShowTimeZonesClick}
@@ -389,8 +454,8 @@ export default function LocationMapExplorer() {
               >
                 <Clock className="h-4 w-4" />
               </Button>
-
-              <Button
+              
+              <Button 
                 id="world-button"
                 type="button"
                 onClick={handleWorldButtonClick}
@@ -403,8 +468,8 @@ export default function LocationMapExplorer() {
             </div>
           </div>
 
-          {/* Search Bar */}
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[10003] pointer-events-auto" style={{ width: '37.5%' }}>
+          {/* Search bar - centered at top */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[10003] pointer-events-auto w-[37.5%]">
             <form onSubmit={handleSearch} className="flex gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -412,7 +477,7 @@ export default function LocationMapExplorer() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search location..."
-                  className="pl-9 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-white/40 dark:border-slate-700/60 shadow-lg"
+                  className="pl-9 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border-white/50 dark:border-slate-700/50 shadow-lg"
                 />
               </div>
               <Button
@@ -425,129 +490,209 @@ export default function LocationMapExplorer() {
             </form>
           </div>
 
-          {/* 2D/3D Toggle */}
-          <div className="absolute bottom-20 right-4 z-[10003] pointer-events-auto">
-            <ToggleGroup type="single" value={viewMode} onValueChange={handleViewModeChange} className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm rounded-lg border border-white/40 dark:border-slate-700/60 shadow-lg p-1">
-              <ToggleGroupItem value="3D" className="text-xs px-3">3D</ToggleGroupItem>
-              <ToggleGroupItem value="2D" className="text-xs px-3">2D</ToggleGroupItem>
+          {/* 2D/3D Toggle - positioned below search bar */}
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-[10003] pointer-events-auto">
+            <ToggleGroup
+              type="single"
+              value={viewMode}
+              onValueChange={handleViewModeChange}
+              className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-lg shadow-lg border border-white/50 dark:border-slate-700/50 p-1"
+            >
+              <ToggleGroupItem value="3D" className="text-xs px-3 py-1.5">
+                <Globe className="h-3 w-3 mr-1" />
+                3D
+              </ToggleGroupItem>
+              <ToggleGroupItem value="2D" className="text-xs px-3 py-1.5">
+                <Map className="h-3 w-3 mr-1" />
+                2D
+              </ToggleGroupItem>
             </ToggleGroup>
           </div>
 
-          {/* UTC Offset Panel */}
-          {showTimeZones && (
-            <div id="utc-offset-panel" className="absolute top-16 left-4 z-[10003] pointer-events-auto bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm rounded-lg border border-white/40 dark:border-slate-700/60 shadow-lg p-4 max-w-xs">
-              <h3 className="font-semibold text-sm mb-3">Time Zone Info</h3>
-              <div className="space-y-2 text-xs">
-                <div>
-                  <span className="text-muted-foreground">Local Time:</span>
-                  <p className="font-medium">{formatLocalTime()}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">UTC Offset Time (UTC {formatUtcOffsetLabel(offsets[activeOffsetIndex])}):</span>
-                  <p className="font-medium">{formatUtcOffsetTime()}</p>
-                </div>
-              </div>
+          {/* World Travel Hotspot Panel */}
+          {worldHotspotOpen && (
+            <div
+              id="world-hotspot-panel"
+              className="absolute top-16 left-4 z-[10002] pointer-events-auto"
+            >
+              <Card className="w-72 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm shadow-xl border border-white/50 dark:border-slate-700/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    World Travel Hotspots
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {[
+                    { name: 'Tokyo', country: 'Japan' },
+                    { name: 'Paris', country: 'France' },
+                    { name: 'New York', country: 'USA' },
+                    { name: 'London', country: 'UK' },
+                    { name: 'Dubai', country: 'UAE' },
+                    { name: 'Singapore', country: 'Singapore' },
+                    { name: 'Sydney', country: 'Australia' },
+                    { name: 'Barcelona', country: 'Spain' },
+                  ].map((city) => (
+                    <button
+                      key={city.name}
+                      onClick={() => {
+                        setSearchQuery(city.name);
+                        performSearch(city.name);
+                        setWorldHotspotOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center justify-between text-sm"
+                    >
+                      <span className="font-medium">{city.name}</span>
+                      <span className="text-muted-foreground text-xs">{city.country}</span>
+                    </button>
+                  ))}
+                </CardContent>
+              </Card>
             </div>
           )}
 
-          {/* World Hotspot Panel */}
-          {worldHotspotOpen && (
-            <div id="world-hotspot-panel" className="absolute top-16 left-4 z-[10003] pointer-events-auto bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm rounded-lg border border-white/40 dark:border-slate-700/60 shadow-lg p-4 w-64">
-              <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                World Travel Hotspot
-              </h3>
-              <div className="space-y-2">
-                {SUPPORTED_COUNTRIES.map(country => (
-                  <button
-                    key={country}
-                    className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-muted transition-colors"
-                    onClick={() => {
-                      setSearchQuery(country);
-                      performSearch(country);
-                      setWorldHotspotOpen(false);
-                    }}
-                  >
-                    {country}
-                  </button>
-                ))}
-              </div>
+          {/* UTC Offset / Time Zone Panel */}
+          {showTimeZones && (
+            <div
+              id="utc-offset-panel"
+              className="absolute top-16 left-16 z-[10002] pointer-events-auto"
+            >
+              <Card className="w-80 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm shadow-xl border border-white/50 dark:border-slate-700/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Time Zone
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground font-medium">Local Time</p>
+                    <p className="text-xs font-mono">{formatLocalTime()}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground font-medium">UTC Offset Time</p>
+                    <p className="text-xs font-mono">{formatUtcOffsetTime()}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground font-medium">
+                      UTC {formatUtcOffsetLabel(offsets[activeOffsetIndex])}
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {offsets.map((offset, index) => (
+                        <button
+                          key={offset}
+                          onClick={() => setActiveOffsetIndex(index)}
+                          className={`text-xs px-1.5 py-0.5 rounded transition-colors ${
+                            activeOffsetIndex === index
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600'
+                          }`}
+                        >
+                          {formatUtcOffsetLabel(offset)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
 
           {/* World Controls Panel */}
           {worldControlsOpen && (
-            <div id="world-controls-panel" className="absolute top-16 left-4 z-[10003] pointer-events-auto bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm rounded-lg border border-white/40 dark:border-slate-700/60 shadow-lg p-4 w-72">
-              <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                <Earth className="h-4 w-4" />
-                Globe Controls
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs">Capitals</span>
-                  <Button size="sm" variant={showCapitals ? 'default' : 'outline'} className="h-6 text-xs px-2" onClick={() => setShowCapitals(p => !p)}>
-                    {showCapitals ? 'On' : 'Off'}
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs">Global Cities</span>
-                  <Button size="sm" variant={showGlobalCities ? 'default' : 'outline'} className="h-6 text-xs px-2" onClick={() => setShowGlobalCities(p => !p)}>
-                    {showGlobalCities ? 'On' : 'Off'}
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs">Major Cities</span>
-                  <Button size="sm" variant={showMajorCities ? 'default' : 'outline'} className="h-6 text-xs px-2" onClick={() => setShowMajorCities(p => !p)}>
-                    {showMajorCities ? 'On' : 'Off'}
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs">Day/Night Terminator</span>
-                  <Button size="sm" variant={showTerminator ? 'default' : 'outline'} className="h-6 text-xs px-2" onClick={() => setShowTerminator(p => !p)}>
-                    {showTerminator ? 'On' : 'Off'}
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs">Twilight Zone</span>
-                  <Button size="sm" variant={showTwilight ? 'default' : 'outline'} className="h-6 text-xs px-2" onClick={() => setShowTwilight(p => !p)}>
-                    {showTwilight ? 'On' : 'Off'}
-                  </Button>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-xs">Rotation Speed: {rotationSpeed.toFixed(4)}</span>
-                  <input type="range" min="0" max="0.005" step="0.0001" value={rotationSpeed} onChange={(e) => setRotationSpeed(parseFloat(e.target.value))} className="w-full h-1" />
-                </div>
-                <div className="space-y-1">
-                  <span className="text-xs">City Font Size: {countryFontSize}px</span>
-                  <input type="range" min="4" max="20" step="1" value={countryFontSize} onChange={(e) => setCountryFontSize(parseInt(e.target.value))} className="w-full h-1" />
-                </div>
-                <div className="space-y-1">
-                  <span className="text-xs">UTC Offset: UTC {formatUtcOffsetLabel(offsets[activeOffsetIndex])}</span>
-                  <input type="range" min="0" max={offsets.length - 1} step="1" value={activeOffsetIndex} onChange={(e) => setActiveOffsetIndex(parseInt(e.target.value))} className="w-full h-1" />
-                </div>
-              </div>
+            <div
+              id="world-controls-panel"
+              className="absolute top-16 left-28 z-[10002] pointer-events-auto"
+            >
+              <Card className="w-72 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm shadow-xl border border-white/50 dark:border-slate-700/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Earth className="h-4 w-4" />
+                    Globe Controls
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">City Labels</p>
+                    <div className="space-y-1">
+                      {[
+                        { label: 'Capitals', value: showCapitals, setter: setShowCapitals },
+                        { label: 'Global Cities', value: showGlobalCities, setter: setShowGlobalCities },
+                        { label: 'Major Cities', value: showMajorCities, setter: setShowMajorCities },
+                      ].map(({ label, value, setter }) => (
+                        <label key={label} className="flex items-center gap-2 text-xs cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={value}
+                            onChange={(e) => setter(e.target.checked)}
+                            className="rounded"
+                          />
+                          {label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Atmosphere</p>
+                    <div className="space-y-1">
+                      {[
+                        { label: 'Day/Night Terminator', value: showTerminator, setter: setShowTerminator },
+                        { label: 'Twilight Zone', value: showTwilight, setter: setShowTwilight },
+                      ].map(({ label, value, setter }) => (
+                        <label key={label} className="flex items-center gap-2 text-xs cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={value}
+                            onChange={(e) => setter(e.target.checked)}
+                            className="rounded"
+                          />
+                          {label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Rotation Speed: {rotationSpeed.toFixed(4)}
+                    </p>
+                    <input
+                      type="range"
+                      min="0"
+                      max="0.005"
+                      step="0.0001"
+                      value={rotationSpeed}
+                      onChange={(e) => setRotationSpeed(parseFloat(e.target.value))}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      City Font Size: {countryFontSize}
+                    </p>
+                    <input
+                      type="range"
+                      min="4"
+                      max="16"
+                      step="0.5"
+                      value={countryFontSize}
+                      onChange={(e) => setCountryFontSize(parseFloat(e.target.value))}
+                      className="w-full"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
         </div>
       </div>
 
       {/* Music Player Bar */}
-      {layoutPreferences?.showMusicPlayer !== false && (
-        <div className="fixed bottom-0 left-0 right-0 z-[10004] pointer-events-auto">
-          <MusicPlayerBar currentSong={currentSong} onSongChange={setCurrentSong} />
-        </div>
-      )}
-
-      {/* Admin Panel Dialog */}
-      <AdminPanel isOpen={adminPanelOpen} onClose={() => setAdminPanelOpen(false)} />
-
-      {/* Website Layout Panel Dialog */}
-      {websiteLayoutPanelOpen && (
-        <div className="fixed inset-0 z-[10005] flex items-center justify-center pointer-events-auto">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setWebsiteLayoutPanelOpen(false)} />
-          <div className="relative bg-background rounded-lg shadow-xl p-6 w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto">
-            <WebsiteLayoutPanel isOpen={websiteLayoutPanelOpen} onClose={() => setWebsiteLayoutPanelOpen(false)} />
-          </div>
+      {layoutPreferences?.showMusicPlayer && (
+        <div className="fixed bottom-0 left-0 right-0 z-[10001] pointer-events-auto">
+          <MusicPlayerBar
+            currentSong={currentSong}
+            onSongChange={setCurrentSong}
+          />
         </div>
       )}
     </TooltipProvider>

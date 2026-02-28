@@ -131,12 +131,6 @@ export const ScheduleItem = IDL.Record({
   'location' : IDL.Text,
   'activity' : IDL.Text,
 });
-export const TravelogueEntry = IDL.Record({
-  'content' : IDL.Text,
-  'createdAt' : Time,
-  'journeyId' : IDL.Text,
-  'updatedAt' : Time,
-});
 export const WebsiteLayoutSettings = IDL.Record({
   'createdAt' : Time,
   'updatedAt' : Time,
@@ -224,7 +218,6 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
-  'addTravelogueEntry' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'addWebsiteLayoutSettings' : IDL.Func(
       [IDL.Bool, IDL.Text, IDL.Bool, IDL.Float64, IDL.Float64],
       [],
@@ -240,7 +233,6 @@ export const idlService = IDL.Service({
   'deleteMusicAlbum' : IDL.Func([IDL.Text], [IDL.Bool], []),
   'deleteScheduleItem' : IDL.Func([IDL.Text, Time, IDL.Text], [IDL.Bool], []),
   'deleteTravelSpot' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
-  'deleteTravelogueEntry' : IDL.Func([IDL.Text], [IDL.Bool], []),
   'deleteWebsiteLayoutSettings' : IDL.Func([], [IDL.Bool], []),
   'dropFileReference' : IDL.Func([IDL.Text], [], []),
   'getAdmins' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
@@ -274,11 +266,6 @@ export const idlService = IDL.Service({
     ),
   'getAllTravelSpots' : IDL.Func([], [IDL.Vec(TravelSpot)], ['query']),
   'getAllTravelSpotsForMap' : IDL.Func([], [IDL.Vec(TravelSpot)], ['query']),
-  'getAllTravelogueEntries' : IDL.Func(
-      [],
-      [IDL.Vec(TravelogueEntry)],
-      ['query'],
-    ),
   'getAllVibes' : IDL.Func([], [IDL.Vec(VibeItem)], ['query']),
   'getAllWebsiteLayoutSettings' : IDL.Func(
       [],
@@ -409,16 +396,6 @@ export const idlService = IDL.Service({
       [IDL.Vec(TravelSpot)],
       ['query'],
     ),
-  'getTravelogueEntriesByJourney' : IDL.Func(
-      [IDL.Text],
-      [IDL.Vec(TravelogueEntry)],
-      ['query'],
-    ),
-  'getTravelogueEntry' : IDL.Func(
-      [IDL.Text],
-      [IDL.Opt(TravelogueEntry)],
-      ['query'],
-    ),
   'getUpcomingJourneys' : IDL.Func([], [IDL.Vec(Journey)], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
@@ -519,7 +496,6 @@ export const idlService = IDL.Service({
       [IDL.Bool],
       [],
     ),
-  'updateTravelogueEntry' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
   'updateWebsiteLayoutSettings' : IDL.Func(
       [IDL.Bool, IDL.Text, IDL.Bool, IDL.Float64, IDL.Float64],
       [IDL.Bool],
@@ -653,12 +629,6 @@ export const idlFactory = ({ IDL }) => {
     'location' : IDL.Text,
     'activity' : IDL.Text,
   });
-  const TravelogueEntry = IDL.Record({
-    'content' : IDL.Text,
-    'createdAt' : Time,
-    'journeyId' : IDL.Text,
-    'updatedAt' : Time,
-  });
   const WebsiteLayoutSettings = IDL.Record({
     'createdAt' : Time,
     'updatedAt' : Time,
@@ -747,7 +717,6 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
-    'addTravelogueEntry' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'addWebsiteLayoutSettings' : IDL.Func(
         [IDL.Bool, IDL.Text, IDL.Bool, IDL.Float64, IDL.Float64],
         [],
@@ -763,7 +732,6 @@ export const idlFactory = ({ IDL }) => {
     'deleteMusicAlbum' : IDL.Func([IDL.Text], [IDL.Bool], []),
     'deleteScheduleItem' : IDL.Func([IDL.Text, Time, IDL.Text], [IDL.Bool], []),
     'deleteTravelSpot' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
-    'deleteTravelogueEntry' : IDL.Func([IDL.Text], [IDL.Bool], []),
     'deleteWebsiteLayoutSettings' : IDL.Func([], [IDL.Bool], []),
     'dropFileReference' : IDL.Func([IDL.Text], [], []),
     'getAdmins' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
@@ -801,11 +769,6 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getAllTravelSpots' : IDL.Func([], [IDL.Vec(TravelSpot)], ['query']),
     'getAllTravelSpotsForMap' : IDL.Func([], [IDL.Vec(TravelSpot)], ['query']),
-    'getAllTravelogueEntries' : IDL.Func(
-        [],
-        [IDL.Vec(TravelogueEntry)],
-        ['query'],
-      ),
     'getAllVibes' : IDL.Func([], [IDL.Vec(VibeItem)], ['query']),
     'getAllWebsiteLayoutSettings' : IDL.Func(
         [],
@@ -948,16 +911,6 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(TravelSpot)],
         ['query'],
       ),
-    'getTravelogueEntriesByJourney' : IDL.Func(
-        [IDL.Text],
-        [IDL.Vec(TravelogueEntry)],
-        ['query'],
-      ),
-    'getTravelogueEntry' : IDL.Func(
-        [IDL.Text],
-        [IDL.Opt(TravelogueEntry)],
-        ['query'],
-      ),
     'getUpcomingJourneys' : IDL.Func([], [IDL.Vec(Journey)], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
@@ -1058,7 +1011,6 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Bool],
         [],
       ),
-    'updateTravelogueEntry' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
     'updateWebsiteLayoutSettings' : IDL.Func(
         [IDL.Bool, IDL.Text, IDL.Bool, IDL.Float64, IDL.Float64],
         [IDL.Bool],

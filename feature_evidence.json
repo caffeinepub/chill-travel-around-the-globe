@@ -1,25 +1,4 @@
 {
   "kind": "feature_evidence_report",
-  "features": [
-    {
-      "featureId": "feature-update-the-travelogue-data-fetch-logic-so-that-travelogue-entries-are-queried-and-loaded-by-journeyid-rather-than-by-city-name-or-any-global-shared-key-this-change-must-be-confined-strictly-to-the-fetch-read-path-for-travelogue-data-no-other-ui-layout-panel-component-or-styling-must-be-modified",
-      "featureTitle": "Update the travelogue data fetch logic so that travelogue entries are queried and loaded by journeyId rather than by city name or any global/shared key. This change must be confined strictly to the fetch/read path for travelogue data. No other UI layout, panel, component, or styling must be modified.",
-      "files": [
-        "frontend/src/hooks/useQueries.ts"
-      ],
-      "components": [
-        "authorization@1.0.1",
-        "blob-storage@1.1.2",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    }
-  ]
+  "features": []
 }

@@ -45,12 +45,6 @@ export interface LocationInfo {
     updatedAt: Time;
     coordinates: [number, number];
 }
-export interface TravelogueEntry {
-    content: string;
-    createdAt: Time;
-    journeyId: string;
-    updatedAt: Time;
-}
 export interface GeonameCity {
     region: string;
     latitude: number;
@@ -61,6 +55,13 @@ export interface GeonameCity {
     featureCode: string;
     classification: string;
 }
+export interface CityRating {
+    city: string;
+    createdAt: Time;
+    comment: string;
+    updatedAt: Time;
+    rating: number;
+}
 export interface WebsiteLayoutSettings {
     createdAt: Time;
     updatedAt: Time;
@@ -70,13 +71,6 @@ export interface WebsiteLayoutSettings {
     showMusicPlayerBar: boolean;
     defaultSearchPlace: string;
     rippleSize: number;
-}
-export interface CityRating {
-    city: string;
-    createdAt: Time;
-    comment: string;
-    updatedAt: Time;
-    rating: number;
 }
 export interface ScheduleItem {
     date: Time;
@@ -157,7 +151,6 @@ export interface backendInterface {
     addSocialMediaLinkToTravelSpot(city: string, spotName: string, socialMediaLink: SocialMediaLink): Promise<boolean>;
     addSongToMusicAlbum(title: string, song: Song): Promise<boolean>;
     addTravelSpot(city: string, name: string, description: string | null, coordinates: [number, number], spotType: string, rating: number): Promise<void>;
-    addTravelogueEntry(journeyId: string, content: string): Promise<void>;
     addWebsiteLayoutSettings(showMusicPlayerBar: boolean, defaultSearchPlace: string, showAllTravelSpots: boolean, rippleSize: number, cityFontSize: number): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     deleteCity(name: string): Promise<boolean>;
@@ -169,7 +162,6 @@ export interface backendInterface {
     deleteMusicAlbum(title: string): Promise<boolean>;
     deleteScheduleItem(journeyCity: string, date: Time, time: string): Promise<boolean>;
     deleteTravelSpot(city: string, name: string): Promise<boolean>;
-    deleteTravelogueEntry(journeyId: string): Promise<boolean>;
     deleteWebsiteLayoutSettings(): Promise<boolean>;
     dropFileReference(path: string): Promise<void>;
     getAdmins(): Promise<Array<Principal>>;
@@ -187,7 +179,6 @@ export interface backendInterface {
     getAllScheduleItemsWithCoordinates(): Promise<Array<[ScheduleItem, [number, number]]>>;
     getAllTravelSpots(): Promise<Array<TravelSpot>>;
     getAllTravelSpotsForMap(): Promise<Array<TravelSpot>>;
-    getAllTravelogueEntries(): Promise<Array<TravelogueEntry>>;
     getAllVibes(): Promise<Array<VibeItem>>;
     getAllWebsiteLayoutSettings(): Promise<Array<WebsiteLayoutSettings>>;
     getAverageCityRating(city: string): Promise<number>;
@@ -234,8 +225,6 @@ export interface backendInterface {
     getTravelSpotTypes(): Promise<Array<string>>;
     getTravelSpots(city: string): Promise<Array<TravelSpot>>;
     getTravelSpotsByCityAndType(city: string, spotType: string): Promise<Array<TravelSpot>>;
-    getTravelogueEntriesByJourney(journeyId: string): Promise<Array<TravelogueEntry>>;
-    getTravelogueEntry(journeyId: string): Promise<TravelogueEntry | null>;
     getUpcomingJourneys(): Promise<Array<Journey>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     getVibesByCity(): Promise<Array<[string, Array<VibeItem>]>>;
@@ -265,6 +254,5 @@ export interface backendInterface {
     updateMusicAlbum(title: string, description: string, songs: Array<Song>): Promise<boolean>;
     updateScheduleItem(journeyCity: string, date: Time, time: string, location: string, activity: string): Promise<boolean>;
     updateTravelSpot(city: string, name: string, description: string | null, coordinates: [number, number], spotType: string, rating: number): Promise<boolean>;
-    updateTravelogueEntry(journeyId: string, content: string): Promise<boolean>;
     updateWebsiteLayoutSettings(showMusicPlayerBar: boolean, defaultSearchPlace: string, showAllTravelSpots: boolean, rippleSize: number, cityFontSize: number): Promise<boolean>;
 }

@@ -1,48 +1,45 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Travel journey app where users can create multiple journeys for the same city. Working on travelogue data isolation (Step 3) to ensure each journey's travelogue is fetched and stored by journey ID. Currently executing Sub-step 3a: update travelogue fetch logic to use journeyId.",
+  "summary": "Earth visualization project with time controls panel migration. Moving controls (Real/Hourly/Yearly toggles and time button) from right bottom panel to below Day/Night Terminator and Twilight Zone controls, one by one, then removing the right bottom panel.",
   "architectural_notes": [
-    "Each implementation step must only change the specific logic/UI area targeted — no unrelated layout, panel, or component changes allowed.",
-    "Multiple journeys per city are now supported (Step 1 complete); backend allows duplicate city journeys.",
-    "Travelogue data must be keyed and isolated by journeyId, not by city name or global key."
+    "Controls are being migrated incrementally (one at a time) to avoid token limit issues that caused previous failed attempts"
   ],
   "known_issues": [
-    "Step 3 travelogue data isolation hitting repeated internal LLM errors when attempted as a single pass; split into sub-steps 3a/3b/3c."
+    "Previous attempts to move the fixed time controls panel hit token limits and failed; reverted to version 1147"
   ],
   "isFixRequest": false,
-  "existing_features": [
-    {
-      "id": "feature-update-the-travelogue-data-fetch-logic-so-that-travelogue-entries-are-queried-and-loaded-by-journeyid-rather-than-by-city-name-or-any-global-shared-key-this-change-must-be-confined-strictly-to-the-fetch-read-path-for-travelogue-data-no-other-ui-layout-panel-component-or-styling-must-be-modified",
-      "title": "Update the travelogue data fetch logic so that travelogue entries are queried and loaded by journeyId rather than by city name or any global/shared key. This change must be confined strictly to the fetch/read path for travelogue data. No other UI layout, panel, component, or styling must be modified.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "version": 1
-    }
-  ],
+  "existing_features": [],
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Travelogue data isolation: fetch travelogue by journeyId (Sub-step 3a)",
+      "summary": "Move time button from right bottom panel to below Day/Night Terminator and Twilight Zone controls",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Travelogue data isolation: save travelogue by journeyId (Sub-step 3b)",
+      "summary": "Move Real/Hourly/Yearly toggles from right bottom panel to below Day/Night Terminator and Twilight Zone controls",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-3",
-      "summary": "Travelogue data isolation: delete/clear travelogue by journeyId (Sub-step 3c)",
+      "summary": "Completely remove the right bottom panel after all controls have been duplicated/moved",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "In InteractiveGlobe.tsx, locate the time button that currently lives in the fixed right bottom panel and render a duplicate of it in the left-side controls panel, positioned directly below the Day/Night Terminator and Twilight Zone toggle controls. The duplicated button must be fully functional (same onClick handler, same state bindings) and visually consistent with the existing controls in that area.",
+      "reqIds": [
+        "REQ-1"
+      ],
       "status": "pending"
     }
   ],
   "gameProjectType": "none",
-  "projectName": "Travel Travelogue Globe",
+  "projectName": "Globe Explorer",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

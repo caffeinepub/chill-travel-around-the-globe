@@ -1,154 +1,237 @@
 import React, { useState, useEffect } from 'react';
-import { Settings2, Monitor, Map } from 'lucide-react';
-import { useGetWebsiteLayoutPreferences, useSaveWebsiteLayoutPreferences, WebsiteLayoutPreferences } from '../hooks/useQueries';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+import { Settings, Monitor, Map, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Slider } from '@/components/ui/slider';
+import { toast } from 'sonner';
+import { useGetWebsiteLayoutPreferences, useSaveWebsiteLayoutPreferences } from '@/hooks/useQueries';
 
-interface WebsiteLayoutPanelProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+export default function WebsiteLayoutPanel() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [localTime, setLocalTime] = useState<string>('');
+  const [utcOffset, setUtcOffset] = useState<string>('');
 
-export default function WebsiteLayoutPanel({ isOpen, onClose }: WebsiteLayoutPanelProps) {
-  const { data: layoutPreferences, isLoading } = useGetWebsiteLayoutPreferences();
-  const savePreferences = useSaveWebsiteLayoutPreferences();
+  const { data: layoutPreferences } = useGetWebsiteLayoutPreferences();
+  const saveLayoutPreferences = useSaveWebsiteLayoutPreferences();
 
-  const [localPrefs, setLocalPrefs] = useState<WebsiteLayoutPreferences>({
-    showMusicPlayer: true,
-    defaultSearchPlace: '',
-    showAllTravelSpots: true,
-    rippleSize: 0.5,
-    cityFontSize: 8.0,
-  });
-
-  useEffect(() => {
-    if (layoutPreferences) {
-      setLocalPrefs({
-        showMusicPlayer: layoutPreferences.showMusicPlayer,
-        defaultSearchPlace: layoutPreferences.defaultSearchPlace,
-        showAllTravelSpots: layoutPreferences.showAllTravelSpots,
-        rippleSize: layoutPreferences.rippleSize,
-        cityFontSize: layoutPreferences.cityFontSize,
-      });
+  // Calculate UTC offset for a given location
+  const calculateUtcOffset = (_locationName: string): string => {
+    try {
+      const now = new Date();
+      const offsetMinutes = -now.getTimezoneOffset();
+      const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
+      const offsetMins = Math.abs(offsetMinutes) % 60;
+      const sign = offsetMinutes >= 0 ? '+' : '-';
+      if (offsetMins === 0) {
+        return `${sign}${offsetHours}`;
+      } else {
+        return `${sign}${offsetHours}:${offsetMins.toString().padStart(2, '0')}`;
+      }
+    } catch (error) {
+      console.error('Error calculating UTC offset:', error);
+      return '+0';
     }
-  }, [layoutPreferences]);
-
-  const handleToggleMusicPlayer = async (enabled: boolean) => {
-    const updated: WebsiteLayoutPreferences = {
-      ...localPrefs,
-      showMusicPlayer: enabled,
-    };
-    setLocalPrefs(updated);
-    await savePreferences.mutateAsync(updated);
   };
 
-  const handleSave = async () => {
-    const updated: WebsiteLayoutPreferences = {
-      ...localPrefs,
-      showMusicPlayer: localPrefs.showMusicPlayer,
+  // Update local time and UTC offset every second
+  useEffect(() => {
+    const updateLocalTime = () => {
+      const now = new Date();
+      const formattedTime = now.toLocaleString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+      setLocalTime(formattedTime);
+      const defaultPlace = layoutPreferences?.defaultSearchPlace || 'Hong Kong';
+      const offset = calculateUtcOffset(defaultPlace);
+      setUtcOffset(offset);
     };
-    await savePreferences.mutateAsync(updated);
-    onClose();
+
+    updateLocalTime();
+    const interval = setInterval(updateLocalTime, 1000);
+    return () => clearInterval(interval);
+  }, [layoutPreferences?.defaultSearchPlace]);
+
+  const handleMusicPlayerToggle = async (enabled: boolean) => {
+    try {
+      await saveLayoutPreferences.mutateAsync({
+        showMusicPlayerBar: enabled,
+        defaultSearchPlace: layoutPreferences?.defaultSearchPlace || 'Hong Kong',
+        showAllTravelSpots: layoutPreferences?.showAllTravelSpots ?? true,
+        rippleSize: layoutPreferences?.rippleSize ?? 0.5,
+        cityFontSize: layoutPreferences?.cityFontSize ?? 8.0,
+      });
+      toast.success(`Music player ${enabled ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      console.error('Error saving layout preferences:', error);
+      toast.error('Failed to save layout preferences');
+    }
   };
 
-  if (!isOpen) return null;
+  const handleDefaultSearchPlaceChange = async (defaultSearchPlace: string) => {
+    if (!defaultSearchPlace.trim()) {
+      toast.error('Please enter a valid location');
+      return;
+    }
+
+    try {
+      await saveLayoutPreferences.mutateAsync({
+        showMusicPlayerBar: layoutPreferences?.showMusicPlayer ?? true,
+        defaultSearchPlace: defaultSearchPlace.trim(),
+        showAllTravelSpots: layoutPreferences?.showAllTravelSpots ?? true,
+        rippleSize: layoutPreferences?.rippleSize ?? 0.5,
+        cityFontSize: layoutPreferences?.cityFontSize ?? 8.0,
+      });
+      toast.success('Default search place updated successfully!');
+    } catch (error) {
+      console.error('Error saving default search place:', error);
+      toast.error('Failed to save default search place');
+    }
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-4">
-        <Settings2 className="h-5 w-5 text-primary" />
-        <h2 className="font-semibold text-base">Website Layout Settings</h2>
-      </div>
-
-      {isLoading ? (
-        <div className="flex items-center justify-center h-16">
-          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
-        </div>
-      ) : (
-        <Tabs defaultValue="map">
-          <TabsList className="w-full">
-            <TabsTrigger value="map" className="flex-1">
-              <Map className="h-4 w-4 mr-1" /> Map Settings
-            </TabsTrigger>
-            <TabsTrigger value="display" className="flex-1">
-              <Monitor className="h-4 w-4 mr-1" /> Display Settings
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="map" className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label htmlFor="defaultSearch" className="text-sm font-medium">Default Search Place</Label>
-              <Input
-                id="defaultSearch"
-                value={localPrefs.defaultSearchPlace}
-                onChange={(e) => setLocalPrefs(prev => ({ ...prev, defaultSearchPlace: e.target.value }))}
-                placeholder="e.g. Tokyo, Japan"
-                className="text-sm"
-              />
-              <p className="text-xs text-muted-foreground">The location to show when the map first loads.</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Ripple Size: {localPrefs.rippleSize.toFixed(1)}</Label>
-              <Slider
-                min={0.1}
-                max={2.0}
-                step={0.1}
-                value={[localPrefs.rippleSize]}
-                onValueChange={([val]) => setLocalPrefs(prev => ({ ...prev, rippleSize: val }))}
-              />
-              <p className="text-xs text-muted-foreground">Controls the size of the ripple animation on city markers.</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">City Font Size: {localPrefs.cityFontSize.toFixed(1)}px</Label>
-              <Slider
-                min={6}
-                max={20}
-                step={0.5}
-                value={[localPrefs.cityFontSize]}
-                onValueChange={([val]) => setLocalPrefs(prev => ({ ...prev, cityFontSize: val }))}
-              />
-              <p className="text-xs text-muted-foreground">Controls the font size of city labels on the 3D globe.</p>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="display" className="space-y-4 mt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">Show Music Player</Label>
-                <p className="text-xs text-muted-foreground">Display the music player bar at the bottom.</p>
-              </div>
-              <Switch
-                checked={localPrefs.showMusicPlayer}
-                onCheckedChange={handleToggleMusicPlayer}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">Show All Travel Spots</Label>
-                <p className="text-xs text-muted-foreground">Display all travel spots on the map by default.</p>
-              </div>
-              <Switch
-                checked={localPrefs.showAllTravelSpots}
-                onCheckedChange={(val) => setLocalPrefs(prev => ({ ...prev, showAllTravelSpots: val }))}
-              />
-            </div>
-          </TabsContent>
-        </Tabs>
-      )}
-
-      <div className="flex gap-2 pt-2">
-        <Button onClick={handleSave} disabled={savePreferences.isPending} className="flex-1" size="sm">
-          {savePreferences.isPending ? 'Saving...' : 'Save Settings'}
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button
+          size="icon"
+          variant="secondary"
+          className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm hover:bg-white/80 dark:hover:bg-slate-800/80 shadow-lg border border-white/40 dark:border-slate-700/60"
+          title="Website Layout"
+        >
+          <Settings className="h-4 w-4" />
         </Button>
-        <Button onClick={onClose} variant="outline" size="sm">Cancel</Button>
-      </div>
-    </div>
+      </DialogTrigger>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto z-[3100]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Website Layout
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          <div>
+            <p className="text-sm text-muted-foreground">
+              Control the appearance and behavior of website features
+            </p>
+          </div>
+
+          <Tabs defaultValue="map" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="map" className="flex items-center gap-2">
+                <Map className="h-4 w-4" />
+                Map Settings
+              </TabsTrigger>
+              <TabsTrigger value="display" className="flex items-center gap-2">
+                <Monitor className="h-4 w-4" />
+                Display Settings
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="map" className="space-y-6 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Map className="h-5 w-5" />
+                    Map Settings
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="space-y-1">
+                      <Label htmlFor="default-search-place" className="text-base font-medium">
+                        Default Search Place
+                      </Label>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Input
+                        id="default-search-place"
+                        type="text"
+                        placeholder="e.g., Hong Kong, New York, Tokyo"
+                        defaultValue={layoutPreferences?.defaultSearchPlace || 'Hong Kong'}
+                        disabled={saveLayoutPreferences.isPending}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleDefaultSearchPlaceChange(e.currentTarget.value);
+                          }
+                        }}
+                        className="flex-1"
+                      />
+                      <Button
+                        onClick={(e) => {
+                          const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                          if (input) {
+                            handleDefaultSearchPlaceChange(input.value);
+                          }
+                        }}
+                        disabled={saveLayoutPreferences.isPending}
+                      >
+                        {saveLayoutPreferences.isPending ? 'Saving...' : 'Save'}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      Current default search place: <strong>{layoutPreferences?.defaultSearchPlace || 'Hong Kong'}</strong>
+                      <br />
+                      Local time: <strong>{localTime} (UTC {utcOffset})</strong>
+                    </AlertDescription>
+                  </Alert>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="display" className="space-y-6 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Monitor className="h-5 w-5" />
+                    Display Settings
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label htmlFor="music-player-toggle" className="text-base font-medium">
+                        Music Player Bar
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Show or hide the music player bar at the bottom of the website
+                      </p>
+                    </div>
+                    <Switch
+                      id="music-player-toggle"
+                      checked={layoutPreferences?.showMusicPlayer !== false}
+                      onCheckedChange={handleMusicPlayerToggle}
+                      disabled={saveLayoutPreferences.isPending}
+                    />
+                  </div>
+
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      Changes take effect immediately. The music player bar will be {layoutPreferences?.showMusicPlayer !== false ? 'visible' : 'hidden'}{' '}
+                      when you have uploaded songs to your Music Album.
+                    </AlertDescription>
+                  </Alert>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

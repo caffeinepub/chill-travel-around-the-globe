@@ -6,20 +6,44 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface RetroItineraryDialogContentProps {
   journey: Journey;
-  formatDate: (timestamp: bigint) => string;
-  formatDateRange: (startTimestamp: bigint, endTimestamp: bigint) => string;
-  formatScheduleDate: (timestamp: bigint) => string;
-  formatTime: (timeString: string) => string;
 }
 
 export default function RetroItineraryDialogContent({
   journey,
-  formatDate,
-  formatDateRange,
-  formatScheduleDate,
-  formatTime,
 }: RetroItineraryDialogContentProps) {
-  const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.city);
+  // Use journey.title as the unique key — not journey.city — so each journey
+  // fetches its own independent schedule data.
+  const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.title);
+
+  const formatDateRange = (startTimestamp: bigint, endTimestamp: bigint) => {
+    const startDate = new Date(Number(startTimestamp) / 1000000);
+    const endDate = new Date(Number(endTimestamp) / 1000000);
+    const formatParts = (date: Date) => {
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        day: '2-digit', month: 'short', year: '2-digit', weekday: 'short'
+      });
+      const parts = formatter.formatToParts(date);
+      const day = parts.find(p => p.type === 'day')?.value || '';
+      const month = parts.find(p => p.type === 'month')?.value || '';
+      const year = parts.find(p => p.type === 'year')?.value || '';
+      const weekday = parts.find(p => p.type === 'weekday')?.value || '';
+      return `${day} ${month} ${year} (${weekday})`;
+    };
+    return `${formatParts(startDate)} ~ ${formatParts(endDate)}`;
+  };
+
+  const formatScheduleDate = (timestamp: bigint) => {
+    const date = new Date(Number(timestamp) / 1000000);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'short', day: 'numeric'
+    });
+  };
+
+  const formatTime = (timeString: string) => {
+    return new Date(`2000-01-01T${timeString}`).toLocaleTimeString('en-US', {
+      hour: 'numeric', minute: '2-digit', hour12: true
+    });
+  };
 
   return (
     <div className="relative w-full h-[85vh] overflow-hidden bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
@@ -37,7 +61,7 @@ export default function RetroItineraryDialogContent({
             </div>
             <div>
               <h2 className="text-5xl font-bold text-amber-900 mb-2" style={{ fontFamily: 'Georgia, serif', textShadow: '2px 2px 4px rgba(0,0,0,0.1)' }}>
-                Greetings from {journey.city}
+                Greetings from {journey.title || journey.city}
               </h2>
               <p className="text-xl text-amber-800 font-serif italic">
                 {formatDateRange(journey.startDate, journey.endDate)}
