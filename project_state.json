@@ -1,45 +1,47 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Earth visualization project with time controls panel migration. Moving controls (Real/Hourly/Yearly toggles and time button) from right bottom panel to below Day/Night Terminator and Twilight Zone controls, one by one, then removing the right bottom panel.",
+  "summary": "Interactive Globe app with UI refactoring in progress. Moving time controls (time button + Real/Hourly/Yearly toggles) from bottom-right panel to below Terminator/Twilight Zone controls in the left panel. Using a 3-step atomic approach due to large file size limitations.",
   "architectural_notes": [
-    "Controls are being migrated incrementally (one at a time) to avoid token limit issues that caused previous failed attempts"
+    "InteractiveGlobe.tsx is very large and exceeds token/context limits when modified directly — use small atomic changes",
+    "Time controls are being extracted to TimeControls.tsx to allow small, focused changes"
   ],
   "known_issues": [
-    "Previous attempts to move the fixed time controls panel hit token limits and failed; reverted to version 1147"
+    "Repeated build failures when modifying InteractiveGlobe.tsx directly due to file size"
   ],
   "isFixRequest": false,
-  "existing_features": [],
+  "existing_features": [
+    {
+      "id": "feature-create-a-new-standalone-react-component-file-frontend-src-components-timecontrols-tsx-that-encapsulates-the-time-button-the-button-that-opens-toggles-the-time-picker-or-time-mode-and-the-real-hourly-yearly-toggle-controls-the-component-must-accept-all-necessary-state-values-and-handler-callbacks-as-props-e-g-timemode-ontimemodechange-currenttime-ontimechange-or-equivalent-props-mirroring-what-is-currently-used-in-interactiveglobe-tsx-the-component-must-render-identically-to-the-existing-controls-in-the-bottom-right-panel-do-not-modify-interactiveglobe-tsx-in-this-step",
+      "title": "Create a new standalone React component file `frontend/src/components/TimeControls.tsx` that encapsulates the time button (the button that opens/toggles the time picker or time mode) and the Real/Hourly/Yearly toggle controls. The component must accept all necessary state values and handler callbacks as props (e.g., timeMode, onTimeModeChange, currentTime, onTimeChange, or equivalent props mirroring what is currently used in InteractiveGlobe.tsx). The component must render identically to the existing controls in the bottom-right panel. Do NOT modify `InteractiveGlobe.tsx` in this step.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    }
+  ],
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Move time button from right bottom panel to below Day/Night Terminator and Twilight Zone controls",
+      "summary": "Extract time controls into standalone TimeControls.tsx component (Step 1)",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Move Real/Hourly/Yearly toggles from right bottom panel to below Day/Night Terminator and Twilight Zone controls",
+      "summary": "Render TimeControls in both bottom-right panel and below Terminator/Twilight Zone controls (Step 2)",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-3",
-      "summary": "Completely remove the right bottom panel after all controls have been duplicated/moved",
+      "summary": "Remove time controls from bottom-right panel after confirming new location works (Step 3)",
       "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-4",
-      "summary": "In InteractiveGlobe.tsx, locate the time button that currently lives in the fixed right bottom panel and render a duplicate of it in the left-side controls panel, positioned directly below the Day/Night Terminator and Twilight Zone toggle controls. The duplicated button must be fully functional (same onClick handler, same state bindings) and visually consistent with the existing controls in that area.",
-      "reqIds": [
-        "REQ-1"
-      ],
       "status": "pending"
     }
   ],
   "gameProjectType": "none",
-  "projectName": "Globe Explorer",
+  "projectName": "Interactive Globe",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

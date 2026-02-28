@@ -1,4 +1,25 @@
 {
   "kind": "feature_evidence_report",
-  "features": []
+  "features": [
+    {
+      "featureId": "feature-create-a-new-standalone-react-component-file-frontend-src-components-timecontrols-tsx-that-encapsulates-the-time-button-the-button-that-opens-toggles-the-time-picker-or-time-mode-and-the-real-hourly-yearly-toggle-controls-the-component-must-accept-all-necessary-state-values-and-handler-callbacks-as-props-e-g-timemode-ontimemodechange-currenttime-ontimechange-or-equivalent-props-mirroring-what-is-currently-used-in-interactiveglobe-tsx-the-component-must-render-identically-to-the-existing-controls-in-the-bottom-right-panel-do-not-modify-interactiveglobe-tsx-in-this-step",
+      "featureTitle": "Create a new standalone React component file `frontend/src/components/TimeControls.tsx` that encapsulates the time button (the button that opens/toggles the time picker or time mode) and the Real/Hourly/Yearly toggle controls. The component must accept all necessary state values and handler callbacks as props (e.g., timeMode, onTimeModeChange, currentTime, onTimeChange, or equivalent props mirroring what is currently used in InteractiveGlobe.tsx). The component must render identically to the existing controls in the bottom-right panel. Do NOT modify `InteractiveGlobe.tsx` in this step.",
+      "files": [
+        "frontend/src/components/TimeControls.tsx"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@1.1.2",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    }
+  ]
 }

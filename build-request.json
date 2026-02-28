@@ -1,43 +1,42 @@
 {
   "kind": "build_request",
-  "title": "Move time button to below Day/Night Terminator and Twilight Zone controls",
+  "title": "Step 1: Extract TimeControls into standalone component",
   "projectName": "Globe Explorer",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "In InteractiveGlobe.tsx, locate the time button that currently lives in the fixed right bottom panel and render a duplicate of it in the left-side controls panel, positioned directly below the Day/Night Terminator and Twilight Zone toggle controls. The duplicated button must be fully functional (same onClick handler, same state bindings) and visually consistent with the existing controls in that area.",
+      "text": "Create a new standalone React component file `frontend/src/components/TimeControls.tsx` that encapsulates the time button (the button that opens/toggles the time picker or time mode) and the Real/Hourly/Yearly toggle controls. The component must accept all necessary state values and handler callbacks as props (e.g., timeMode, onTimeModeChange, currentTime, onTimeChange, or equivalent props mirroring what is currently used in InteractiveGlobe.tsx). The component must render identically to the existing controls in the bottom-right panel. Do NOT modify `InteractiveGlobe.tsx` in this step.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-recent"
+          "msg-1",
+          "msg-2"
         ],
         "quotes": [
-          "How about you try moving the time button first ?",
-          "Yes please proceed",
-          "below day/night terminator and twilight zone"
+          "Create a new small file TimeControls.tsx containing just the time button + Real/Hourly/Yearly toggles, accepting the necessary props/handlers. No changes to the main file yet.",
+          "Starting Step 1 — creating the standalone TimeControls.tsx component with the time button and Real/Hourly/Yearly toggles, accepting all necessary props and handlers. No changes to InteractiveGlobe.tsx yet, keeping this change small and focused."
         ]
       },
       "acceptanceCriteria": [
-        "The time button appears in the left-side controls panel, directly below the Day/Night Terminator and Twilight Zone controls.",
-        "Clicking the time button in its new position behaves identically to clicking it in the original right bottom panel (same state change, same visual feedback).",
-        "The time button still exists in the right bottom panel (it is not removed in this step — only moved/duplicated as the first incremental step).",
-        "No existing controls in the left-side panel are displaced or broken by the addition.",
-        "The new button styling is consistent with the surrounding controls."
+        "`frontend/src/components/TimeControls.tsx` exists as a new file",
+        "The component exports a default or named `TimeControls` React component",
+        "The component accepts props for all state values and handlers needed to control time mode (Real/Hourly/Yearly) and the time button",
+        "The component renders the time button and Real/Hourly/Yearly toggle controls visually identical to the existing bottom-right panel controls in InteractiveGlobe.tsx",
+        "`InteractiveGlobe.tsx` is NOT modified in this step",
+        "The file compiles without TypeScript errors"
       ]
     }
   ],
   "constraints": [
-    "Only move the time button in this build step — do NOT move or remove the Real/Hourly/Yearly toggles yet.",
-    "Do NOT remove the right bottom panel in this step.",
-    "Do not alter backend logic or data models.",
-    "Do not modify any file listed under frontend.immutablePaths."
+    "Do NOT modify InteractiveGlobe.tsx in this step",
+    "Do not touch any immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui"
   ],
   "nonGoals": [
-    "Moving the Real/Hourly/Yearly toggles (deferred to a future step).",
-    "Removing the right bottom panel (deferred until all controls are successfully moved).",
-    "Any changes to backend Motoko code.",
-    "Redesigning or restyling the existing controls panel."
+    "Rendering TimeControls in InteractiveGlobe.tsx (Step 2)",
+    "Removing the bottom-right panel controls (Step 3)",
+    "Any backend changes",
+    "Any other UI modifications"
   ],
   "imageRequirements": {
     "required": [],

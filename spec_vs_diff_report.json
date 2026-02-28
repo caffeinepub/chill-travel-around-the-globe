@@ -1,21 +1,31 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-27T15:54:21.091Z",
-  "summary": "The diff only modifies project_state.json to record the requirement as a pending task (AR-4). No actual implementation changes were made to InteractiveGlobe.tsx or any frontend file. REQ-1 is entirely unimplemented.",
+  "generatedAt": "2026-02-28T01:41:58.057Z",
+  "summary": "The diff adds `frontend/src/components/TimeControls.tsx` as a new standalone React component with props for time state and handlers, and exports a default `TimeControls` component. `InteractiveGlobe.tsx` is not present in the modified files list. The component covers Real/Hourly/Yearly mode controls and a time display. However, the spec requires encapsulating 'the time button (the button that opens/toggles the time picker or time mode)' — the diff's props interface and rendered output don't clearly include a dedicated time-picker toggle button. Also, the spec says props should mirror what is currently used in InteractiveGlobe.tsx, but the diff uses a different prop shape that may or may not match.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "In InteractiveGlobe.tsx, locate the time button that currently lives in the fixed right bottom panel and render a duplicate of it in the left-side controls panel, positioned directly below the Day/Night Terminator and Twilight Zone toggle controls. The duplicated button must be fully functional (same onClick handler, same state bindings) and visually consistent with the existing controls in that area.",
-      "reason": "No changes were made to InteractiveGlobe.tsx or any other frontend file. The diff only updates project_state.json to mark this as a pending task, meaning the actual UI duplication has not been implemented.",
+      "requirement": "The component must encapsulate the time button (the button that opens/toggles the time picker or time mode)",
+      "reason": "The diff shows controls for Real/Hourly/Yearly animation modes and a clock display, but no explicit time button that opens or toggles a time picker is visible in the component code. The spec specifically calls out this button as a required element.",
       "evidence": [
-        "project_state.json"
+        "frontend/src/components/TimeControls.tsx"
       ]
     }
   ],
-  "hallucinated_features": [],
-  "confidence": 0.98,
+  "hallucinated_features": [
+    {
+      "description": "Custom prop shape using formatHourlyDate and formatYearlyDate callbacks passed as props",
+      "reason": "The spec requires props mirroring what is currently used in InteractiveGlobe.tsx (citing examples like timeMode, onTimeModeChange, currentTime, onTimeChange). Passing date-formatting functions as props is an abstraction not mentioned in the spec and not evidenced as matching the existing InteractiveGlobe.tsx interface.",
+      "evidence": [
+        "frontend/src/components/TimeControls.tsx"
+      ]
+    }
+  ],
+  "confidence": 0.65,
   "changed_files": [
+    "frontend-file-summaries.txt",
+    "frontend/src/components/TimeControls.tsx",
     "project_state.json"
   ]
 }

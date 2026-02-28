@@ -1,11 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Add a duplicate of the time button to the left-side controls panel in InteractiveGlobe.tsx, positioned directly below the Day/Night Terminator and Twilight Zone toggle controls.
+**Goal:** Extract the time controls UI into a new standalone React component file without modifying the existing InteractiveGlobe.tsx.
 
 **Planned changes:**
-- In `InteractiveGlobe.tsx`, render a duplicate of the time button in the left-side controls panel, placed directly below the Day/Night Terminator and Twilight Zone controls.
-- The duplicated button shares the same `onClick` handler and state bindings as the original.
-- The original time button in the right bottom panel remains unchanged.
+- Create `frontend/src/components/TimeControls.tsx` as a new file
+- The component accepts props for time mode (Real/Hourly/Yearly), time mode change handler, current time, and time change handler
+- The component renders the time button and Real/Hourly/Yearly toggle controls identically to the existing bottom-right panel in InteractiveGlobe.tsx
+- `InteractiveGlobe.tsx` is not modified
 
-**User-visible outcome:** The time button appears in both the left-side controls panel (below the Day/Night Terminator and Twilight Zone toggles) and the original right bottom panel, and both buttons work identically.
+**User-visible outcome:** No visible change to the app; the new TimeControls component exists as a standalone file ready for integration in a future step.
