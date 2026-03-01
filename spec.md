@@ -1,12 +1,10 @@
 # Specification
 
 ## Summary
-**Goal:** Extract the time controls UI into a new standalone React component file without modifying the existing InteractiveGlobe.tsx.
+**Goal:** Fix two bugs in the 2D map within the Travelogue panel: the map not rendering on first click, and markers from multiple journeys sharing the same city not all appearing.
 
 **Planned changes:**
-- Create `frontend/src/components/TimeControls.tsx` as a new file
-- The component accepts props for time mode (Real/Hourly/Yearly), time mode change handler, current time, and time change handler
-- The component renders the time button and Real/Hourly/Yearly toggle controls identically to the existing bottom-right panel in InteractiveGlobe.tsx
-- `InteractiveGlobe.tsx` is not modified
+- Ensure the Leaflet map initializes only after its container is fully mounted and visible, and calls `invalidateSize` so tiles and markers render correctly on the first button click without requiring a hard refresh.
+- Fix marker deduplication/keying logic so that when multiple journeys share the same city, markers from all journeys are shown — keyed per schedule item (e.g., by schedule item ID or journey+item combination) rather than by city name alone.
 
-**User-visible outcome:** No visible change to the app; the new TimeControls component exists as a standalone file ready for integration in a future step.
+**User-visible outcome:** Clicking the 2D map button in the Travelogue panel immediately displays the map with all markers on the first click, and all journey markers appear correctly even when multiple journeys share the same city.

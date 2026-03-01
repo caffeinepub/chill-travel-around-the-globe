@@ -1,24 +1,35 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-28T01:41:58.061Z",
+  "generatedAt": "2026-02-27T10:42:00.232Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 1,
-    "implemented": 1,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Create a new standalone React component file `frontend/src/components/TimeControls.tsx` that encapsulates the time button (the button that opens/toggles the time picker or time mode) and the Real/Hourly/Yearly toggle controls. The component must accept all necessary state values and handler callbacks as props (e.g., timeMode, onTimeModeChange, currentTime, onTimeChange, or equivalent props mirroring what is currently used in InteractiveGlobe.tsx). The component must render identically to the existing controls in the bottom-right panel. Do NOT modify `InteractiveGlobe.tsx` in this step.",
+        "summary": "Fix the 2D map in the Travelogue panel so it renders correctly on the first button click without requiring a hard refresh. The map component likely mounts before its container dimensions or data are ready — ensure the Leaflet map is initialized only after its container is fully mounted and visible, and that it invalidates its size after becoming visible (e.g., via a resize/invalidateSize call triggered on mount or visibility change).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/TimeControls.tsx"
+          "frontend/src/components/MapComponent.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/TimeControls.tsx"
+          "frontend/src/components/MapComponent.tsx"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Fix the 2D map in the Travelogue panel so that when multiple journeys share the same city, markers from all those journeys are shown on the map — not just the markers from the first journey added for that city. The current deduplication or keying logic is discarding markers from subsequent journeys with the same city. Each journey's schedule items must produce their own distinct markers regardless of shared city names.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/MapComponent.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/MapComponent.tsx"
         ]
       }
     ]
@@ -28,7 +39,9 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/TimeControls.tsx",
+    "frontend/src/components/MapComponent.tsx",
+    "frontend/src/components/TraveloguePanel.tsx",
+    "frontend/src/pages/LocationMapExplorer.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

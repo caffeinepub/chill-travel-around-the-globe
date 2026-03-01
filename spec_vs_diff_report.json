@@ -1,31 +1,16 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-28T01:41:58.057Z",
-  "summary": "The diff adds `frontend/src/components/TimeControls.tsx` as a new standalone React component with props for time state and handlers, and exports a default `TimeControls` component. `InteractiveGlobe.tsx` is not present in the modified files list. The component covers Real/Hourly/Yearly mode controls and a time display. However, the spec requires encapsulating 'the time button (the button that opens/toggles the time picker or time mode)' — the diff's props interface and rendered output don't clearly include a dedicated time-picker toggle button. Also, the spec says props should mirror what is currently used in InteractiveGlobe.tsx, but the diff uses a different prop shape that may or may not match.",
-  "missing_requirements": [
-    {
-      "id": "REQ-1",
-      "requirement": "The component must encapsulate the time button (the button that opens/toggles the time picker or time mode)",
-      "reason": "The diff shows controls for Real/Hourly/Yearly animation modes and a clock display, but no explicit time button that opens or toggles a time picker is visible in the component code. The spec specifically calls out this button as a required element.",
-      "evidence": [
-        "frontend/src/components/TimeControls.tsx"
-      ]
-    }
-  ],
-  "hallucinated_features": [
-    {
-      "description": "Custom prop shape using formatHourlyDate and formatYearlyDate callbacks passed as props",
-      "reason": "The spec requires props mirroring what is currently used in InteractiveGlobe.tsx (citing examples like timeMode, onTimeModeChange, currentTime, onTimeChange). Passing date-formatting functions as props is an abstraction not mentioned in the spec and not evidenced as matching the existing InteractiveGlobe.tsx interface.",
-      "evidence": [
-        "frontend/src/components/TimeControls.tsx"
-      ]
-    }
-  ],
-  "confidence": 0.65,
+  "generatedAt": "2026-02-27T10:42:00.229Z",
+  "summary": "Both REQ-1 and REQ-2 appear to be addressed in the diff. MapComponent.tsx includes invalidateSize() calls for first-render fixes (REQ-1) and journeyId-based schedule key for per-journey marker display (REQ-2). LocationMapExplorer.tsx and TraveloguePanel.tsx were updated to pass journey.title as journeyId. The file summary text in frontend-file-summaries.txt explicitly confirms both fixes are present. No hallucinated features or missing requirements detected based on available evidence.",
+  "missing_requirements": [],
+  "hallucinated_features": [],
+  "confidence": 0.82,
   "changed_files": [
     "frontend-file-summaries.txt",
-    "frontend/src/components/TimeControls.tsx",
+    "frontend/src/components/MapComponent.tsx",
+    "frontend/src/components/TraveloguePanel.tsx",
+    "frontend/src/pages/LocationMapExplorer.tsx",
     "project_state.json"
   ]
 }

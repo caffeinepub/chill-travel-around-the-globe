@@ -1,42 +1,56 @@
 {
   "kind": "build_request",
-  "title": "Step 1: Extract TimeControls into standalone component",
-  "projectName": "Globe Explorer",
+  "title": "Fix 2D map schedule item markers in Travelogue",
+  "projectName": "Travel Travelogue Globe",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Create a new standalone React component file `frontend/src/components/TimeControls.tsx` that encapsulates the time button (the button that opens/toggles the time picker or time mode) and the Real/Hourly/Yearly toggle controls. The component must accept all necessary state values and handler callbacks as props (e.g., timeMode, onTimeModeChange, currentTime, onTimeChange, or equivalent props mirroring what is currently used in InteractiveGlobe.tsx). The component must render identically to the existing controls in the bottom-right panel. Do NOT modify `InteractiveGlobe.tsx` in this step.",
+      "text": "Fix the 2D map in the Travelogue panel so it renders correctly on the first button click without requiring a hard refresh. The map component likely mounts before its container dimensions or data are ready — ensure the Leaflet map is initialized only after its container is fully mounted and visible, and that it invalidates its size after becoming visible (e.g., via a resize/invalidateSize call triggered on mount or visibility change).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1",
-          "msg-2"
+          "msg-recent-1"
         ],
         "quotes": [
-          "Create a new small file TimeControls.tsx containing just the time button + Real/Hourly/Yearly toggles, accepting the necessary props/handlers. No changes to the main file yet.",
-          "Starting Step 1 — creating the standalone TimeControls.tsx component with the time button and Real/Hourly/Yearly toggles, accepting all necessary props and handlers. No changes to InteractiveGlobe.tsx yet, keeping this change small and focused."
+          "when clicking the 2d map button on the travelogue, it didnt show up originally, I need to hard refresh the webpage each time and clicks the button again such that it starts to show"
         ]
       },
       "acceptanceCriteria": [
-        "`frontend/src/components/TimeControls.tsx` exists as a new file",
-        "The component exports a default or named `TimeControls` React component",
-        "The component accepts props for all state values and handlers needed to control time mode (Real/Hourly/Yearly) and the time button",
-        "The component renders the time button and Real/Hourly/Yearly toggle controls visually identical to the existing bottom-right panel controls in InteractiveGlobe.tsx",
-        "`InteractiveGlobe.tsx` is NOT modified in this step",
-        "The file compiles without TypeScript errors"
+        "Clicking the 2D map button in the Travelogue panel displays the map on the first click without any hard refresh",
+        "The map tiles and markers are fully visible immediately after the panel opens",
+        "No change to layout, UI structure, or other components"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Fix the 2D map in the Travelogue panel so that when multiple journeys share the same city, markers from all those journeys are shown on the map — not just the markers from the first journey added for that city. The current deduplication or keying logic is discarding markers from subsequent journeys with the same city. Each journey's schedule items must produce their own distinct markers regardless of shared city names.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent-1"
+        ],
+        "quotes": [
+          "when the travelogue has multiple journeys with same city, it will only show the markers of the first journey added for that city"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When two or more journeys share the same city, markers from all journeys for that city appear on the 2D map",
+        "Markers are uniquely keyed per schedule item (e.g., by schedule item ID or journey+item combination), not by city name alone",
+        "No markers from any journey are silently overwritten or skipped",
+        "No change to layout, UI structure, or other components"
       ]
     }
   ],
   "constraints": [
-    "Do NOT modify InteractiveGlobe.tsx in this step",
-    "Do not touch any immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui"
+    "Do not change any UI layout, JSX structure, or visual styling outside the map marker rendering and initialization logic",
+    "Fix must be strictly scoped to MapComponent.tsx and/or TraveloguePanel.tsx map-related logic only",
+    "Do not modify backend files"
   ],
   "nonGoals": [
-    "Rendering TimeControls in InteractiveGlobe.tsx (Step 2)",
-    "Removing the bottom-right panel controls (Step 3)",
-    "Any backend changes",
-    "Any other UI modifications"
+    "Fixing the Save button issue (reverted, out of scope for this build)",
+    "Any new features or UI redesign",
+    "Changes to the 3D globe or other map views"
   ],
   "imageRequirements": {
     "required": [],
