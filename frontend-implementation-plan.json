@@ -1,38 +1,53 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix 2D map schedule item markers in Travelogue",
+  "title": "Revise World Travel, Time Zone, and Global Control popup layouts",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Fix 2D map rendering on first click without requiring hard refresh",
+      "summary": "Revise World Travel popup layout with tailored structure, clear visual organization, and reduced size",
       "acceptanceCriteria": [
-        "Clicking the 2D map button in the Travelogue panel displays the map on the first click without any hard refresh",
-        "The map tiles and markers are fully visible immediately after the panel opens",
-        "No change to layout, UI structure, or other components"
+        "World Travel popup is visibly smaller than its previous size",
+        "Content is organized with clear sections, consistent spacing, and visual dividers appropriate to World Travel content",
+        "No content is clipped or overflows the popup container"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/MapComponent.tsx",
+          "path": "frontend/src/components/TraveloguePanel.tsx",
           "operation": "modify",
-          "description": "Add a useEffect hook that calls map.invalidateSize() when the map instance becomes available and after the container is mounted and visible. This ensures Leaflet recalculates the map dimensions after the Travelogue panel opens and the map container is rendered. The effect should depend on the map ref to trigger when the map is first initialized."
+          "description": "Reduce the Dialog width and height by adjusting the DialogContent className (e.g., from 'max-w-4xl' to 'max-w-3xl' or smaller). Introduce clear visual sections for Live Journeys, Upcoming Journeys, and Past Journeys using dividers or card groupings. Apply consistent spacing (e.g., gap-4 or gap-6) and padding between journey groups. Ensure journey cards have appropriate internal structure with labeled headings and organized schedule displays. Verify that all content remains visible and no overflow occurs with the reduced popup size."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Fix 2D map to show markers from all journeys sharing the same city",
+      "summary": "Revise Time Zone popup layout with tailored structure, clear visual organization, and reduced size",
       "acceptanceCriteria": [
-        "When two or more journeys share the same city, markers from all journeys for that city appear on the 2D map",
-        "Markers are uniquely keyed per schedule item (e.g., by schedule item ID or journey+item combination), not by city name alone",
-        "No markers from any journey are silently overwritten or skipped",
-        "No change to layout, UI structure, or other components"
+        "Time Zone popup is visibly smaller than its previous size",
+        "Timezone content is presented in a well-structured, readable layout appropriate to time zone data",
+        "No content is clipped or overflows the popup container"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/MapComponent.tsx",
+          "path": "frontend/src/pages/LocationMapExplorer.tsx",
           "operation": "modify",
-          "description": "Change the marker rendering logic for schedule items to use a unique key per schedule item instead of deduplicating by city name. Use a combination of date, time, and location to create unique keys (e.g., `${item.date}-${item.time}-${item.location}`) so that multiple journeys with the same city produce distinct markers. Update the map marker loop to ensure all schedule items are rendered without any city-based deduplication."
+          "description": "Locate the Time Zone dialog (timezone overlay controls dialog) and reduce its Dialog dimensions by adjusting the DialogContent className to a smaller max-width (e.g., 'max-w-md' or 'max-w-lg'). Structure the timezone offset controls with clear section labels (e.g., 'Select Timezone Offset'). Format the offset dropdown or input field with proper spacing and labeling. Add visual separators between different control groups if multiple controls exist. Ensure the layout is optimized for displaying timezone data (offset values, region names) in a compact, readable format. Verify no content overflow or clipping occurs with the reduced size."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Revise Global Control popup layout with tailored structure, clear visual organization, and reduced size",
+      "acceptanceCriteria": [
+        "Global Control popup is visibly smaller than its previous size",
+        "Controls and settings are organized in a structured, clearly grouped layout appropriate to global control options",
+        "No content is clipped or overflows the popup container"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/WebsiteLayoutPanel.tsx",
+          "operation": "modify",
+          "description": "Reduce the Dialog dimensions by adjusting the DialogContent className to a smaller max-width (e.g., from current size to 'max-w-md' or 'max-w-sm'). Organize controls into logical groups with clear section headings (e.g., 'Display Settings', 'Map Settings', 'Music Settings'). Use visual dividers (Separator component or border classes) between control groups. Apply consistent vertical spacing (space-y-4 or space-y-3) between form fields and groups. Ensure toggle switches, input fields, and buttons are properly aligned and labeled. Verify that all settings remain accessible and visible within the reduced popup size without overflow or clipping."
         }
       ]
     }

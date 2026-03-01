@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-the-2d-map-in-the-travelogue-panel-so-it-renders-correctly-on-the-first-button-click-without-requiring-a-hard-refresh-the-map-component-likely-mounts-before-its-container-dimensions-or-data-are-ready-ensure-the-leaflet-map-is-initialized-only-after-its-container-is-fully-mounted-and-visible-and-that-it-invalidates-its-size-after-becoming-visible-e-g-via-a-resize-invalidatesize-call-triggered-on-mount-or-visibility-change",
-      "featureTitle": "Fix the 2D map in the Travelogue panel so it renders correctly on the first button click without requiring a hard refresh. The map component likely mounts before its container dimensions or data are ready — ensure the Leaflet map is initialized only after its container is fully mounted and visible, and that it invalidates its size after becoming visible (e.g., via a resize/invalidateSize call triggered on mount or visibility change).",
+      "featureId": "feature-revise-the-world-travel-popup-to-have-a-layout-tailored-to-its-own-content-improve-internal-structure-with-clear-visual-organization-e-g-section-groupings-spacing-dividers-and-reduce-the-overall-popup-size-to-be-slightly-smaller-than-its-current-dimensions",
+      "featureTitle": "Revise the World Travel popup to have a layout tailored to its own content: improve internal structure with clear visual organization (e.g., section groupings, spacing, dividers), and reduce the overall popup size to be slightly smaller than its current dimensions.",
       "files": [
-        "frontend/src/components/MapComponent.tsx"
+        "frontend/src/components/TraveloguePanel.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -22,10 +22,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-fix-the-2d-map-in-the-travelogue-panel-so-that-when-multiple-journeys-share-the-same-city-markers-from-all-those-journeys-are-shown-on-the-map-not-just-the-markers-from-the-first-journey-added-for-that-city-the-current-deduplication-or-keying-logic-is-discarding-markers-from-subsequent-journeys-with-the-same-city-each-journey-s-schedule-items-must-produce-their-own-distinct-markers-regardless-of-shared-city-names",
-      "featureTitle": "Fix the 2D map in the Travelogue panel so that when multiple journeys share the same city, markers from all those journeys are shown on the map — not just the markers from the first journey added for that city. The current deduplication or keying logic is discarding markers from subsequent journeys with the same city. Each journey's schedule items must produce their own distinct markers regardless of shared city names.",
+      "featureId": "feature-revise-the-time-zone-popup-to-have-a-layout-tailored-to-its-own-content-improve-internal-structure-with-clear-visual-organization-e-g-timezone-list-formatting-offset-display-section-groupings-and-reduce-the-overall-popup-size-to-be-slightly-smaller-than-its-current-dimensions",
+      "featureTitle": "Revise the Time Zone popup to have a layout tailored to its own content: improve internal structure with clear visual organization (e.g., timezone list formatting, offset display, section groupings), and reduce the overall popup size to be slightly smaller than its current dimensions.",
       "files": [
-        "frontend/src/components/MapComponent.tsx"
+        "frontend/src/pages/LocationMapExplorer.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -38,6 +38,26 @@
       ],
       "testIds": [
         "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-revise-the-global-control-popup-to-have-a-layout-tailored-to-its-own-content-improve-internal-structure-with-clear-visual-organization-e-g-control-groupings-labeled-sections-consistent-spacing-and-reduce-the-overall-popup-size-to-be-slightly-smaller-than-its-current-dimensions",
+      "featureTitle": "Revise the Global Control popup to have a layout tailored to its own content: improve internal structure with clear visual organization (e.g., control groupings, labeled sections, consistent spacing), and reduce the overall popup size to be slightly smaller than its current dimensions.",
+      "files": [
+        "frontend/src/components/WebsiteLayoutPanel.tsx"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@1.1.2",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
       ],
       "confidence": "high"
     }

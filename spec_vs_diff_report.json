@@ -1,15 +1,15 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-27T10:42:00.229Z",
-  "summary": "Both REQ-1 and REQ-2 appear to be addressed in the diff. MapComponent.tsx includes invalidateSize() calls for first-render fixes (REQ-1) and journeyId-based schedule key for per-journey marker display (REQ-2). LocationMapExplorer.tsx and TraveloguePanel.tsx were updated to pass journey.title as journeyId. The file summary text in frontend-file-summaries.txt explicitly confirms both fixes are present. No hallucinated features or missing requirements detected based on available evidence.",
+  "generatedAt": "2026-03-01T03:11:41.657Z",
+  "summary": "The diff shows modifications to TraveloguePanel.tsx (World Travel popup), WebsiteLayoutPanel.tsx (Global Control popup), and LocationMapExplorer.tsx (which contains the Time Zone dialog). All three popups appear to have received layout revisions with improved internal structure, section groupings, spacing, separators/dividers, and reduced sizing. The changes appear to address all three requirements with distinct layouts tailored to each popup's content.",
   "missing_requirements": [],
   "hallucinated_features": [],
-  "confidence": 0.82,
+  "confidence": 0.72,
   "changed_files": [
     "frontend-file-summaries.txt",
-    "frontend/src/components/MapComponent.tsx",
     "frontend/src/components/TraveloguePanel.tsx",
+    "frontend/src/components/WebsiteLayoutPanel.tsx",
     "frontend/src/pages/LocationMapExplorer.tsx",
     "project_state.json"
   ]

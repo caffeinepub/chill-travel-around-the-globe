@@ -1,35 +1,46 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-27T10:42:00.232Z",
+  "generatedAt": "2026-03-01T03:11:41.661Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 2,
+    "total": 3,
+    "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix the 2D map in the Travelogue panel so it renders correctly on the first button click without requiring a hard refresh. The map component likely mounts before its container dimensions or data are ready — ensure the Leaflet map is initialized only after its container is fully mounted and visible, and that it invalidates its size after becoming visible (e.g., via a resize/invalidateSize call triggered on mount or visibility change).",
+        "summary": "Revise the World Travel popup to have a layout tailored to its own content: improve internal structure with clear visual organization (e.g., section groupings, spacing, dividers), and reduce the overall popup size to be slightly smaller than its current dimensions.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/MapComponent.tsx"
+          "frontend/src/components/TraveloguePanel.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/MapComponent.tsx"
+          "frontend/src/components/TraveloguePanel.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Fix the 2D map in the Travelogue panel so that when multiple journeys share the same city, markers from all those journeys are shown on the map — not just the markers from the first journey added for that city. The current deduplication or keying logic is discarding markers from subsequent journeys with the same city. Each journey's schedule items must produce their own distinct markers regardless of shared city names.",
+        "summary": "Revise the Time Zone popup to have a layout tailored to its own content: improve internal structure with clear visual organization (e.g., timezone list formatting, offset display, section groupings), and reduce the overall popup size to be slightly smaller than its current dimensions.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/MapComponent.tsx"
+          "frontend/src/pages/LocationMapExplorer.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/MapComponent.tsx"
+          "frontend/src/pages/LocationMapExplorer.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Revise the Global Control popup to have a layout tailored to its own content: improve internal structure with clear visual organization (e.g., control groupings, labeled sections, consistent spacing), and reduce the overall popup size to be slightly smaller than its current dimensions.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/WebsiteLayoutPanel.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/WebsiteLayoutPanel.tsx"
         ]
       }
     ]
@@ -39,8 +50,8 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/MapComponent.tsx",
     "frontend/src/components/TraveloguePanel.tsx",
+    "frontend/src/components/WebsiteLayoutPanel.tsx",
     "frontend/src/pages/LocationMapExplorer.tsx",
     "project_state.json",
     "scratch/component-selection.json",

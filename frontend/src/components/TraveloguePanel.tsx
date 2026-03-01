@@ -1,601 +1,321 @@
 import React, { useState } from 'react';
-import { BookOpen, Calendar, MapPin, ChevronDown, ChevronRight, Eye, MoreHorizontal, Filter, Plane, X, Map as MapIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { useGetAllJourneys, useGetJourneyScheduleWithDays, useUpdateScheduleItem, useDeleteScheduleItem, useAddScheduleItem, useGetWebsiteLayoutPreferences } from '@/hooks/useQueries';
-import { Journey, ScheduleItem } from '@/backend';
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Plane, MapPin, Calendar, Clock, ChevronRight, Globe, BookOpen, Scroll } from 'lucide-react';
+import { useGetAllJourneys, useGetScheduleItems } from '@/hooks/useQueries';
+import { Journey } from '@/backend';
 import DoodleItineraryDialogContent from './itinerary/DoodleItineraryDialogContent';
 import RetroItineraryDialogContent from './itinerary/RetroItineraryDialogContent';
 
 interface TraveloguePanelProps {
-  onFlightAnimation?: (fromCity: string, toCity: string, fromCoords: { lat: number; lon: number }, toCoords: { lat: number; lon: number }) => void;
-  // Receives journey.title (the unique schedule key) so the 2D map can filter
-  // schedule markers correctly even when multiple journeys share the same city.
-  onJourney2DMap?: (journeyId: string) => void;
+  onJourney2DMap?: (journeyId: string, city: string) => void;
+  onFlightAnimation?: (fromCity: string, toCity: string) => void;
 }
 
-export default function TraveloguePanel({ onFlightAnimation, onJourney2DMap }: TraveloguePanelProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [expandedJourneys, setExpandedJourneys] = useState<string[]>([]);
-  const [fullItineraryJourney, setFullItineraryJourney] = useState<Journey | null>(null);
-  const [retroItineraryJourney, setRetroItineraryJourney] = useState<Journey | null>(null);
-  const [editPopupOpen, setEditPopupOpen] = useState(false);
-  const [selectedScheduleItem, setSelectedScheduleItem] = useState<ScheduleItem | null>(null);
-  const [selectedJourney, setSelectedJourney] = useState<Journey | null>(null);
-  const [editForm, setEditForm] = useState({ date: '', time: '', location: '', activity: '' });
-  const [filterTab, setFilterTab] = useState<'live' | 'upcoming' | 'past'>('live');
-  const [flyingJourneys, setFlyingJourneys] = useState<Set<string>>(new Set());
+function formatDateShort(timestamp: bigint): string {
+  const date = new Date(Number(timestamp) / 1_000_000);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
-  const { data: journeys = [] } = useGetAllJourneys();
-  const { data: layoutPreferences } = useGetWebsiteLayoutPreferences();
-  const updateScheduleItem = useUpdateScheduleItem();
-  const deleteScheduleItem = useDeleteScheduleItem();
-  const addScheduleItem = useAddScheduleItem();
+function getDurationDays(start: bigint, end: bigint): number {
+  const ms = Number(end - start) / 1_000_000;
+  return Math.max(1, Math.ceil(ms / (1000 * 60 * 60 * 24)));
+}
 
-  const toggleJourney = (journeyTitle: string) => {
-    setExpandedJourneys(prev =>
-      prev.includes(journeyTitle)
-        ? prev.filter(t => t !== journeyTitle)
-        : [...prev, journeyTitle]
-    );
+function getJourneyStatus(journey: Journey): 'live' | 'upcoming' | 'past' {
+  const now = BigInt(Date.now()) * BigInt(1_000_000);
+  if (journey.startDate <= now && now <= journey.endDate) return 'live';
+  if (journey.startDate > now) return 'upcoming';
+  return 'past';
+}
+
+interface JourneyCardProps {
+  journey: Journey;
+  status: 'live' | 'upcoming' | 'past';
+  onMapClick?: (journeyId: string, city: string) => void;
+  onFlightClick?: (city: string) => void;
+}
+
+function JourneyCard({ journey, status, onMapClick, onFlightClick }: JourneyCardProps) {
+  const [showSchedule, setShowSchedule] = useState(false);
+  const [showDoodle, setShowDoodle] = useState(false);
+  const [showRetro, setShowRetro] = useState(false);
+  const { data: scheduleItems } = useGetScheduleItems(journey.title);
+
+  const statusColors = {
+    live: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+    upcoming: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+    past: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
   };
 
-  const formatDate = (timestamp: bigint) => {
-    const date = new Date(Number(timestamp) / 1000000);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  const statusDot = {
+    live: 'bg-emerald-400 animate-pulse',
+    upcoming: 'bg-blue-400',
+    past: 'bg-slate-400',
   };
 
-  const formatScheduleDate = (timestamp: bigint) => {
-    const date = new Date(Number(timestamp) / 1000000);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  const duration = getDurationDays(journey.startDate, journey.endDate);
 
-  const formatTime = (timeString: string) => {
-    return new Date(`2000-01-01T${timeString}`).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
-  const formatDateRange = (startTimestamp: bigint, endTimestamp: bigint) => {
-    const startDate = new Date(Number(startTimestamp) / 1000000);
-    const endDate = new Date(Number(endTimestamp) / 1000000);
-
-    const formatParts = (date: Date) => {
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        day: '2-digit',
-        month: 'short',
-        year: '2-digit',
-        weekday: 'short'
-      });
-      const parts = formatter.formatToParts(date);
-
-      const day = parts.find(p => p.type === 'day')?.value || '';
-      const month = parts.find(p => p.type === 'month')?.value || '';
-      const year = parts.find(p => p.type === 'year')?.value || '';
-      const weekday = parts.find(p => p.type === 'weekday')?.value || '';
-
-      return `${day} ${month} ${year} (${weekday})`;
-    };
-
-    return `${formatParts(startDate)} ~ ${formatParts(endDate)}`;
-  };
-
-  const geocodeCity = async (cityName: string): Promise<{ lat: number; lon: number } | null> => {
-    try {
-      const encodedQuery = encodeURIComponent(cityName);
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodedQuery}&limit=1&addressdetails=1`,
-        { headers: { 'User-Agent': 'LocationMapExplorer/1.0' } }
-      );
-
-      if (!response.ok) throw new Error('Geocoding request failed');
-
-      const data = await response.json();
-
-      if (data && data.length > 0) {
-        const result = data[0];
-        const lat = parseFloat(result.lat);
-        const lon = parseFloat(result.lon);
-        if (!isNaN(lat) && !isNaN(lon)) return { lat, lon };
-      }
-
-      return null;
-    } catch (error) {
-      console.error('Geocoding error:', error);
-      return null;
-    }
-  };
-
-  const handleFlyingClick = async (journey: Journey) => {
-    if (!onFlightAnimation) return;
-
-    const defaultSearchPlace = layoutPreferences?.defaultSearchPlace || 'Zurich';
-    const journeyKey = journey.title;
-
-    if (flyingJourneys.has(journeyKey)) {
-      const fromCoords = await geocodeCity(defaultSearchPlace);
-      const toCoords = await geocodeCity(journey.city);
-
-      if (!fromCoords || !toCoords) {
-        toast.error('Failed to get coordinates for flight animation');
-        return;
-      }
-
-      onFlightAnimation(defaultSearchPlace, journey.city, fromCoords, toCoords);
-
-      setFlyingJourneys(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(journeyKey);
-        return newSet;
-      });
-    } else {
-      const fromCoords = await geocodeCity(defaultSearchPlace);
-      const toCoords = await geocodeCity(journey.city);
-
-      if (!fromCoords || !toCoords) {
-        toast.error('Failed to get coordinates for flight animation');
-        return;
-      }
-
-      onFlightAnimation(defaultSearchPlace, journey.city, fromCoords, toCoords);
-      setFlyingJourneys(prev => new Set(prev).add(journeyKey));
-    }
-  };
-
-  // FIX: Pass journey.title (the unique schedule storage key) instead of journey.city.
-  // This ensures the 2D map fetches the correct schedule even when multiple journeys
-  // share the same city name.
-  const handleMapClick = (e: React.MouseEvent, journey: Journey) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (onJourney2DMap) {
-      onJourney2DMap(journey.title);
-    }
-  };
-
-  const now = Date.now();
-  const liveJourneys = journeys.filter(journey => {
-    const startDate = Number(journey.startDate) / 1000000;
-    const endDate = Number(journey.endDate) / 1000000;
-    return startDate <= now && endDate >= now;
-  }).sort((a, b) => Number(b.startDate) - Number(a.startDate));
-
-  const upcomingJourneys = journeys.filter(journey => {
-    const startDate = Number(journey.startDate) / 1000000;
-    return startDate > now;
-  }).sort((a, b) => Number(b.startDate) - Number(a.startDate));
-
-  const pastJourneys = journeys.filter(journey => {
-    const endDate = Number(journey.endDate) / 1000000;
-    return endDate < now;
-  }).sort((a, b) => Number(b.startDate) - Number(a.startDate));
-
-  const getFilteredJourneys = () => {
-    switch (filterTab) {
-      case 'live': return liveJourneys;
-      case 'upcoming': return upcomingJourneys;
-      case 'past': return pastJourneys;
-      default: return [];
-    }
-  };
-
-  const handleSixDotClick = (item: ScheduleItem, journey: Journey) => {
-    setSelectedScheduleItem(item);
-    setSelectedJourney(journey);
-    const dateObj = new Date(Number(item.date) / 1000000);
-    setEditForm({
-      date: dateObj.toISOString().split('T')[0],
-      time: item.time,
-      location: item.location || '',
-      activity: item.activity
-    });
-    setEditPopupOpen(true);
-  };
-
-  const handleEditSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!selectedScheduleItem || !selectedJourney || !editForm.date || !editForm.time || !editForm.location.trim() || !editForm.activity.trim()) {
-      toast.error('Please fill in all required fields including location');
-      return;
-    }
-
-    const newDateTime = new Date(`${editForm.date}T${editForm.time}`);
-    const journeyStart = new Date(Number(selectedJourney.startDate) / 1000000);
-    const journeyEnd = new Date(Number(selectedJourney.endDate) / 1000000);
-
-    if (newDateTime < journeyStart || newDateTime > journeyEnd) {
-      toast.error(`Date/time must be between ${journeyStart.toLocaleString()} and ${journeyEnd.toLocaleString()}`);
-      return;
-    }
-
-    try {
-      // Delete the old item using journey title as journeyId
-      await deleteScheduleItem.mutateAsync({
-        journeyId: selectedJourney.title,
-        date: selectedScheduleItem.date,
-        time: selectedScheduleItem.time
-      });
-
-      // Add the item with new details
-      const newDateTimestamp = BigInt(newDateTime.getTime() * 1000000);
-      await addScheduleItem.mutateAsync({
-        journeyId: selectedJourney.title,
-        date: newDateTimestamp,
-        time: editForm.time,
-        location: editForm.location.trim(),
-        activity: editForm.activity.trim()
-      });
-
-      toast.success('Schedule item updated successfully!');
-      setEditPopupOpen(false);
-      setSelectedScheduleItem(null);
-      setSelectedJourney(null);
-      setEditForm({ date: '', time: '', location: '', activity: '' });
-    } catch (error) {
-      console.error('Error updating schedule item:', error);
-      toast.error('Failed to update schedule item');
-    }
-  };
-
-  // Journey Card Component — uses journey.title as the unique key for schedule data
-  const JourneyCard = ({ journey, isExpanded, onToggle, onViewFullItinerary, onViewRetroItinerary, onFlyingClick, onMapClick, isFlying, formatDate, formatScheduleDate, formatTime, onSixDotClick, badgeColor }: any) => {
-    const { data: scheduleWithDays = [] } = useGetJourneyScheduleWithDays(journey.title);
-
-    return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 flex-1">
-              <Collapsible open={isExpanded} onOpenChange={onToggle}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                  </Button>
-                </CollapsibleTrigger>
-              </Collapsible>
-              <div className="flex-1">
-                <CardTitle className="text-lg">{journey.title || journey.city}</CardTitle>
-                <p className="text-xs text-muted-foreground">{journey.city}</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {formatDate(journey.startDate)} - {formatDate(journey.endDate)}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" style={{ backgroundColor: badgeColor === 'orange' ? '#fb923c' : badgeColor === 'green' ? '#4ade80' : '#60a5fa' }}>
-                {badgeColor === 'orange' ? 'Live' : badgeColor === 'green' ? 'Upcoming' : 'Past'}
-              </Badge>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onFlyingClick()}
-                className={isFlying ? 'bg-blue-100 dark:bg-blue-900' : ''}
-                title={isFlying ? 'Stop Flying' : 'Fly to Journey'}
-              >
-                <Plane className={`h-4 w-4 ${isFlying ? 'text-blue-600 dark:text-blue-400' : ''}`} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={(e) => onMapClick(e)}
-                title="View on 2D Map"
-              >
-                <MapIcon className="h-4 w-4" />
-              </Button>
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/5 overflow-hidden">
+      {/* Card Header */}
+      <div className="px-3 py-2.5 flex items-start justify-between gap-2">
+        <div className="flex items-start gap-2 min-w-0">
+          <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${statusDot[status]}`} />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-white truncate">{journey.title}</p>
+            <div className="flex items-center gap-1 mt-0.5">
+              <MapPin className="w-3 h-3 text-white/40 flex-shrink-0" />
+              <p className="text-xs text-white/50 truncate">{journey.city}</p>
             </div>
           </div>
-        </CardHeader>
-        <Collapsible open={isExpanded}>
-          <CollapsibleContent>
-            <CardContent className="space-y-4">
-              {scheduleWithDays.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No schedule items yet
-                </p>
-              ) : (
-                scheduleWithDays.map(([dayLabel, items]: [string, ScheduleItem[]], dayIndex: number) => (
-                  <div key={dayIndex} className="space-y-2">
-                    <h4 className="font-semibold text-sm">{dayLabel}</h4>
-                    {items.length > 0 && (
-                      <p className="text-xs text-muted-foreground">{formatScheduleDate(items[0].date)}</p>
-                    )}
-                    <div className="space-y-2 ml-4">
-                      {items.map((item: ScheduleItem, itemIndex: number) => (
-                        <div key={itemIndex} className="flex items-start gap-2 text-sm">
-                          <span className="font-medium text-primary">{formatTime(item.time)}</span>
-                          <span className="text-muted-foreground">•</span>
-                          <span className="flex-1">{item.activity}</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => onSixDotClick(item, journey)}
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))
-              )}
-              <div className="flex gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onViewFullItinerary}
-                  className="flex-1"
-                >
-                  <Eye className="h-4 w-4 mr-2" />
+        </div>
+        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border flex-shrink-0 ${statusColors[status]}`}>
+          {status === 'live' ? 'LIVE' : status === 'upcoming' ? 'SOON' : 'PAST'}
+        </span>
+      </div>
+
+      {/* Date & Duration Row */}
+      <div className="px-3 pb-2 flex items-center gap-3 text-xs text-white/40">
+        <div className="flex items-center gap-1">
+          <Calendar className="w-3 h-3" />
+          <span>{formatDateShort(journey.startDate)} – {formatDateShort(journey.endDate)}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Clock className="w-3 h-3" />
+          <span>{duration}d</span>
+        </div>
+        {scheduleItems && scheduleItems.length > 0 && (
+          <div className="flex items-center gap-1">
+            <BookOpen className="w-3 h-3" />
+            <span>{scheduleItems.length} items</span>
+          </div>
+        )}
+      </div>
+
+      <Separator className="bg-white/10" />
+
+      {/* Actions Row */}
+      <div className="px-2 py-1.5 flex items-center gap-1 flex-wrap">
+        {onMapClick && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-[10px] text-white/60 hover:text-white hover:bg-white/10"
+            onClick={() => onMapClick(journey.title, journey.city)}
+          >
+            <MapPin className="w-3 h-3 mr-1" />
+            Map
+          </Button>
+        )}
+        {onFlightClick && status !== 'past' && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-[10px] text-white/60 hover:text-white hover:bg-white/10"
+            onClick={() => onFlightClick(journey.city)}
+          >
+            <Plane className="w-3 h-3 mr-1" />
+            Fly
+          </Button>
+        )}
+        {scheduleItems && scheduleItems.length > 0 && (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-[10px] text-white/60 hover:text-white hover:bg-white/10"
+              onClick={() => setShowSchedule(!showSchedule)}
+            >
+              <ChevronRight className={`w-3 h-3 mr-1 transition-transform ${showSchedule ? 'rotate-90' : ''}`} />
+              Schedule
+            </Button>
+            <Dialog open={showDoodle} onOpenChange={setShowDoodle}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-white/60 hover:text-white hover:bg-white/10">
+                  <BookOpen className="w-3 h-3 mr-1" />
                   Doodle
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onViewRetroItinerary}
-                  className="flex-1"
-                >
-                  <Eye className="h-4 w-4 mr-2" />
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-slate-900 border-white/20">
+                <DoodleItineraryDialogContent journey={journey} />
+              </DialogContent>
+            </Dialog>
+            <Dialog open={showRetro} onOpenChange={setShowRetro}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-white/60 hover:text-white hover:bg-white/10">
+                  <Scroll className="w-3 h-3 mr-1" />
                   Retro
                 </Button>
-              </div>
-            </CardContent>
-          </CollapsibleContent>
-        </Collapsible>
-      </Card>
-    );
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-slate-900 border-white/20">
+                <RetroItineraryDialogContent journey={journey} />
+              </DialogContent>
+            </Dialog>
+          </>
+        )}
+      </div>
+
+      {/* Inline Schedule Preview */}
+      {showSchedule && scheduleItems && scheduleItems.length > 0 && (
+        <div className="border-t border-white/10 bg-black/20 px-3 py-2 space-y-1">
+          {scheduleItems.slice(0, 4).map((item, idx) => (
+            <div key={idx} className="flex items-start gap-2 text-xs">
+              <span className="text-white/30 w-10 flex-shrink-0">{item.time}</span>
+              <span className="text-white/70 truncate">{item.activity}</span>
+            </div>
+          ))}
+          {scheduleItems.length > 4 && (
+            <p className="text-[10px] text-white/30 pt-0.5">+{scheduleItems.length - 4} more items</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface JourneySectionProps {
+  title: string;
+  journeys: Journey[];
+  status: 'live' | 'upcoming' | 'past';
+  onMapClick?: (journeyId: string, city: string) => void;
+  onFlightClick?: (city: string) => void;
+  defaultOpen?: boolean;
+}
+
+function JourneySection({ title, journeys, status, onMapClick, onFlightClick, defaultOpen = false }: JourneySectionProps) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  if (journeys.length === 0) return null;
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-1 py-1 text-left group"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-white/70 uppercase tracking-wider">{title}</span>
+          <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-full">{journeys.length}</span>
+        </div>
+        <ChevronRight className={`w-3.5 h-3.5 text-white/30 transition-transform ${open ? 'rotate-90' : ''}`} />
+      </button>
+      {open && (
+        <div className="mt-1.5 space-y-2">
+          {journeys.map((journey) => (
+            <JourneyCard
+              key={journey.title}
+              journey={journey}
+              status={status}
+              onMapClick={onMapClick}
+              onFlightClick={onFlightClick}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function TraveloguePanel({ onJourney2DMap, onFlightAnimation }: TraveloguePanelProps) {
+  const [open, setOpen] = useState(false);
+  const { data: allJourneys = [] } = useGetAllJourneys();
+
+  const now = BigInt(Date.now()) * BigInt(1_000_000);
+  const liveJourneys = allJourneys.filter(j => j.startDate <= now && now <= j.endDate);
+  const upcomingJourneys = allJourneys.filter(j => j.startDate > now);
+  const pastJourneys = allJourneys.filter(j => j.endDate < now);
+
+  const totalJourneys = allJourneys.length;
+
+  const handleMapClick = (journeyId: string, city: string) => {
+    onJourney2DMap?.(journeyId, city);
+    setOpen(false);
+  };
+
+  const handleFlightClick = (city: string) => {
+    onFlightAnimation?.(city, city);
   };
 
   return (
-    <>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogTrigger asChild>
-          <Button
-            size="icon"
-            variant="secondary"
-            className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm hover:bg-white/80 dark:hover:bg-slate-800/80 shadow-lg border border-white/40 dark:border-slate-700/60"
-            title="Travelogue"
-          >
-            <BookOpen className="h-4 w-4" />
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto z-[3100]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
-              Travelogue
-            </DialogTitle>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0 rounded-full bg-black/40 hover:bg-black/60 border border-white/20 backdrop-blur-sm"
+          title="World Travel"
+        >
+          <img src="/assets/generated/world-button-icon-transparent.dim_32x32.png" alt="World Travel" className="w-5 h-5" />
+        </Button>
+      </DialogTrigger>
 
-          <div className="space-y-4">
-            <Tabs value={filterTab} onValueChange={(value) => setFilterTab(value as 'live' | 'upcoming' | 'past')}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="live" className="flex items-center gap-2">
-                  <Filter className="h-4 w-4" />
-                  Live
-                  <Badge variant="secondary" className="ml-1">
-                    {liveJourneys.length}
-                  </Badge>
-                </TabsTrigger>
-                <TabsTrigger value="upcoming" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Upcoming
-                  <Badge variant="secondary" className="ml-1">
-                    {upcomingJourneys.length}
-                  </Badge>
-                </TabsTrigger>
-                <TabsTrigger value="past" className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  Past
-                  <Badge variant="secondary" className="ml-1">
-                    {pastJourneys.length}
-                  </Badge>
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="live" className="space-y-4 mt-4">
-                {liveJourneys.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium">No live journeys</p>
-                    <p className="text-sm">You don't have any journeys currently in progress</p>
-                  </div>
-                ) : (
-                  liveJourneys.map((journey) => (
-                    <JourneyCard
-                      key={journey.title}
-                      journey={journey}
-                      isExpanded={expandedJourneys.includes(journey.title)}
-                      onToggle={() => toggleJourney(journey.title)}
-                      onViewFullItinerary={() => setFullItineraryJourney(journey)}
-                      onViewRetroItinerary={() => setRetroItineraryJourney(journey)}
-                      onFlyingClick={() => handleFlyingClick(journey)}
-                      onMapClick={(e: React.MouseEvent) => handleMapClick(e, journey)}
-                      isFlying={flyingJourneys.has(journey.title)}
-                      formatDate={formatDate}
-                      formatScheduleDate={formatScheduleDate}
-                      formatTime={formatTime}
-                      onSixDotClick={handleSixDotClick}
-                      badgeColor="orange"
-                    />
-                  ))
-                )}
-              </TabsContent>
-
-              <TabsContent value="upcoming" className="space-y-4 mt-4">
-                {upcomingJourneys.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium">No upcoming journeys</p>
-                    <p className="text-sm">You don't have any upcoming journeys planned</p>
-                  </div>
-                ) : (
-                  upcomingJourneys.map((journey) => (
-                    <JourneyCard
-                      key={journey.title}
-                      journey={journey}
-                      isExpanded={expandedJourneys.includes(journey.title)}
-                      onToggle={() => toggleJourney(journey.title)}
-                      onViewFullItinerary={() => setFullItineraryJourney(journey)}
-                      onViewRetroItinerary={() => setRetroItineraryJourney(journey)}
-                      onFlyingClick={() => handleFlyingClick(journey)}
-                      onMapClick={(e: React.MouseEvent) => handleMapClick(e, journey)}
-                      isFlying={flyingJourneys.has(journey.title)}
-                      formatDate={formatDate}
-                      formatScheduleDate={formatScheduleDate}
-                      formatTime={formatTime}
-                      onSixDotClick={handleSixDotClick}
-                      badgeColor="green"
-                    />
-                  ))
-                )}
-              </TabsContent>
-
-              <TabsContent value="past" className="space-y-4 mt-4">
-                {pastJourneys.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium">No past journeys</p>
-                    <p className="text-sm">You haven't completed any journeys yet</p>
-                  </div>
-                ) : (
-                  pastJourneys.map((journey) => (
-                    <JourneyCard
-                      key={journey.title}
-                      journey={journey}
-                      isExpanded={expandedJourneys.includes(journey.title)}
-                      onToggle={() => toggleJourney(journey.title)}
-                      onViewFullItinerary={() => setFullItineraryJourney(journey)}
-                      onViewRetroItinerary={() => setRetroItineraryJourney(journey)}
-                      onFlyingClick={() => handleFlyingClick(journey)}
-                      onMapClick={(e: React.MouseEvent) => handleMapClick(e, journey)}
-                      isFlying={flyingJourneys.has(journey.title)}
-                      formatDate={formatDate}
-                      formatScheduleDate={formatScheduleDate}
-                      formatTime={formatTime}
-                      onSixDotClick={handleSixDotClick}
-                      badgeColor="blue"
-                    />
-                  ))
-                )}
-              </TabsContent>
-            </Tabs>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Doodle Itinerary Dialog */}
-      {fullItineraryJourney && (
-        <Dialog open={!!fullItineraryJourney} onOpenChange={(open) => !open && setFullItineraryJourney(null)}>
-          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto z-[3200]">
-            <DialogHeader>
-              <DialogTitle>Doodle Itinerary — {fullItineraryJourney.title}</DialogTitle>
-            </DialogHeader>
-            <DoodleItineraryDialogContent journey={fullItineraryJourney} />
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Retro Itinerary Dialog */}
-      {retroItineraryJourney && (
-        <Dialog open={!!retroItineraryJourney} onOpenChange={(open) => !open && setRetroItineraryJourney(null)}>
-          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto z-[3200]">
-            <DialogHeader>
-              <DialogTitle>Retro Itinerary — {retroItineraryJourney.title}</DialogTitle>
-            </DialogHeader>
-            <RetroItineraryDialogContent journey={retroItineraryJourney} />
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Edit Schedule Item Popup */}
-      {editPopupOpen && selectedScheduleItem && selectedJourney && (
-        <div className="fixed inset-0 z-[3300] flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-lg">Edit Schedule Item</h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setEditPopupOpen(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+      <DialogContent className="max-w-xs w-[320px] bg-slate-900/95 border-white/15 backdrop-blur-xl text-white p-0 gap-0 max-h-[75vh] flex flex-col">
+        {/* Header */}
+        <DialogHeader className="px-4 pt-4 pb-3 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
+              <Globe className="w-3.5 h-3.5 text-blue-400" />
             </div>
-            <form onSubmit={handleEditSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="edit-date">Date</Label>
-                <Input
-                  id="edit-date"
-                  type="date"
-                  value={editForm.date}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, date: e.target.value }))}
-                  min={new Date(Number(selectedJourney.startDate) / 1000000).toISOString().split('T')[0]}
-                  max={new Date(Number(selectedJourney.endDate) / 1000000).toISOString().split('T')[0]}
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-time">Time</Label>
-                <Input
-                  id="edit-time"
-                  type="time"
-                  value={editForm.time}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, time: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-location">Location</Label>
-                <Input
-                  id="edit-location"
-                  value={editForm.location}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
-                  placeholder="Location name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-activity">Activity</Label>
-                <Input
-                  id="edit-activity"
-                  value={editForm.activity}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, activity: e.target.value }))}
-                  placeholder="Activity description"
-                />
-              </div>
-              <div className="flex gap-2 pt-2">
-                <Button type="button" variant="outline" onClick={() => setEditPopupOpen(false)} className="flex-1">
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="flex-1"
-                  disabled={updateScheduleItem.isPending || deleteScheduleItem.isPending || addScheduleItem.isPending}
-                >
-                  {(updateScheduleItem.isPending || deleteScheduleItem.isPending || addScheduleItem.isPending) ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </div>
-            </form>
+            <div>
+              <DialogTitle className="text-sm font-bold text-white">World Travel</DialogTitle>
+              <p className="text-[10px] text-white/40 mt-0.5">
+                {totalJourneys} {totalJourneys === 1 ? 'journey' : 'journeys'} total
+              </p>
+            </div>
           </div>
-        </div>
-      )}
-    </>
+        </DialogHeader>
+
+        <Separator className="bg-white/10 flex-shrink-0" />
+
+        {/* Content */}
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="px-3 py-3 space-y-3">
+            {totalJourneys === 0 ? (
+              <div className="text-center py-8">
+                <Globe className="w-8 h-8 text-white/20 mx-auto mb-2" />
+                <p className="text-xs text-white/40">No journeys yet</p>
+                <p className="text-[10px] text-white/25 mt-1">Add journeys in the Admin panel</p>
+              </div>
+            ) : (
+              <>
+                <JourneySection
+                  title="Live"
+                  journeys={liveJourneys}
+                  status="live"
+                  onMapClick={handleMapClick}
+                  onFlightClick={handleFlightClick}
+                  defaultOpen={true}
+                />
+                {liveJourneys.length > 0 && (upcomingJourneys.length > 0 || pastJourneys.length > 0) && (
+                  <Separator className="bg-white/10" />
+                )}
+                <JourneySection
+                  title="Upcoming"
+                  journeys={upcomingJourneys}
+                  status="upcoming"
+                  onMapClick={handleMapClick}
+                  onFlightClick={handleFlightClick}
+                  defaultOpen={upcomingJourneys.length > 0 && liveJourneys.length === 0}
+                />
+                {upcomingJourneys.length > 0 && pastJourneys.length > 0 && (
+                  <Separator className="bg-white/10" />
+                )}
+                <JourneySection
+                  title="Past"
+                  journeys={pastJourneys}
+                  status="past"
+                  onMapClick={handleMapClick}
+                  onFlightClick={handleFlightClick}
+                  defaultOpen={pastJourneys.length > 0 && liveJourneys.length === 0 && upcomingJourneys.length === 0}
+                />
+              </>
+            )}
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
   );
 }

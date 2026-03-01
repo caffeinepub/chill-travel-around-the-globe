@@ -1,235 +1,189 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Monitor, Map, Info } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
-import { useGetWebsiteLayoutPreferences, useSaveWebsiteLayoutPreferences } from '@/hooks/useQueries';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
+import { Settings, Music, Map, Monitor, Globe2 } from 'lucide-react';
+import { useGetWebsiteLayoutSettings, useSaveWebsiteLayoutPreferences } from '@/hooks/useQueries';
 
-export default function WebsiteLayoutPanel() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [localTime, setLocalTime] = useState<string>('');
-  const [utcOffset, setUtcOffset] = useState<string>('');
+interface WebsiteLayoutPanelProps {
+  onSettingsChange?: () => void;
+}
 
-  const { data: layoutPreferences } = useGetWebsiteLayoutPreferences();
-  const saveLayoutPreferences = useSaveWebsiteLayoutPreferences();
+export default function WebsiteLayoutPanel({ onSettingsChange }: WebsiteLayoutPanelProps) {
+  const [open, setOpen] = useState(false);
+  const { data: settings } = useGetWebsiteLayoutSettings();
+  const { mutate: saveSettings, isPending } = useSaveWebsiteLayoutPreferences();
 
-  // Calculate UTC offset for a given location
-  const calculateUtcOffset = (_locationName: string): string => {
-    try {
-      const now = new Date();
-      const offsetMinutes = -now.getTimezoneOffset();
-      const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
-      const offsetMins = Math.abs(offsetMinutes) % 60;
-      const sign = offsetMinutes >= 0 ? '+' : '-';
-      if (offsetMins === 0) {
-        return `${sign}${offsetHours}`;
-      } else {
-        return `${sign}${offsetHours}:${offsetMins.toString().padStart(2, '0')}`;
-      }
-    } catch (error) {
-      console.error('Error calculating UTC offset:', error);
-      return '+0';
-    }
-  };
+  const [showMusicPlayerBar, setShowMusicPlayerBar] = useState(true);
+  const [defaultSearchPlace, setDefaultSearchPlace] = useState('');
+  const [showAllTravelSpots, setShowAllTravelSpots] = useState(true);
+  const [rippleSize, setRippleSize] = useState(0.5);
+  const [cityFontSize, setCityFontSize] = useState(8.0);
 
-  // Update local time and UTC offset every second
   useEffect(() => {
-    const updateLocalTime = () => {
-      const now = new Date();
-      const formattedTime = now.toLocaleString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      });
-      setLocalTime(formattedTime);
-      const defaultPlace = layoutPreferences?.defaultSearchPlace || 'Hong Kong';
-      const offset = calculateUtcOffset(defaultPlace);
-      setUtcOffset(offset);
-    };
-
-    updateLocalTime();
-    const interval = setInterval(updateLocalTime, 1000);
-    return () => clearInterval(interval);
-  }, [layoutPreferences?.defaultSearchPlace]);
-
-  const handleMusicPlayerToggle = async (enabled: boolean) => {
-    try {
-      await saveLayoutPreferences.mutateAsync({
-        showMusicPlayerBar: enabled,
-        defaultSearchPlace: layoutPreferences?.defaultSearchPlace || 'Hong Kong',
-        showAllTravelSpots: layoutPreferences?.showAllTravelSpots ?? true,
-        rippleSize: layoutPreferences?.rippleSize ?? 0.5,
-        cityFontSize: layoutPreferences?.cityFontSize ?? 8.0,
-      });
-      toast.success(`Music player ${enabled ? 'enabled' : 'disabled'}`);
-    } catch (error) {
-      console.error('Error saving layout preferences:', error);
-      toast.error('Failed to save layout preferences');
+    if (settings) {
+      setShowMusicPlayerBar(settings.showMusicPlayerBar);
+      setDefaultSearchPlace(settings.defaultSearchPlace);
+      setShowAllTravelSpots(settings.showAllTravelSpots);
+      setRippleSize(settings.rippleSize);
+      setCityFontSize(settings.cityFontSize);
     }
-  };
+  }, [settings]);
 
-  const handleDefaultSearchPlaceChange = async (defaultSearchPlace: string) => {
-    if (!defaultSearchPlace.trim()) {
-      toast.error('Please enter a valid location');
-      return;
-    }
-
-    try {
-      await saveLayoutPreferences.mutateAsync({
-        showMusicPlayerBar: layoutPreferences?.showMusicPlayer ?? true,
-        defaultSearchPlace: defaultSearchPlace.trim(),
-        showAllTravelSpots: layoutPreferences?.showAllTravelSpots ?? true,
-        rippleSize: layoutPreferences?.rippleSize ?? 0.5,
-        cityFontSize: layoutPreferences?.cityFontSize ?? 8.0,
-      });
-      toast.success('Default search place updated successfully!');
-    } catch (error) {
-      console.error('Error saving default search place:', error);
-      toast.error('Failed to save default search place');
-    }
+  const handleSave = () => {
+    saveSettings(
+      {
+        showMusicPlayerBar,
+        defaultSearchPlace,
+        showAllTravelSpots,
+        rippleSize,
+        cityFontSize,
+      },
+      {
+        onSuccess: () => {
+          onSettingsChange?.();
+          setOpen(false);
+        },
+      }
+    );
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
-          size="icon"
-          variant="secondary"
-          className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm hover:bg-white/80 dark:hover:bg-slate-800/80 shadow-lg border border-white/40 dark:border-slate-700/60"
-          title="Website Layout"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0 rounded-full bg-black/40 hover:bg-black/60 border border-white/20 backdrop-blur-sm"
+          title="Global Control"
         >
-          <Settings className="h-4 w-4" />
+          <Settings className="w-4 h-4 text-white/80" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto z-[3100]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Website Layout
-          </DialogTitle>
+
+      <DialogContent className="max-w-[300px] w-[300px] bg-slate-900/95 border-white/15 backdrop-blur-xl text-white p-0 gap-0">
+        {/* Header */}
+        <DialogHeader className="px-4 pt-4 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
+              <Globe2 className="w-3.5 h-3.5 text-purple-400" />
+            </div>
+            <div>
+              <DialogTitle className="text-sm font-bold text-white">Global Control</DialogTitle>
+              <p className="text-[10px] text-white/40 mt-0.5">Display & map preferences</p>
+            </div>
+          </div>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <Separator className="bg-white/10" />
+
+        <div className="px-4 py-3 space-y-4">
+
+          {/* Display Settings Section */}
           <div>
-            <p className="text-sm text-muted-foreground">
-              Control the appearance and behavior of website features
-            </p>
+            <div className="flex items-center gap-1.5 mb-2.5">
+              <Monitor className="w-3 h-3 text-white/40" />
+              <span className="text-[10px] font-semibold text-white/50 uppercase tracking-wider">Display</span>
+            </div>
+            <div className="space-y-2.5">
+              {/* Music Player Bar */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Music className="w-3 h-3 text-white/40" />
+                  <Label className="text-xs text-white/70 cursor-pointer">Music Bar</Label>
+                </div>
+                <Switch
+                  checked={showMusicPlayerBar}
+                  onCheckedChange={setShowMusicPlayerBar}
+                  className="scale-75 origin-right"
+                />
+              </div>
+
+              {/* Show All Travel Spots */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Map className="w-3 h-3 text-white/40" />
+                  <Label className="text-xs text-white/70 cursor-pointer">All Spots</Label>
+                </div>
+                <Switch
+                  checked={showAllTravelSpots}
+                  onCheckedChange={setShowAllTravelSpots}
+                  className="scale-75 origin-right"
+                />
+              </div>
+            </div>
           </div>
 
-          <Tabs defaultValue="map" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="map" className="flex items-center gap-2">
-                <Map className="h-4 w-4" />
-                Map Settings
-              </TabsTrigger>
-              <TabsTrigger value="display" className="flex items-center gap-2">
-                <Monitor className="h-4 w-4" />
-                Display Settings
-              </TabsTrigger>
-            </TabsList>
+          <Separator className="bg-white/10" />
 
-            <TabsContent value="map" className="space-y-6 mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Map className="h-5 w-5" />
-                    Map Settings
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="space-y-1">
-                      <Label htmlFor="default-search-place" className="text-base font-medium">
-                        Default Search Place
-                      </Label>
-                    </div>
+          {/* Map Settings Section */}
+          <div>
+            <div className="flex items-center gap-1.5 mb-2.5">
+              <Map className="w-3 h-3 text-white/40" />
+              <span className="text-[10px] font-semibold text-white/50 uppercase tracking-wider">Map</span>
+            </div>
+            <div className="space-y-3">
+              {/* Default Search Place */}
+              <div className="space-y-1">
+                <Label className="text-[10px] text-white/50">Default Location</Label>
+                <Input
+                  value={defaultSearchPlace}
+                  onChange={(e) => setDefaultSearchPlace(e.target.value)}
+                  placeholder="e.g. Tokyo"
+                  className="h-7 text-xs bg-white/5 border-white/15 text-white placeholder:text-white/25 focus:border-white/30"
+                />
+              </div>
 
-                    <div className="flex gap-2">
-                      <Input
-                        id="default-search-place"
-                        type="text"
-                        placeholder="e.g., Hong Kong, New York, Tokyo"
-                        defaultValue={layoutPreferences?.defaultSearchPlace || 'Hong Kong'}
-                        disabled={saveLayoutPreferences.isPending}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            handleDefaultSearchPlaceChange(e.currentTarget.value);
-                          }
-                        }}
-                        className="flex-1"
-                      />
-                      <Button
-                        onClick={(e) => {
-                          const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                          if (input) {
-                            handleDefaultSearchPlaceChange(input.value);
-                          }
-                        }}
-                        disabled={saveLayoutPreferences.isPending}
-                      >
-                        {saveLayoutPreferences.isPending ? 'Saving...' : 'Save'}
-                      </Button>
-                    </div>
-                  </div>
+              {/* Ripple Size */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[10px] text-white/50">Ripple Size</Label>
+                  <span className="text-[10px] text-white/40 tabular-nums">{rippleSize.toFixed(1)}</span>
+                </div>
+                <Slider
+                  value={[rippleSize]}
+                  onValueChange={([v]) => setRippleSize(v)}
+                  min={0.1}
+                  max={2.0}
+                  step={0.1}
+                  className="w-full"
+                />
+              </div>
 
-                  <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      Current default search place: <strong>{layoutPreferences?.defaultSearchPlace || 'Hong Kong'}</strong>
-                      <br />
-                      Local time: <strong>{localTime} (UTC {utcOffset})</strong>
-                    </AlertDescription>
-                  </Alert>
-                </CardContent>
-              </Card>
-            </TabsContent>
+              {/* City Font Size */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[10px] text-white/50">City Labels</Label>
+                  <span className="text-[10px] text-white/40 tabular-nums">{cityFontSize.toFixed(0)}px</span>
+                </div>
+                <Slider
+                  value={[cityFontSize]}
+                  onValueChange={([v]) => setCityFontSize(v)}
+                  min={4}
+                  max={20}
+                  step={1}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
-            <TabsContent value="display" className="space-y-6 mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Monitor className="h-5 w-5" />
-                    Display Settings
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <Label htmlFor="music-player-toggle" className="text-base font-medium">
-                        Music Player Bar
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        Show or hide the music player bar at the bottom of the website
-                      </p>
-                    </div>
-                    <Switch
-                      id="music-player-toggle"
-                      checked={layoutPreferences?.showMusicPlayer !== false}
-                      onCheckedChange={handleMusicPlayerToggle}
-                      disabled={saveLayoutPreferences.isPending}
-                    />
-                  </div>
+        <Separator className="bg-white/10" />
 
-                  <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      Changes take effect immediately. The music player bar will be {layoutPreferences?.showMusicPlayer !== false ? 'visible' : 'hidden'}{' '}
-                      when you have uploaded songs to your Music Album.
-                    </AlertDescription>
-                  </Alert>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+        {/* Footer */}
+        <div className="px-4 py-3">
+          <Button
+            onClick={handleSave}
+            disabled={isPending}
+            className="w-full h-7 text-xs bg-purple-600 hover:bg-purple-700 text-white border-0"
+          >
+            {isPending ? 'Saving…' : 'Save Changes'}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

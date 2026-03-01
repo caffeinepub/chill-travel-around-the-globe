@@ -1,10 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Fix two bugs in the 2D map within the Travelogue panel: the map not rendering on first click, and markers from multiple journeys sharing the same city not all appearing.
+**Goal:** Revise the layouts of the World Travel, Time Zone, and Global Control popups to be slightly smaller and better organized, each with a layout tailored to its own content.
 
 **Planned changes:**
-- Ensure the Leaflet map initializes only after its container is fully mounted and visible, and calls `invalidateSize` so tiles and markers render correctly on the first button click without requiring a hard refresh.
-- Fix marker deduplication/keying logic so that when multiple journeys share the same city, markers from all journeys are shown — keyed per schedule item (e.g., by schedule item ID or journey+item combination) rather than by city name alone.
+- Reduce the overall size of the World Travel popup slightly and reorganize its content with clear section groupings, spacing, and visual dividers
+- Reduce the overall size of the Time Zone popup slightly and restructure its timezone list, offset display, and section groupings for improved readability
+- Reduce the overall size of the Global Control popup slightly and reorganize its controls into clearly labeled, consistently spaced groups
+- Each popup receives its own distinct layout rather than a shared template
 
-**User-visible outcome:** Clicking the 2D map button in the Travelogue panel immediately displays the map with all markers on the first click, and all journey markers appear correctly even when multiple journeys share the same city.
+**User-visible outcome:** The three upper-left popups (World Travel, Time Zone, Global Control) each appear slightly more compact and display their content in a well-organized, visually clear layout with no overflow or clipping.
