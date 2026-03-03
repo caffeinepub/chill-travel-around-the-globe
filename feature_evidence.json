@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-revise-the-world-travel-popup-to-have-a-layout-tailored-to-its-own-content-improve-internal-structure-with-clear-visual-organization-e-g-section-groupings-spacing-dividers-and-reduce-the-overall-popup-size-to-be-slightly-smaller-than-its-current-dimensions",
-      "featureTitle": "Revise the World Travel popup to have a layout tailored to its own content: improve internal structure with clear visual organization (e.g., section groupings, spacing, dividers), and reduce the overall popup size to be slightly smaller than its current dimensions.",
+      "featureId": "feature-reposition-the-time-zone-button-popup-so-it-opens-to-the-left-hand-side-anchored-close-to-the-time-zone-button-instead-of-its-current-position",
+      "featureTitle": "Reposition the Time Zone button popup so it opens to the left-hand side, anchored close to the Time Zone button, instead of its current position.",
       "files": [
-        "frontend/src/components/TraveloguePanel.tsx"
+        "frontend/src/pages/LocationMapExplorer.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -22,8 +22,8 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-revise-the-time-zone-popup-to-have-a-layout-tailored-to-its-own-content-improve-internal-structure-with-clear-visual-organization-e-g-timezone-list-formatting-offset-display-section-groupings-and-reduce-the-overall-popup-size-to-be-slightly-smaller-than-its-current-dimensions",
-      "featureTitle": "Revise the Time Zone popup to have a layout tailored to its own content: improve internal structure with clear visual organization (e.g., timezone list formatting, offset display, section groupings), and reduce the overall popup size to be slightly smaller than its current dimensions.",
+      "featureId": "feature-reposition-the-global-control-button-popup-so-it-opens-to-the-left-hand-side-anchored-close-to-the-global-control-button-instead-of-its-current-position",
+      "featureTitle": "Reposition the Global Control button popup so it opens to the left-hand side, anchored close to the Global Control button, instead of its current position.",
       "files": [
         "frontend/src/pages/LocationMapExplorer.tsx"
       ],
@@ -42,10 +42,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-revise-the-global-control-popup-to-have-a-layout-tailored-to-its-own-content-improve-internal-structure-with-clear-visual-organization-e-g-control-groupings-labeled-sections-consistent-spacing-and-reduce-the-overall-popup-size-to-be-slightly-smaller-than-its-current-dimensions",
-      "featureTitle": "Revise the Global Control popup to have a layout tailored to its own content: improve internal structure with clear visual organization (e.g., control groupings, labeled sections, consistent spacing), and reduce the overall popup size to be slightly smaller than its current dimensions.",
+      "featureId": "feature-restore-the-local-time-display-inside-the-time-zone-button-s-popup-box-it-should-show-the-local-time-with-utc-offset-as-it-previously-appeared-before-it-was-removed",
+      "featureTitle": "Restore the Local Time display inside the Time Zone button's popup box. It should show the local time (with UTC offset) as it previously appeared before it was removed.",
       "files": [
-        "frontend/src/components/WebsiteLayoutPanel.tsx"
+        "frontend/src/pages/LocationMapExplorer.tsx"
       ],
       "components": [
         "authorization@1.0.1",
@@ -58,6 +58,26 @@
       ],
       "testIds": [
         "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-re-add-the-font-size-control-slider-or-input-to-the-global-control-popup-placed-directly-below-the-globe-rotation-control",
+      "featureTitle": "Re-add the Font Size control (slider or input) to the Global Control popup, placed directly below the Globe Rotation control.",
+      "files": [
+        "frontend/src/pages/LocationMapExplorer.tsx"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@1.1.2",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
       ],
       "confidence": "high"
     }

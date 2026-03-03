@@ -1,29 +1,29 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-03-01T03:11:41.661Z",
+  "generatedAt": "2026-03-02T06:25:35.724Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 4,
+    "implemented": 4,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Revise the World Travel popup to have a layout tailored to its own content: improve internal structure with clear visual organization (e.g., section groupings, spacing, dividers), and reduce the overall popup size to be slightly smaller than its current dimensions.",
+        "summary": "Reposition the Time Zone button popup so it opens to the left-hand side, anchored close to the Time Zone button, instead of its current position.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx"
+          "frontend/src/pages/LocationMapExplorer.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/TraveloguePanel.tsx"
+          "frontend/src/pages/LocationMapExplorer.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Revise the Time Zone popup to have a layout tailored to its own content: improve internal structure with clear visual organization (e.g., timezone list formatting, offset display, section groupings), and reduce the overall popup size to be slightly smaller than its current dimensions.",
+        "summary": "Reposition the Global Control button popup so it opens to the left-hand side, anchored close to the Global Control button, instead of its current position.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/pages/LocationMapExplorer.tsx"
@@ -34,13 +34,24 @@
       },
       {
         "id": "REQ-3",
-        "summary": "Revise the Global Control popup to have a layout tailored to its own content: improve internal structure with clear visual organization (e.g., control groupings, labeled sections, consistent spacing), and reduce the overall popup size to be slightly smaller than its current dimensions.",
+        "summary": "Restore the Local Time display inside the Time Zone button's popup box. It should show the local time (with UTC offset) as it previously appeared before it was removed.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/WebsiteLayoutPanel.tsx"
+          "frontend/src/pages/LocationMapExplorer.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/WebsiteLayoutPanel.tsx"
+          "frontend/src/pages/LocationMapExplorer.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Re-add the Font Size control (slider or input) to the Global Control popup, placed directly below the Globe Rotation control.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/LocationMapExplorer.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/LocationMapExplorer.tsx"
         ]
       }
     ]
@@ -50,8 +61,6 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/TraveloguePanel.tsx",
-    "frontend/src/components/WebsiteLayoutPanel.tsx",
     "frontend/src/pages/LocationMapExplorer.tsx",
     "project_state.json",
     "scratch/component-selection.json",

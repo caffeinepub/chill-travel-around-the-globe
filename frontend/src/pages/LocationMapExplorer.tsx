@@ -1,344 +1,774 @@
-import React, { useState, useEffect } from 'react';
-import InteractiveGlobe from '@/components/InteractiveGlobe';
-import MapComponent from '@/components/MapComponent';
-import TraveloguePanel from '@/components/TraveloguePanel';
-import WebsiteLayoutPanel from '@/components/WebsiteLayoutPanel';
-import LoginPanel from '@/components/LoginPanel';
-import AdminPanel from '@/components/AdminPanel';
-import VibesPanel from '@/components/VibesPanel';
-import MusicPanel from '@/components/MusicPanel';
-import MusicPlayerBar from '@/components/MusicPlayerBar';
+import { useState, useCallback, useEffect } from 'react';
+import { MapPin, Globe, Building, Map, Building2, Earth, Clock, Search, Settings2, Layers, Sun, Moon, RotateCcw, Sunset, CloudSun, Timer, Type } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Map, Globe, Clock, Search } from 'lucide-react';
-import { useGetWebsiteLayoutSettings, useSearchLocation } from '@/hooks/useQueries';
-import { Song } from '@/backend';
 import { toast } from 'sonner';
+import MapComponent from '@/components/MapComponent';
+import InteractiveGlobe from '@/components/InteractiveGlobe';
+import AdminPanel from '@/components/AdminPanel';
+import TraveloguePanel from '@/components/TraveloguePanel';
+import VibesPanel from '@/components/VibesPanel';
+import LoginPanel from '@/components/LoginPanel';
+import MusicPlayerBar from '@/components/MusicPlayerBar';
+import MusicPanel from '@/components/MusicPanel';
+import WebsiteLayoutPanel from '@/components/WebsiteLayoutPanel';
+import { useSearchLocation, useGetWebsiteLayoutPreferences } from '@/hooks/useQueries';
+import { TravelSpot, Song, MapBookmark } from '@/backend';
 
-// Timezone offset options
-const TIMEZONE_OFFSETS = [
-  { label: 'UTC−12:00', value: -12 },
-  { label: 'UTC−11:00', value: -11 },
-  { label: 'UTC−10:00', value: -10 },
-  { label: 'UTC−9:30', value: -9.5 },
-  { label: 'UTC−9:00', value: -9 },
-  { label: 'UTC−8:00', value: -8 },
-  { label: 'UTC−7:00', value: -7 },
-  { label: 'UTC−6:00', value: -6 },
-  { label: 'UTC−5:00', value: -5 },
-  { label: 'UTC−4:30', value: -4.5 },
-  { label: 'UTC−4:00', value: -4 },
-  { label: 'UTC−3:30', value: -3.5 },
-  { label: 'UTC−3:00', value: -3 },
-  { label: 'UTC−2:00', value: -2 },
-  { label: 'UTC−1:00', value: -1 },
-  { label: 'UTC±0:00', value: 0 },
-  { label: 'UTC+1:00', value: 1 },
-  { label: 'UTC+2:00', value: 2 },
-  { label: 'UTC+3:00', value: 3 },
-  { label: 'UTC+3:30', value: 3.5 },
-  { label: 'UTC+4:00', value: 4 },
-  { label: 'UTC+4:30', value: 4.5 },
-  { label: 'UTC+5:00', value: 5 },
-  { label: 'UTC+5:30', value: 5.5 },
-  { label: 'UTC+5:45', value: 5.75 },
-  { label: 'UTC+6:00', value: 6 },
-  { label: 'UTC+6:30', value: 6.5 },
-  { label: 'UTC+7:00', value: 7 },
-  { label: 'UTC+8:00', value: 8 },
-  { label: 'UTC+8:45', value: 8.75 },
-  { label: 'UTC+9:00', value: 9 },
-  { label: 'UTC+9:30', value: 9.5 },
-  { label: 'UTC+10:00', value: 10 },
-  { label: 'UTC+10:30', value: 10.5 },
-  { label: 'UTC+11:00', value: 11 },
-  { label: 'UTC+12:00', value: 12 },
-  { label: 'UTC+12:45', value: 12.75 },
-  { label: 'UTC+13:00', value: 13 },
-  { label: 'UTC+14:00', value: 14 },
+interface LocationResult {
+  coordinates: [number, number];
+  name: string;
+  searchQuery: string;
+  type: 'country' | 'city' | 'town' | 'village';
+  country?: string;
+  state?: string;
+}
+
+interface FlightAnimationData {
+  fromCity: string;
+  toCity: string;
+  fromCoords: { lat: number; lon: number };
+  toCoords: { lat: number; lon: number };
+}
+
+// ─── UTC offset helpers ───────────────────────────────────────────────────────
+const ALL_OFFSETS = [-12, -11, -10, -9.5, -9, -8, -7, -6, -5, -4, -3.5, -3, -2, -1, 0, 1, 2, 3, 3.5, 4, 4.5, 5, 5.5, 5.75, 6, 6.5, 7, 8, 8.75, 9, 9.5, 10, 10.5, 11, 12, 12.75, 13, 14];
+
+function formatOffsetLabel(offset: number): string {
+  if (offset === 0) return 'UTC+0';
+  const sign = offset > 0 ? '+' : '-';
+  const abs = Math.abs(offset);
+  const h = Math.floor(abs);
+  const m = Math.round((abs - h) * 60);
+  return m > 0 ? `UTC${sign}${h}:${String(m).padStart(2, '0')}` : `UTC${sign}${h}`;
+}
+
+// World clock cities
+const WORLD_CLOCK_CITIES = [
+  { name: 'New York', tz: 'America/New_York', flag: '🇺🇸' },
+  { name: 'London', tz: 'Europe/London', flag: '🇬🇧' },
+  { name: 'Paris', tz: 'Europe/Paris', flag: '🇫🇷' },
+  { name: 'Dubai', tz: 'Asia/Dubai', flag: '🇦🇪' },
+  { name: 'Singapore', tz: 'Asia/Singapore', flag: '🇸🇬' },
+  { name: 'Tokyo', tz: 'Asia/Tokyo', flag: '🇯🇵' },
+  { name: 'Sydney', tz: 'Australia/Sydney', flag: '🇦🇺' },
+  { name: 'Los Angeles', tz: 'America/Los_Angeles', flag: '🇺🇸' },
 ];
 
-function formatUTCTime(offsetHours: number): string {
-  const now = new Date();
-  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
-  const offsetMs = offsetHours * 3600000;
-  const localTime = new Date(utcMs + offsetMs);
-  return localTime.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: true,
-  });
+// ─── Time Zone Popover Content ─────────────────────────────────────────────────
+interface TimeZonePopoverContentProps {
+  activeOffsetIndex: number;
+  onOffsetChange: (index: number) => void;
+  showTimeZones: boolean;
+  onToggleTimeZones: (v: boolean) => void;
+  currentTime: Date;
 }
 
-function formatLocalTime(): string {
-  return new Date().toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: true,
-  });
+function TimeZonePopoverContent({
+  activeOffsetIndex,
+  onOffsetChange,
+  showTimeZones,
+  onToggleTimeZones,
+  currentTime,
+}: TimeZonePopoverContentProps) {
+  const selectedOffset = ALL_OFFSETS[activeOffsetIndex];
+  const selectedLabel = formatOffsetLabel(selectedOffset);
+
+  // Compute time at selected offset
+  const localOffsetMinutes = -currentTime.getTimezoneOffset();
+  const selectedOffsetMinutes = selectedOffset * 60;
+  const diffMs = (selectedOffsetMinutes - localOffsetMinutes) * 60 * 1000;
+  const adjustedTime = new Date(currentTime.getTime() + diffMs);
+  const timeStr = adjustedTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  const dateStr = adjustedTime.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+  // Local time with UTC offset
+  const localOffsetHours = localOffsetMinutes / 60;
+  const localSign = localOffsetHours >= 0 ? '+' : '-';
+  const localAbsH = Math.abs(localOffsetHours);
+  const localH = Math.floor(localAbsH);
+  const localM = Math.round((localAbsH - localH) * 60);
+  const localOffsetStr = localM > 0 ? `UTC${localSign}${localH}:${String(localM).padStart(2, '0')}` : `UTC${localSign}${localH}`;
+  const localTimeStr = currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+
+  const sliderMin = 0;
+  const sliderMax = ALL_OFFSETS.length - 1;
+
+  return (
+    <div className="space-y-5">
+      {/* Local Time Display */}
+      <div className="rounded-xl bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20 p-3 text-center">
+        <div className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Local Time</div>
+        <div className="text-2xl font-bold text-foreground font-mono">{localTimeStr}</div>
+        <div className="text-xs text-muted-foreground mt-1">{localOffsetStr}</div>
+      </div>
+
+      {/* Selected Offset Hero */}
+      <div className="rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-4 text-center">
+        <div className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Selected Timezone</div>
+        <div className="text-3xl font-bold text-primary font-mono">{selectedLabel}</div>
+        <div className="text-lg font-mono text-foreground mt-1">{timeStr}</div>
+        <div className="text-xs text-muted-foreground mt-1">{dateStr}</div>
+      </div>
+
+      {/* Offset Slider */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <Timer className="w-4 h-4 text-primary" />
+          <span className="text-sm font-semibold">UTC Offset</span>
+        </div>
+        <div className="flex items-center gap-3 mb-3">
+          <span className="text-xs text-muted-foreground w-16">UTC−12</span>
+          <Slider
+            min={sliderMin}
+            max={sliderMax}
+            step={1}
+            value={[activeOffsetIndex]}
+            onValueChange={([v]) => onOffsetChange(v)}
+            className="flex-1"
+          />
+          <span className="text-xs text-muted-foreground w-14 text-right">UTC+14</span>
+        </div>
+        {/* Quick-select integer offsets */}
+        <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+          {ALL_OFFSETS.map((offset, idx) => {
+            if (!Number.isInteger(offset)) return null;
+            return (
+              <button
+                key={idx}
+                onClick={() => onOffsetChange(idx)}
+                className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                  idx === activeOffsetIndex
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-muted/40 text-muted-foreground border-border hover:border-primary/50'
+                }`}
+              >
+                {formatOffsetLabel(offset)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Overlay Toggle */}
+      <div className="flex items-center justify-between rounded-lg bg-muted/30 border border-border px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Layers className="w-4 h-4 text-primary" />
+          <div>
+            <div className="text-sm font-medium">Timezone Overlay</div>
+            <div className="text-xs text-muted-foreground">Highlight selected timezone on globe</div>
+          </div>
+        </div>
+        <Switch checked={showTimeZones} onCheckedChange={onToggleTimeZones} />
+      </div>
+
+      <Separator />
+
+      {/* World Clock */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <Clock className="w-4 h-4 text-primary" />
+          <span className="text-sm font-semibold">World Clock</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {WORLD_CLOCK_CITIES.map(city => {
+            const cityTimeStr = currentTime.toLocaleTimeString('en-US', {
+              timeZone: city.tz,
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false,
+            });
+            const cityDateStr = currentTime.toLocaleDateString('en-US', {
+              timeZone: city.tz,
+              month: 'short',
+              day: 'numeric',
+            });
+            const cityHour = parseInt(currentTime.toLocaleTimeString('en-US', { timeZone: city.tz, hour: '2-digit', hour12: false }));
+            const isDaytime = cityHour >= 6 && cityHour < 20;
+            return (
+              <div key={city.name} className="flex items-center gap-2 rounded-lg bg-muted/40 border border-border px-3 py-2">
+                <span className="text-base">{city.flag}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[10px] text-muted-foreground truncate">{city.name}</div>
+                  <div className="text-sm font-mono font-semibold text-foreground leading-tight">{cityTimeStr}</div>
+                  <div className="text-[10px] text-muted-foreground">{cityDateStr}</div>
+                </div>
+                <div className="shrink-0">
+                  {isDaytime
+                    ? <Sun className="w-3.5 h-3.5 text-yellow-400" />
+                    : <Moon className="w-3.5 h-3.5 text-blue-300" />}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
 }
 
-interface MapLocation {
-  coordinates: [number, number];
-  locationName: string;
+// ─── Global Control Popover Content ───────────────────────────────────────────
+interface GlobalControlPopoverContentProps {
+  viewMode: '3D' | '2D';
+  onViewModeChange: (v: '3D' | '2D') => void;
+  showCapitals: boolean;
+  onToggleCapitals: (v: boolean) => void;
+  showGlobalCities: boolean;
+  onToggleGlobalCities: (v: boolean) => void;
+  showMajorCities: boolean;
+  onToggleMajorCities: (v: boolean) => void;
+  showTerminator: boolean;
+  onToggleTerminator: (v: boolean) => void;
+  showTwilight: boolean;
+  onToggleTwilight: (v: boolean) => void;
+  rotationSpeed: number;
+  onRotationSpeedChange: (v: number) => void;
+  cityFontSize: number;
+  onFontSizeChange: (v: number) => void;
 }
 
-const DEFAULT_MAP_LOCATION: MapLocation = {
-  coordinates: [48.8566, 2.3522], // Paris as default
-  locationName: 'Paris',
-};
+function GlobalControlPopoverContent({
+  viewMode, onViewModeChange,
+  showCapitals, onToggleCapitals,
+  showGlobalCities, onToggleGlobalCities,
+  showMajorCities, onToggleMajorCities,
+  showTerminator, onToggleTerminator,
+  showTwilight, onToggleTwilight,
+  rotationSpeed, onRotationSpeedChange,
+  cityFontSize, onFontSizeChange,
+}: GlobalControlPopoverContentProps) {
 
+  const ControlRow = ({
+    icon: Icon,
+    label,
+    description,
+    checked,
+    onChange,
+    iconColor = 'text-primary',
+  }: {
+    icon: React.ElementType;
+    label: string;
+    description?: string;
+    checked: boolean;
+    onChange: (v: boolean) => void;
+    iconColor?: string;
+  }) => (
+    <div className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-muted/30 transition-colors">
+      <div className="flex items-center gap-3">
+        <div className="w-7 h-7 rounded-md bg-muted/50 flex items-center justify-center shrink-0">
+          <Icon className={`w-3.5 h-3.5 ${iconColor}`} />
+        </div>
+        <div>
+          <div className="text-sm font-medium leading-tight">{label}</div>
+          {description && <div className="text-[11px] text-muted-foreground mt-0.5">{description}</div>}
+        </div>
+      </div>
+      <Switch checked={checked} onCheckedChange={onChange} />
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* View Mode */}
+      <div>
+        <div className="flex items-center gap-2 mb-2 px-1">
+          <Globe className="w-4 h-4 text-primary" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">View Mode</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => onViewModeChange('3D')}
+            className={`flex flex-col items-center gap-2 rounded-xl border p-4 transition-all ${
+              viewMode === '3D'
+                ? 'bg-primary/10 border-primary text-primary'
+                : 'bg-muted/20 border-border text-muted-foreground hover:border-primary/40'
+            }`}
+          >
+            <Globe className="w-6 h-6" />
+            <span className="text-xs font-semibold">3D Globe</span>
+            <span className="text-[10px] opacity-70">Interactive sphere</span>
+          </button>
+          <button
+            onClick={() => onViewModeChange('2D')}
+            className={`flex flex-col items-center gap-2 rounded-xl border p-4 transition-all ${
+              viewMode === '2D'
+                ? 'bg-primary/10 border-primary text-primary'
+                : 'bg-muted/20 border-border text-muted-foreground hover:border-primary/40'
+            }`}
+          >
+            <Map className="w-6 h-6" />
+            <span className="text-xs font-semibold">2D Map</span>
+            <span className="text-[10px] opacity-70">Flat projection</span>
+          </button>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* City Labels */}
+      <div>
+        <div className="flex items-center gap-2 mb-1 px-1">
+          <Settings2 className="w-4 h-4 text-primary" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">City Labels</span>
+        </div>
+        <div className="space-y-0.5">
+          <ControlRow
+            icon={MapPin}
+            label="Capital Cities"
+            description="Show capital city labels"
+            checked={showCapitals}
+            onChange={onToggleCapitals}
+            iconColor="text-yellow-400"
+          />
+          <ControlRow
+            icon={Building}
+            label="Global Cities"
+            description="Show global city labels"
+            checked={showGlobalCities}
+            onChange={onToggleGlobalCities}
+            iconColor="text-blue-400"
+          />
+          <ControlRow
+            icon={Building2}
+            label="Major Cities"
+            description="Show major city labels"
+            checked={showMajorCities}
+            onChange={onToggleMajorCities}
+            iconColor="text-green-400"
+          />
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Solar & Twilight */}
+      <div>
+        <div className="flex items-center gap-2 mb-1 px-1">
+          <Sun className="w-4 h-4 text-yellow-400" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Solar & Twilight</span>
+        </div>
+        <div className="space-y-0.5">
+          <ControlRow
+            icon={Sunset}
+            label="Solar Terminator"
+            description="Day/night boundary line"
+            checked={showTerminator}
+            onChange={onToggleTerminator}
+            iconColor="text-yellow-400"
+          />
+          <ControlRow
+            icon={CloudSun}
+            label="Twilight Zone"
+            description="Civil twilight overlay"
+            checked={showTwilight}
+            onChange={onToggleTwilight}
+            iconColor="text-orange-300"
+          />
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Globe Rotation */}
+      <div>
+        <div className="flex items-center gap-2 mb-2 px-1">
+          <RotateCcw className="w-4 h-4 text-primary" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Globe Rotation</span>
+        </div>
+        <div className="px-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-muted-foreground">Speed</span>
+            <span className="text-xs font-mono text-foreground">{rotationSpeed === 0 ? 'Off' : rotationSpeed.toFixed(4)}</span>
+          </div>
+          <Slider
+            min={0}
+            max={0.005}
+            step={0.0001}
+            value={[rotationSpeed]}
+            onValueChange={([v]) => onRotationSpeedChange(v)}
+          />
+          <div className="flex justify-between mt-1">
+            <span className="text-[10px] text-muted-foreground">Stopped</span>
+            <span className="text-[10px] text-muted-foreground">Fast</span>
+          </div>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Font Size */}
+      <div>
+        <div className="flex items-center gap-2 mb-2 px-1">
+          <Type className="w-4 h-4 text-primary" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Font Size</span>
+        </div>
+        <div className="px-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-muted-foreground">City Label Size</span>
+            <span className="text-xs font-mono text-foreground">{cityFontSize.toFixed(0)}px</span>
+          </div>
+          <Slider
+            min={6}
+            max={24}
+            step={1}
+            value={[cityFontSize]}
+            onValueChange={([v]) => onFontSizeChange(v)}
+          />
+          <div className="flex justify-between mt-1">
+            <span className="text-[10px] text-muted-foreground">Small</span>
+            <span className="text-[10px] text-muted-foreground">Large</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function LocationMapExplorer() {
-  const [is3DView, setIs3DView] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [mapLocation, setMapLocation] = useState<MapLocation>(DEFAULT_MAP_LOCATION);
+  const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
+  const [viewMode, setViewMode] = useState<'3D' | '2D'>('3D');
+  const [focusedTravelSpot, setFocusedTravelSpot] = useState<TravelSpot | null>(null);
+  const [focusedBookmark, setFocusedBookmark] = useState<MapBookmark | null>(null);
+  const [currentSong, setCurrentSong] = useState<Song & { albumTitle: string } | undefined>(undefined);
+  const [showTimeZones, setShowTimeZones] = useState(false);
+  const [timezonePopoverOpen, setTimezonePopoverOpen] = useState(false);
+  const [globalControlPopoverOpen, setGlobalControlPopoverOpen] = useState(false);
+  const [showCapitals, setShowCapitals] = useState(true);
+  const [showGlobalCities, setShowGlobalCities] = useState(true);
+  const [showMajorCities, setShowMajorCities] = useState(true);
+  const [showTerminator, setShowTerminator] = useState(true);
+  const [showTwilight, setShowTwilight] = useState(true);
+  const [activeOffsetIndex, setActiveOffsetIndex] = useState<number>(14);
+  const [rotationSpeed, setRotationSpeed] = useState<number>(0.0005);
+  const [countryFontSize, setCountryFontSize] = useState<number>(8);
+  const [flightAnimation, setFlightAnimation] = useState<FlightAnimationData | null>(null);
   const [selectedJourneyId, setSelectedJourneyId] = useState<string | undefined>(undefined);
-  const [currentTime, setCurrentTime] = useState(formatLocalTime());
-  const [utcOffset, setUtcOffset] = useState(0);
-  const [utcTime, setUtcTime] = useState(formatUTCTime(0));
-  const [showTimezoneDialog, setShowTimezoneDialog] = useState(false);
-  const [currentSong, setCurrentSong] = useState<Song | null>(null);
-  const { data: layoutSettings } = useGetWebsiteLayoutSettings();
-  const { mutate: searchLocation, isPending: isSearching } = useSearchLocation();
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
-  // Clock tick
+  const { mutate: searchLocation, isPending } = useSearchLocation();
+  const { data: layoutPreferences } = useGetWebsiteLayoutPreferences();
+
+  // Live clock update effect
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentTime(formatLocalTime());
-      setUtcTime(formatUTCTime(utcOffset));
+      setCurrentTime(new Date());
     }, 1000);
     return () => clearInterval(interval);
-  }, [utcOffset]);
+  }, []);
 
-  const performSearch = (query: string) => {
-    searchLocation(query, {
+  // Format local time with UTC offset
+  const formatLocalTime = (): string => {
+    const localOffsetMinutes = -currentTime.getTimezoneOffset();
+    const localOffsetHours = localOffsetMinutes / 60;
+    const sign = localOffsetHours >= 0 ? '+' : '-';
+    const absH = Math.abs(localOffsetHours);
+    const h = Math.floor(absH);
+    const m = Math.round((absH - h) * 60);
+    const offsetStr = m > 0 ? `UTC${sign}${h}:${String(m).padStart(2, '0')}` : `UTC${sign}${h}`;
+    const timeStr = currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    return `${timeStr} (${offsetStr})`;
+  };
+
+  const handleSearch = useCallback(() => {
+    if (!searchQuery.trim()) return;
+    searchLocation(searchQuery, {
       onSuccess: (result) => {
         if (result) {
-          setMapLocation({
-            coordinates: result.coordinates,
-            locationName: result.searchQuery,
-          });
-          setIs3DView(false);
+          setSelectedLocation(result as LocationResult);
         } else {
-          toast.error(`"${query}" not found. Try a different location.`);
+          toast.error('Location not found. Try a different search term.');
         }
       },
       onError: () => {
-        toast.error('Failed to search for location. Please try again.');
+        toast.error('Search failed. Please try again.');
       },
     });
+  }, [searchQuery, searchLocation]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleSearch();
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      performSearch(searchQuery.trim());
-    }
-  };
+  const handleTravelSpotFocus = useCallback((spot: TravelSpot) => {
+    setFocusedTravelSpot(spot);
+    setViewMode('2D');
+  }, []);
 
-  const handleJourney2DMap = (journeyId: string, city: string) => {
+  const handleBookmarkFocus = useCallback((bookmark: MapBookmark) => {
+    setFocusedBookmark(bookmark);
+    setViewMode('2D');
+  }, []);
+
+  const handleFlightAnimation = useCallback((
+    fromCity: string,
+    toCity: string,
+    fromCoords: { lat: number; lon: number },
+    toCoords: { lat: number; lon: number }
+  ) => {
+    setFlightAnimation({ fromCity, toCity, fromCoords, toCoords });
+    setViewMode('3D');
+  }, []);
+
+  const handleJourney2DMap = useCallback((journeyId: string) => {
     setSelectedJourneyId(journeyId);
-    performSearch(city);
-  };
+    setViewMode('2D');
+  }, []);
 
-  const handleFlightAnimation = (_fromCity: string, _toCity: string) => {
-    setIs3DView(true);
-  };
-
-  const handleSongChange = (song: Song | null) => {
+  const handleSongChange = useCallback((song: Song & { albumTitle: string }) => {
     setCurrentSong(song);
-  };
+  }, []);
 
-  const showMusicBar = layoutSettings?.showMusicPlayerBar ?? true;
-  const selectedOffsetLabel = TIMEZONE_OFFSETS.find(o => o.value === utcOffset)?.label ?? 'UTC±0:00';
+  // Use correct property name from WebsiteLayoutPreferences
+  const showMusicBar = layoutPreferences?.showMusicPlayer ?? true;
+
+  // Derive map coordinates and name from selectedLocation
+  const mapCoordinates: [number, number] = selectedLocation?.coordinates ?? [51.505, -0.09];
+  const mapLocationName = selectedLocation?.name ?? 'London';
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black">
-      {/* Main View */}
-      {is3DView ? (
-        <InteractiveGlobe />
-      ) : (
-        <MapComponent
-          coordinates={mapLocation.coordinates}
-          locationName={mapLocation.locationName}
-          journeyId={selectedJourneyId}
-        />
-      )}
-
-      {/* Top-left controls */}
-      <div className="absolute top-3 left-3 flex flex-col gap-2 z-20">
-        {/* Row 1: Three main buttons */}
-        <div className="flex items-center gap-1.5">
-          <TraveloguePanel
-            onJourney2DMap={handleJourney2DMap}
-            onFlightAnimation={handleFlightAnimation}
-          />
-          {/* Time Zone Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 rounded-full bg-black/40 hover:bg-black/60 border border-white/20 backdrop-blur-sm"
-            title="Time Zone"
-            onClick={() => setShowTimezoneDialog(true)}
-          >
-            <Clock className="w-4 h-4 text-white/80" />
-          </Button>
-          <WebsiteLayoutPanel />
+    <TooltipProvider>
+      <div className="relative w-full h-screen overflow-hidden bg-background">
+        {/* Main View */}
+        <div className="absolute inset-0">
+          {viewMode === '3D' ? (
+            <InteractiveGlobe
+              showCapitals={showCapitals}
+              showGlobalCities={showGlobalCities}
+              showMajorCities={showMajorCities}
+              showTerminator={showTerminator}
+              showTwilight={showTwilight}
+              rotationSpeed={rotationSpeed}
+              countryFontSize={countryFontSize}
+              activeOffsetIndex={activeOffsetIndex}
+              showTimeZones={showTimeZones}
+              flightAnimation={flightAnimation}
+              onFlightAnimationComplete={() => setFlightAnimation(null)}
+            />
+          ) : (
+            <MapComponent
+              coordinates={mapCoordinates}
+              locationName={mapLocationName}
+              focusedTravelSpot={focusedTravelSpot}
+              onTravelSpotFocused={() => setFocusedTravelSpot(null)}
+              focusedBookmark={focusedBookmark}
+              onBookmarkFocused={() => setFocusedBookmark(null)}
+              journeyId={selectedJourneyId}
+            />
+          )}
         </div>
 
-        {/* Row 2: Live clock display */}
-        <div className="flex flex-col gap-1">
-          <div className="bg-black/40 backdrop-blur-sm border border-white/15 rounded-md px-2.5 py-1.5">
-            <p className="text-[9px] text-white/40 uppercase tracking-wider mb-0.5">Local</p>
-            <p className="text-xs font-mono text-white/80 tabular-nums">{currentTime}</p>
-          </div>
-          <div
-            className="bg-black/40 backdrop-blur-sm border border-white/15 rounded-md px-2.5 py-1.5 cursor-pointer hover:border-white/30 transition-colors"
-            onClick={() => setShowTimezoneDialog(true)}
-            title="Click to change timezone"
-          >
-            <p className="text-[9px] text-white/40 uppercase tracking-wider mb-0.5">{selectedOffsetLabel}</p>
-            <p className="text-xs font-mono text-white/80 tabular-nums">{utcTime}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Top-right controls */}
-      <div className="absolute top-3 right-3 flex items-center gap-2 z-20">
-        <LoginPanel />
-        <AdminPanel />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0 rounded-full bg-black/40 hover:bg-black/60 border border-white/20 backdrop-blur-sm"
-          onClick={() => setIs3DView(!is3DView)}
-          title={is3DView ? 'Switch to 2D Map' : 'Switch to 3D Globe'}
-        >
-          {is3DView ? <Map className="w-4 h-4 text-white/80" /> : <Globe className="w-4 h-4 text-white/80" />}
-        </Button>
-      </div>
-
-      {/* Search Bar */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20" style={{ width: '37.5%' }}>
-        <form onSubmit={handleSearch} className="flex gap-1.5">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40" />
-            <input
-              type="text"
+        {/* Search Bar */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 w-[37.5%] max-w-xl min-w-[280px]">
+          <div className="flex gap-2 bg-background/90 backdrop-blur-sm rounded-full border border-border shadow-lg px-3 py-2">
+            <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search city or place…"
-              className="w-full h-8 pl-8 pr-3 text-xs bg-black/50 backdrop-blur-sm border border-white/20 rounded-full text-white placeholder:text-white/30 focus:outline-none focus:border-white/40 transition-colors"
+              onKeyDown={handleKeyDown}
+              placeholder="Search location..."
+              className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 h-8 text-sm"
             />
-          </div>
-          <Button
-            type="submit"
-            size="sm"
-            disabled={isSearching}
-            className="h-8 px-3 text-xs rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white/80"
-          >
-            {isSearching ? '…' : 'Go'}
-          </Button>
-        </form>
-      </div>
-
-      {/* Bottom panels */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 flex items-end justify-between px-3 pb-3 pointer-events-none">
-        <div className="pointer-events-auto flex items-end gap-2">
-          <VibesPanel />
-        </div>
-        <div className="pointer-events-auto">
-          <MusicPanel onSongSelect={handleSongChange} />
-        </div>
-      </div>
-
-      {/* Music Player Bar */}
-      {showMusicBar && (
-        <div className="absolute bottom-14 left-0 right-0 z-10 pointer-events-auto">
-          <MusicPlayerBar />
-        </div>
-      )}
-
-      {/* Timezone Dialog */}
-      <Dialog open={showTimezoneDialog} onOpenChange={setShowTimezoneDialog}>
-        <DialogContent className="max-w-[280px] w-[280px] bg-slate-900/95 border-white/15 backdrop-blur-xl text-white p-0 gap-0">
-          {/* Header */}
-          <DialogHeader className="px-4 pt-4 pb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
-                <Clock className="w-3.5 h-3.5 text-cyan-400" />
-              </div>
-              <div>
-                <DialogTitle className="text-sm font-bold text-white">Time Zone</DialogTitle>
-                <p className="text-[10px] text-white/40 mt-0.5">Select UTC offset</p>
-              </div>
-            </div>
-          </DialogHeader>
-
-          <Separator className="bg-white/10" />
-
-          {/* Current time preview */}
-          <div className="px-4 py-3 bg-white/5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] text-white/40 uppercase tracking-wider">Current offset</p>
-                <p className="text-sm font-semibold text-cyan-300 mt-0.5">{selectedOffsetLabel}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] text-white/40 uppercase tracking-wider">Time</p>
-                <p className="text-sm font-mono text-white/80 tabular-nums mt-0.5">{utcTime}</p>
-              </div>
-            </div>
-          </div>
-
-          <Separator className="bg-white/10" />
-
-          {/* Offset list */}
-          <ScrollArea className="h-[240px]">
-            <div className="py-1">
-              {TIMEZONE_OFFSETS.map((tz) => {
-                const isSelected = tz.value === utcOffset;
-                const previewTime = formatUTCTime(tz.value);
-                return (
-                  <button
-                    key={tz.value}
-                    onClick={() => {
-                      setUtcOffset(tz.value);
-                      setUtcTime(formatUTCTime(tz.value));
-                    }}
-                    className={`w-full flex items-center justify-between px-4 py-2 text-left transition-colors hover:bg-white/5 ${
-                      isSelected ? 'bg-cyan-500/15 border-l-2 border-cyan-400' : 'border-l-2 border-transparent'
-                    }`}
-                  >
-                    <span className={`text-xs font-medium ${isSelected ? 'text-cyan-300' : 'text-white/70'}`}>
-                      {tz.label}
-                    </span>
-                    <span className={`text-[10px] font-mono tabular-nums ${isSelected ? 'text-cyan-400/80' : 'text-white/30'}`}>
-                      {previewTime}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </ScrollArea>
-
-          <Separator className="bg-white/10" />
-
-          {/* Footer */}
-          <div className="px-4 py-3">
             <Button
-              onClick={() => setShowTimezoneDialog(false)}
-              className="w-full h-7 text-xs bg-cyan-600 hover:bg-cyan-700 text-white border-0"
+              size="sm"
+              onClick={handleSearch}
+              disabled={isPending}
+              className="rounded-full h-8 w-8 p-0 shrink-0"
             >
-              Done
+              {isPending ? (
+                <div className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+              ) : (
+                <Search className="w-3.5 h-3.5" />
+              )}
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+        </div>
+
+        {/* Right Panel Buttons */}
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex flex-col gap-2">
+
+          {/* World Travel Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <TraveloguePanel
+                  onFlightAnimation={handleFlightAnimation}
+                  onJourney2DMap={handleJourney2DMap}
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="left">World Travel</TooltipContent>
+          </Tooltip>
+
+          {/* Time Zone Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <Popover open={timezonePopoverOpen} onOpenChange={setTimezonePopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="w-10 h-10 rounded-full bg-background/90 backdrop-blur-sm border-border shadow-md hover:bg-accent/20"
+                    >
+                      <Clock className="w-4 h-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    side="left"
+                    align="center"
+                    sideOffset={12}
+                    className="w-80 p-4 max-h-[85vh] overflow-y-auto"
+                  >
+                    <div className="mb-4">
+                      <h3 className="text-sm font-semibold">Time Zone</h3>
+                      <p className="text-xs text-muted-foreground">Select and visualize timezones</p>
+                    </div>
+                    <TimeZonePopoverContent
+                      activeOffsetIndex={activeOffsetIndex}
+                      onOffsetChange={setActiveOffsetIndex}
+                      showTimeZones={showTimeZones}
+                      onToggleTimeZones={setShowTimeZones}
+                      currentTime={currentTime}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="left">Time Zone</TooltipContent>
+          </Tooltip>
+
+          {/* Global Control Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <Popover open={globalControlPopoverOpen} onOpenChange={setGlobalControlPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="w-10 h-10 rounded-full bg-background/90 backdrop-blur-sm border-border shadow-md hover:bg-accent/20"
+                    >
+                      <Earth className="w-4 h-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    side="left"
+                    align="center"
+                    sideOffset={12}
+                    className="w-80 p-4 max-h-[85vh] overflow-y-auto"
+                  >
+                    <div className="mb-4">
+                      <h3 className="text-sm font-semibold">Global Control</h3>
+                      <p className="text-xs text-muted-foreground">Configure globe display settings</p>
+                    </div>
+                    <GlobalControlPopoverContent
+                      viewMode={viewMode}
+                      onViewModeChange={(v) => {
+                        setViewMode(v);
+                        setGlobalControlPopoverOpen(false);
+                      }}
+                      showCapitals={showCapitals}
+                      onToggleCapitals={setShowCapitals}
+                      showGlobalCities={showGlobalCities}
+                      onToggleGlobalCities={setShowGlobalCities}
+                      showMajorCities={showMajorCities}
+                      onToggleMajorCities={setShowMajorCities}
+                      showTerminator={showTerminator}
+                      onToggleTerminator={setShowTerminator}
+                      showTwilight={showTwilight}
+                      onToggleTwilight={setShowTwilight}
+                      rotationSpeed={rotationSpeed}
+                      onRotationSpeedChange={setRotationSpeed}
+                      cityFontSize={countryFontSize}
+                      onFontSizeChange={setCountryFontSize}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="left">Global Control</TooltipContent>
+          </Tooltip>
+
+          {/* Vibes Panel */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <VibesPanel
+                  onTravelSpotFocus={handleTravelSpotFocus}
+                  onBookmarkFocus={handleBookmarkFocus}
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="left">Vibes</TooltipContent>
+          </Tooltip>
+
+          {/* Music Panel */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <MusicPanel onSongSelect={handleSongChange} />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="left">Music</TooltipContent>
+          </Tooltip>
+
+          {/* Website Layout Panel */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <WebsiteLayoutPanel />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="left">Layout Settings</TooltipContent>
+          </Tooltip>
+
+          {/* Admin Panel */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <AdminPanel />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="left">Admin</TooltipContent>
+          </Tooltip>
+
+          {/* Login Panel */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <LoginPanel />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="left">Login</TooltipContent>
+          </Tooltip>
+        </div>
+
+        {/* Clock Display */}
+        <div className="absolute bottom-4 left-4 z-10">
+          <div className="bg-background/80 backdrop-blur-sm rounded-lg border border-border px-3 py-1.5 shadow-sm">
+            <div className="text-xs font-mono text-foreground">{formatLocalTime()}</div>
+          </div>
+        </div>
+
+        {/* Music Player Bar */}
+        {showMusicBar && (
+          <div className="absolute bottom-0 left-0 right-0 z-10">
+            <MusicPlayerBar
+              currentSong={currentSong}
+              onSongChange={handleSongChange}
+            />
+          </div>
+        )}
+      </div>
+    </TooltipProvider>
   );
 }

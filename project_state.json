@@ -1,45 +1,45 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "App with World Travel, Time Zone, and Global Control popup buttons in the upper left. Working on improving popup layouts with tailored content layouts and slightly smaller sizing.",
+  "summary": "New project",
   "architectural_notes": [],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-revise-the-world-travel-popup-to-have-a-layout-tailored-to-its-own-content-improve-internal-structure-with-clear-visual-organization-e-g-section-groupings-spacing-dividers-and-reduce-the-overall-popup-size-to-be-slightly-smaller-than-its-current-dimensions",
-      "title": "Revise the World Travel popup to have a layout tailored to its own content: improve internal structure with clear visual organization (e.g., section groupings, spacing, dividers), and reduce the overall popup size to be slightly smaller than its current dimensions.",
+      "id": "feature-reposition-the-time-zone-button-popup-so-it-opens-to-the-left-hand-side-anchored-close-to-the-time-zone-button-instead-of-its-current-position",
+      "title": "Reposition the Time Zone button popup so it opens to the left-hand side, anchored close to the Time Zone button, instead of its current position.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-revise-the-time-zone-popup-to-have-a-layout-tailored-to-its-own-content-improve-internal-structure-with-clear-visual-organization-e-g-timezone-list-formatting-offset-display-section-groupings-and-reduce-the-overall-popup-size-to-be-slightly-smaller-than-its-current-dimensions",
-      "title": "Revise the Time Zone popup to have a layout tailored to its own content: improve internal structure with clear visual organization (e.g., timezone list formatting, offset display, section groupings), and reduce the overall popup size to be slightly smaller than its current dimensions.",
+      "id": "feature-reposition-the-global-control-button-popup-so-it-opens-to-the-left-hand-side-anchored-close-to-the-global-control-button-instead-of-its-current-position",
+      "title": "Reposition the Global Control button popup so it opens to the left-hand side, anchored close to the Global Control button, instead of its current position.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-revise-the-global-control-popup-to-have-a-layout-tailored-to-its-own-content-improve-internal-structure-with-clear-visual-organization-e-g-control-groupings-labeled-sections-consistent-spacing-and-reduce-the-overall-popup-size-to-be-slightly-smaller-than-its-current-dimensions",
-      "title": "Revise the Global Control popup to have a layout tailored to its own content: improve internal structure with clear visual organization (e.g., control groupings, labeled sections, consistent spacing), and reduce the overall popup size to be slightly smaller than its current dimensions.",
+      "id": "feature-restore-the-local-time-display-inside-the-time-zone-button-s-popup-box-it-should-show-the-local-time-with-utc-offset-as-it-previously-appeared-before-it-was-removed",
+      "title": "Restore the Local Time display inside the Time Zone button's popup box. It should show the local time (with UTC offset) as it previously appeared before it was removed.",
       "reqIds": [
         "REQ-3"
       ],
       "version": 1
-    }
-  ],
-  "new_feature_requests": [
+    },
     {
-      "id": "AR-1",
-      "summary": "Revise World Travel, Time Zone, and Global Control popups: each with a layout tailored to its own content, slightly smaller than current size, with improved structure and spacing",
-      "reqIds": [],
-      "status": "pending"
+      "id": "feature-re-add-the-font-size-control-slider-or-input-to-the-global-control-popup-placed-directly-below-the-globe-rotation-control",
+      "title": "Re-add the Font Size control (slider or input) to the Global Control popup, placed directly below the Globe Rotation control.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
     }
   ],
-  "gameProjectType": "none",
+  "new_feature_requests": [],
   "projectName": "Country Map Explorer",
   "clarification_mode": "instant",
   "clarification_rounds": 0

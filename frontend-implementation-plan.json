@@ -1,53 +1,69 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Revise World Travel, Time Zone, and Global Control popup layouts",
+  "title": "Fix Time Zone & Global Control popups: reposition left, restore local time and font size controls",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Revise World Travel popup layout with tailored structure, clear visual organization, and reduced size",
+      "summary": "Reposition the Time Zone button popup to open on the left-hand side, anchored close to the Time Zone button",
       "acceptanceCriteria": [
-        "World Travel popup is visibly smaller than its previous size",
-        "Content is organized with clear sections, consistent spacing, and visual dividers appropriate to World Travel content",
-        "No content is clipped or overflows the popup container"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/TraveloguePanel.tsx",
-          "operation": "modify",
-          "description": "Reduce the Dialog width and height by adjusting the DialogContent className (e.g., from 'max-w-4xl' to 'max-w-3xl' or smaller). Introduce clear visual sections for Live Journeys, Upcoming Journeys, and Past Journeys using dividers or card groupings. Apply consistent spacing (e.g., gap-4 or gap-6) and padding between journey groups. Ensure journey cards have appropriate internal structure with labeled headings and organized schedule displays. Verify that all content remains visible and no overflow occurs with the reduced popup size."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Revise Time Zone popup layout with tailored structure, clear visual organization, and reduced size",
-      "acceptanceCriteria": [
-        "Time Zone popup is visibly smaller than its previous size",
-        "Timezone content is presented in a well-structured, readable layout appropriate to time zone data",
-        "No content is clipped or overflows the popup container"
+        "The Time Zone popup renders to the left of (or left-aligned near) the Time Zone button.",
+        "The popup does not overlap unrelated UI elements or extend off-screen.",
+        "No other popups or UI elements are repositioned."
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/LocationMapExplorer.tsx",
           "operation": "modify",
-          "description": "Locate the Time Zone dialog (timezone overlay controls dialog) and reduce its Dialog dimensions by adjusting the DialogContent className to a smaller max-width (e.g., 'max-w-md' or 'max-w-lg'). Structure the timezone offset controls with clear section labels (e.g., 'Select Timezone Offset'). Format the offset dropdown or input field with proper spacing and labeling. Add visual separators between different control groups if multiple controls exist. Ensure the layout is optimized for displaying timezone data (offset values, region names) in a compact, readable format. Verify no content overflow or clipping occurs with the reduced size."
+          "description": "Modify the Time Zone button's Popover component positioning. Update the PopoverContent to use left-side alignment (e.g., 'align=\"end\"' and 'side=\"left\"' or similar shadcn/ui Popover props) so the popup appears anchored to the left of the Time Zone button instead of its current position. Ensure the popup remains within viewport bounds."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Reposition the Global Control button popup to open on the left-hand side, anchored close to the Global Control button",
+      "acceptanceCriteria": [
+        "The Global Control popup renders to the left of (or left-aligned near) the Global Control button.",
+        "The popup does not overlap unrelated UI elements or extend off-screen.",
+        "No other popups or UI elements are repositioned."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/LocationMapExplorer.tsx",
+          "operation": "modify",
+          "description": "Modify the Global Control button's Popover component positioning. Update the PopoverContent to use left-side alignment (e.g., 'align=\"end\"' and 'side=\"left\"' or similar shadcn/ui Popover props) so the popup appears anchored to the left of the Global Control button instead of its current position. Ensure the popup remains within viewport bounds."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Revise Global Control popup layout with tailored structure, clear visual organization, and reduced size",
+      "summary": "Restore the Local Time display inside the Time Zone button's popup box with UTC offset",
       "acceptanceCriteria": [
-        "Global Control popup is visibly smaller than its previous size",
-        "Controls and settings are organized in a structured, clearly grouped layout appropriate to global control options",
-        "No content is clipped or overflows the popup container"
+        "The Time Zone popup contains a visible local time display with the current time and UTC offset.",
+        "The local time updates correctly based on the selected or detected timezone.",
+        "No other content in the Time Zone popup is removed or rearranged."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/WebsiteLayoutPanel.tsx",
+          "path": "frontend/src/pages/LocationMapExplorer.tsx",
           "operation": "modify",
-          "description": "Reduce the Dialog dimensions by adjusting the DialogContent className to a smaller max-width (e.g., from current size to 'max-w-md' or 'max-w-sm'). Organize controls into logical groups with clear section headings (e.g., 'Display Settings', 'Map Settings', 'Music Settings'). Use visual dividers (Separator component or border classes) between control groups. Apply consistent vertical spacing (space-y-4 or space-y-3) between form fields and groups. Ensure toggle switches, input fields, and buttons are properly aligned and labeled. Verify that all settings remain accessible and visible within the reduced popup size without overflow or clipping."
+          "description": "Add Local Time display back into the Time Zone popup content. Inside the Time Zone PopoverContent, add a section that displays the current local time with UTC offset (e.g., '14:32:15 (UTC+1)'). Use existing state variables (currentLocalTime, currentTimezoneOffset) or create new ones if needed. Ensure the time updates dynamically (using useEffect with setInterval or similar) and formats the UTC offset correctly (including fractional offsets like +5.75). Position this display prominently within the popup, above or below existing timezone controls."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Re-add the Font Size control to the Global Control popup, placed directly below the Globe Rotation control",
+      "acceptanceCriteria": [
+        "The Global Control popup contains a Font Size control rendered immediately below the Globe Rotation control.",
+        "Adjusting the Font Size control changes the relevant font size in the UI as it did previously.",
+        "Globe Rotation control remains functional and is unaffected by this change."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/LocationMapExplorer.tsx",
+          "operation": "modify",
+          "description": "Add Font Size control back into the Global Control popup content. Inside the Global Control PopoverContent, locate the Globe Rotation control section and add a Font Size slider or input immediately below it. Wire the control to the cityFontSize state variable and ensure it calls the appropriate update function (likely related to WebsiteLayoutSettings or a local state handler). Use a Slider component with appropriate min/max values (e.g., 8-24 for font size in pixels) and display the current value. Ensure the control updates the font size of city labels on the map or globe in real-time."
         }
       ]
     }

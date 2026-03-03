@@ -1,82 +1,91 @@
 {
   "kind": "build_request",
-  "title": "Revise World Travel, Time Zone, and Global Control popup layouts",
+  "title": "Fix Time Zone & Global Control popups: reposition left, restore local time and font size controls",
   "projectName": "Country Map Explorer",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Revise the World Travel popup to have a layout tailored to its own content: improve internal structure with clear visual organization (e.g., section groupings, spacing, dividers), and reduce the overall popup size to be slightly smaller than its current dimensions.",
+      "text": "Reposition the Time Zone button popup so it opens to the left-hand side, anchored close to the Time Zone button, instead of its current position.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-10",
-          "msg-12"
+          "msg-1"
         ],
         "quotes": [
-          "Could you revise the pop up box's of the upper left three buttons, world travel, time zone and global control, such that the layout is better outlined",
-          "a layout tailored to its own content",
-          "I would like the size to be little bit smaller than its size right now"
+          "Place the pop up box of the Time Zone button and Global Control button to the left hand side, close to the button."
         ]
       },
       "acceptanceCriteria": [
-        "World Travel popup is visibly smaller than its previous size",
-        "Content is organized with clear sections, consistent spacing, and visual dividers appropriate to World Travel content",
-        "No content is clipped or overflows the popup container"
+        "The Time Zone popup renders to the left of (or left-aligned near) the Time Zone button.",
+        "The popup does not overlap unrelated UI elements or extend off-screen.",
+        "No other popups or UI elements are repositioned."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Revise the Time Zone popup to have a layout tailored to its own content: improve internal structure with clear visual organization (e.g., timezone list formatting, offset display, section groupings), and reduce the overall popup size to be slightly smaller than its current dimensions.",
+      "text": "Reposition the Global Control button popup so it opens to the left-hand side, anchored close to the Global Control button, instead of its current position.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-10",
-          "msg-12"
+          "msg-1"
         ],
         "quotes": [
-          "Could you revise the pop up box's of the upper left three buttons, world travel, time zone and global control, such that the layout is better outlined",
-          "a layout tailored to its own content",
-          "I would like the size to be little bit smaller than its size right now"
+          "Place the pop up box of the Time Zone button and Global Control button to the left hand side, close to the button."
         ]
       },
       "acceptanceCriteria": [
-        "Time Zone popup is visibly smaller than its previous size",
-        "Timezone content is presented in a well-structured, readable layout appropriate to time zone data",
-        "No content is clipped or overflows the popup container"
+        "The Global Control popup renders to the left of (or left-aligned near) the Global Control button.",
+        "The popup does not overlap unrelated UI elements or extend off-screen.",
+        "No other popups or UI elements are repositioned."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Revise the Global Control popup to have a layout tailored to its own content: improve internal structure with clear visual organization (e.g., control groupings, labeled sections, consistent spacing), and reduce the overall popup size to be slightly smaller than its current dimensions.",
+      "text": "Restore the Local Time display inside the Time Zone button's popup box. It should show the local time (with UTC offset) as it previously appeared before it was removed.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-10",
-          "msg-12"
+          "msg-1"
         ],
         "quotes": [
-          "Could you revise the pop up box's of the upper left three buttons, world travel, time zone and global control, such that the layout is better outlined",
-          "a layout tailored to its own content",
-          "I would like the size to be little bit smaller than its size right now"
+          "Put the Local time display back into the Pop up box of the Time Zone Button"
         ]
       },
       "acceptanceCriteria": [
-        "Global Control popup is visibly smaller than its previous size",
-        "Controls and settings are organized in a structured, clearly grouped layout appropriate to global control options",
-        "No content is clipped or overflows the popup container"
+        "The Time Zone popup contains a visible local time display with the current time and UTC offset.",
+        "The local time updates correctly based on the selected or detected timezone.",
+        "No other content in the Time Zone popup is removed or rearranged."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Re-add the Font Size control (slider or input) to the Global Control popup, placed directly below the Globe Rotation control.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Font Size control has been removed? please add back to Global Control right below Globe Rotation"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The Global Control popup contains a Font Size control rendered immediately below the Globe Rotation control.",
+        "Adjusting the Font Size control changes the relevant font size in the UI as it did previously.",
+        "Globe Rotation control remains functional and is unaffected by this change."
       ]
     }
   ],
   "constraints": [
-    "Do not change backend logic or data models",
-    "Each popup must have its own distinct layout — do not apply a single shared template across all three",
-    "Popup functionality must remain fully intact after layout revisions"
+    "Changes must be scoped only to the Time Zone popup, Global Control popup, and their parent button components in LocationMapExplorer.tsx.",
+    "Do not modify any other popups, panels, or UI elements.",
+    "Do not modify any files listed under frontend.immutablePaths."
   ],
   "nonGoals": [
-    "Changing the content or features inside any of the three popups",
-    "Modifying any other popups or UI panels not mentioned",
-    "Redesigning the overall app layout or globe component"
+    "Redesigning the World Travel popup.",
+    "Adding new features to any popup beyond those explicitly listed.",
+    "Changing backend logic or data models."
   ],
   "imageRequirements": {
     "required": [],

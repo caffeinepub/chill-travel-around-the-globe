@@ -1,12 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Revise the layouts of the World Travel, Time Zone, and Global Control popups to be slightly smaller and better organized, each with a layout tailored to its own content.
+**Goal:** Fix the Time Zone and Global Control popups by repositioning them to the left side and restoring previously removed controls.
 
 **Planned changes:**
-- Reduce the overall size of the World Travel popup slightly and reorganize its content with clear section groupings, spacing, and visual dividers
-- Reduce the overall size of the Time Zone popup slightly and restructure its timezone list, offset display, and section groupings for improved readability
-- Reduce the overall size of the Global Control popup slightly and reorganize its controls into clearly labeled, consistently spaced groups
-- Each popup receives its own distinct layout rather than a shared template
+- Reposition the Time Zone button popup to open on the left-hand side, anchored close to the button
+- Reposition the Global Control button popup to open on the left-hand side, anchored close to the button
+- Restore the Local Time display (with UTC offset) inside the Time Zone popup
+- Re-add the Font Size control to the Global Control popup, placed directly below the Globe Rotation control
 
-**User-visible outcome:** The three upper-left popups (World Travel, Time Zone, Global Control) each appear slightly more compact and display their content in a well-organized, visually clear layout with no overflow or clipping.
+**User-visible outcome:** The Time Zone and Global Control popups now appear to the left of their buttons, the Time Zone popup shows the local time with UTC offset, and the Global Control popup includes the Font Size slider below Globe Rotation.
