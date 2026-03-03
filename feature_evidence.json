@@ -2,8 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-reposition-the-time-zone-button-popup-so-it-opens-to-the-left-hand-side-anchored-close-to-the-time-zone-button-instead-of-its-current-position",
-      "featureTitle": "Reposition the Time Zone button popup so it opens to the left-hand side, anchored close to the Time Zone button, instead of its current position.",
+      "featureId": "feature-move-the-world-travel-time-zone-and-global-control-buttons-back-to-the-upper-left-area-of-the-map-globe-explorer-ui-locationmapexplorer-tsx-restoring-their-original-positioning-from-version-1164",
+      "featureTitle": "Move the 'World Travel', 'Time Zone', and 'Global Control' buttons back to the upper-left area of the map/globe explorer UI (LocationMapExplorer.tsx), restoring their original positioning from version 1164.",
       "files": [
         "frontend/src/pages/LocationMapExplorer.tsx"
       ],
@@ -22,8 +22,8 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-reposition-the-global-control-button-popup-so-it-opens-to-the-left-hand-side-anchored-close-to-the-global-control-button-instead-of-its-current-position",
-      "featureTitle": "Reposition the Global Control button popup so it opens to the left-hand side, anchored close to the Global Control button, instead of its current position.",
+      "featureId": "feature-when-clicking-the-world-travel-time-zone-or-global-control-buttons-the-popup-panel-that-appears-must-open-on-the-right-side-of-the-screen-instead-of-the-left-side",
+      "featureTitle": "When clicking the 'World Travel', 'Time Zone', or 'Global Control' buttons, the popup/panel that appears must open on the right side of the screen instead of the left side.",
       "files": [
         "frontend/src/pages/LocationMapExplorer.tsx"
       ],
@@ -42,8 +42,8 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-restore-the-local-time-display-inside-the-time-zone-button-s-popup-box-it-should-show-the-local-time-with-utc-offset-as-it-previously-appeared-before-it-was-removed",
-      "featureTitle": "Restore the Local Time display inside the Time Zone button's popup box. It should show the local time (with UTC offset) as it previously appeared before it was removed.",
+      "featureId": "feature-restore-the-3d-and-2d-toggle-buttons-in-locationmapexplorer-tsx-that-were-present-in-version-1164-but-are-currently-missing-re-add-them-in-their-original-location-and-with-their-original-functionality-for-switching-between-3d-globe-and-2d-map-views",
+      "featureTitle": "Restore the 3D and 2D toggle buttons in LocationMapExplorer.tsx that were present in version 1164 but are currently missing. Re-add them in their original location and with their original functionality for switching between 3D globe and 2D map views.",
       "files": [
         "frontend/src/pages/LocationMapExplorer.tsx"
       ],
@@ -62,8 +62,8 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-re-add-the-font-size-control-slider-or-input-to-the-global-control-popup-placed-directly-below-the-globe-rotation-control",
-      "featureTitle": "Re-add the Font Size control (slider or input) to the Global Control popup, placed directly below the Globe Rotation control.",
+      "featureId": "feature-remove-the-local-time-display-that-is-currently-shown-in-the-bottom-left-area-of-the-explorer-ui-locationmapexplorer-tsx",
+      "featureTitle": "Remove the local time display that is currently shown in the bottom-left area of the explorer UI (LocationMapExplorer.tsx).",
       "files": [
         "frontend/src/pages/LocationMapExplorer.tsx"
       ],

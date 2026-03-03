@@ -1,12 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Fix the Time Zone and Global Control popups by repositioning them to the left side and restoring previously removed controls.
+**Goal:** Fix several UI issues in the LocationMapExplorer: reposition navigation buttons, move popups to the right side, restore 3D/2D toggle buttons, and remove the bottom-left time display.
 
 **Planned changes:**
-- Reposition the Time Zone button popup to open on the left-hand side, anchored close to the button
-- Reposition the Global Control button popup to open on the left-hand side, anchored close to the button
-- Restore the Local Time display (with UTC offset) inside the Time Zone popup
-- Re-add the Font Size control to the Global Control popup, placed directly below the Globe Rotation control
+- Move the "World Travel", "Time Zone", and "Global Control" buttons back to the upper-left area of the explorer UI
+- Change the popup/panel for each of these buttons to open anchored to the right side of the screen instead of the left
+- Restore the 3D and 2D toggle buttons with their original functionality for switching between globe and map views
+- Remove the local time display from the bottom-left corner of the explorer UI
 
-**User-visible outcome:** The Time Zone and Global Control popups now appear to the left of their buttons, the Time Zone popup shows the local time with UTC offset, and the Global Control popup includes the Font Size slider below Globe Rotation.
+**User-visible outcome:** The explorer UI has its navigation buttons in the upper-left, their popups open on the right side, 3D/2D view toggles are available again, and no time/clock is shown in the bottom-left.

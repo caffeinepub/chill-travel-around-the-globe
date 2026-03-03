@@ -18,23 +18,7 @@ import MusicPlayerBar from '@/components/MusicPlayerBar';
 import MusicPanel from '@/components/MusicPanel';
 import WebsiteLayoutPanel from '@/components/WebsiteLayoutPanel';
 import { useSearchLocation, useGetWebsiteLayoutPreferences } from '@/hooks/useQueries';
-import { TravelSpot, Song, MapBookmark } from '@/backend';
-
-interface LocationResult {
-  coordinates: [number, number];
-  name: string;
-  searchQuery: string;
-  type: 'country' | 'city' | 'town' | 'village';
-  country?: string;
-  state?: string;
-}
-
-interface FlightAnimationData {
-  fromCity: string;
-  toCity: string;
-  fromCoords: { lat: number; lon: number };
-  toCoords: { lat: number; lon: number };
-}
+import { Song } from '@/backend';
 
 // ─── UTC offset helpers ───────────────────────────────────────────────────────
 const ALL_OFFSETS = [-12, -11, -10, -9.5, -9, -8, -7, -6, -5, -4, -3.5, -3, -2, -1, 0, 1, 2, 3, 3.5, 4, 4.5, 5, 5.5, 5.75, 6, 6.5, 7, 8, 8.75, 9, 9.5, 10, 10.5, 11, 12, 12.75, 13, 14];
@@ -60,6 +44,14 @@ const WORLD_CLOCK_CITIES = [
   { name: 'Los Angeles', tz: 'America/Los_Angeles', flag: '🇺🇸' },
 ];
 
+// ─── Flight animation data type (mirrors InteractiveGlobe's internal type) ────
+interface FlightAnimationData {
+  fromCity: string;
+  toCity: string;
+  fromCoords: { lat: number; lon: number };
+  toCoords: { lat: number; lon: number };
+}
+
 // ─── Time Zone Popover Content ─────────────────────────────────────────────────
 interface TimeZonePopoverContentProps {
   activeOffsetIndex: number;
@@ -79,7 +71,6 @@ function TimeZonePopoverContent({
   const selectedOffset = ALL_OFFSETS[activeOffsetIndex];
   const selectedLabel = formatOffsetLabel(selectedOffset);
 
-  // Compute time at selected offset
   const localOffsetMinutes = -currentTime.getTimezoneOffset();
   const selectedOffsetMinutes = selectedOffset * 60;
   const diffMs = (selectedOffsetMinutes - localOffsetMinutes) * 60 * 1000;
@@ -87,7 +78,6 @@ function TimeZonePopoverContent({
   const timeStr = adjustedTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
   const dateStr = adjustedTime.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
-  // Local time with UTC offset
   const localOffsetHours = localOffsetMinutes / 60;
   const localSign = localOffsetHours >= 0 ? '+' : '-';
   const localAbsH = Math.abs(localOffsetHours);
@@ -134,7 +124,6 @@ function TimeZonePopoverContent({
           />
           <span className="text-xs text-muted-foreground w-14 text-right">UTC+14</span>
         </div>
-        {/* Quick-select integer offsets */}
         <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
           {ALL_OFFSETS.map((offset, idx) => {
             if (!Number.isInteger(offset)) return null;
@@ -435,80 +424,62 @@ function GlobalControlPopoverContent({
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function LocationMapExplorer() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
+  // Map/2D view state: coordinates and location name from search
+  const [mapCoordinates, setMapCoordinates] = useState<[number, number]>([51.505, -0.09]);
+  const [mapLocationName, setMapLocationName] = useState<string>('London');
   const [viewMode, setViewMode] = useState<'3D' | '2D'>('3D');
-  const [focusedTravelSpot, setFocusedTravelSpot] = useState<TravelSpot | null>(null);
-  const [focusedBookmark, setFocusedBookmark] = useState<MapBookmark | null>(null);
   const [currentSong, setCurrentSong] = useState<Song & { albumTitle: string } | undefined>(undefined);
   const [showTimeZones, setShowTimeZones] = useState(false);
   const [timezonePopoverOpen, setTimezonePopoverOpen] = useState(false);
   const [globalControlPopoverOpen, setGlobalControlPopoverOpen] = useState(false);
   const [showCapitals, setShowCapitals] = useState(true);
   const [showGlobalCities, setShowGlobalCities] = useState(true);
-  const [showMajorCities, setShowMajorCities] = useState(true);
-  const [showTerminator, setShowTerminator] = useState(true);
-  const [showTwilight, setShowTwilight] = useState(true);
-  const [activeOffsetIndex, setActiveOffsetIndex] = useState<number>(14);
-  const [rotationSpeed, setRotationSpeed] = useState<number>(0.0005);
-  const [countryFontSize, setCountryFontSize] = useState<number>(8);
+  const [showMajorCities, setShowMajorCities] = useState(false);
+  const [showTerminator, setShowTerminator] = useState(false);
+  const [showTwilight, setShowTwilight] = useState(false);
+  const [rotationSpeed, setRotationSpeed] = useState(0.001);
+  const [cityFontSize, setCityFontSize] = useState(8);
+  const [activeOffsetIndex, setActiveOffsetIndex] = useState(() => ALL_OFFSETS.indexOf(0));
+  const [currentTime, setCurrentTime] = useState(new Date());
+  // Flight animation state — passed as a single object to InteractiveGlobe
   const [flightAnimation, setFlightAnimation] = useState<FlightAnimationData | null>(null);
-  const [selectedJourneyId, setSelectedJourneyId] = useState<string | undefined>(undefined);
-  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  // Journey 2D map: journeyId used as schedule key
+  const [journey2DId, setJourney2DId] = useState<string>('');
 
-  const { mutate: searchLocation, isPending } = useSearchLocation();
-  const { data: layoutPreferences } = useGetWebsiteLayoutPreferences();
+  const { data: layoutPrefs } = useGetWebsiteLayoutPreferences();
 
-  // Live clock update effect
+  // Tick clock every second
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
+    const interval = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // Format local time with UTC offset
-  const formatLocalTime = (): string => {
-    const localOffsetMinutes = -currentTime.getTimezoneOffset();
-    const localOffsetHours = localOffsetMinutes / 60;
-    const sign = localOffsetHours >= 0 ? '+' : '-';
-    const absH = Math.abs(localOffsetHours);
-    const h = Math.floor(absH);
-    const m = Math.round((absH - h) * 60);
-    const offsetStr = m > 0 ? `UTC${sign}${h}:${String(m).padStart(2, '0')}` : `UTC${sign}${h}`;
-    const timeStr = currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-    return `${timeStr} (${offsetStr})`;
-  };
+  // Apply layout preferences
+  useEffect(() => {
+    if (layoutPrefs) {
+      if (layoutPrefs.cityFontSize) setCityFontSize(layoutPrefs.cityFontSize);
+    }
+  }, [layoutPrefs]);
+
+  const { mutate: searchLocation, isPending: isSearching } = useSearchLocation();
 
   const handleSearch = useCallback(() => {
     if (!searchQuery.trim()) return;
-    searchLocation(searchQuery, {
-      onSuccess: (result) => {
+    searchLocation(searchQuery.trim(), {
+      onSuccess: (result: unknown) => {
         if (result) {
-          setSelectedLocation(result as LocationResult);
+          const loc = result as { name: string; coordinates: [number, number] };
+          if (loc.coordinates) setMapCoordinates(loc.coordinates);
+          if (loc.name) setMapLocationName(loc.name);
         } else {
-          toast.error('Location not found. Try a different search term.');
+          toast.error('Location not found');
         }
       },
-      onError: () => {
-        toast.error('Search failed. Please try again.');
-      },
+      onError: () => toast.error('Search failed'),
     });
   }, [searchQuery, searchLocation]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleSearch();
-  };
-
-  const handleTravelSpotFocus = useCallback((spot: TravelSpot) => {
-    setFocusedTravelSpot(spot);
-    setViewMode('2D');
-  }, []);
-
-  const handleBookmarkFocus = useCallback((bookmark: MapBookmark) => {
-    setFocusedBookmark(bookmark);
-    setViewMode('2D');
-  }, []);
-
+  // TraveloguePanel callback: 4 separate params → build FlightAnimationData object
   const handleFlightAnimation = useCallback((
     fromCity: string,
     toCity: string,
@@ -516,29 +487,25 @@ export default function LocationMapExplorer() {
     toCoords: { lat: number; lon: number }
   ) => {
     setFlightAnimation({ fromCity, toCity, fromCoords, toCoords });
-    setViewMode('3D');
+    if (viewMode === '2D') setViewMode('3D');
+  }, [viewMode]);
+
+  const handleFlightAnimationComplete = useCallback(() => {
+    setFlightAnimation(null);
   }, []);
 
+  // TraveloguePanel callback: journeyId (journey.title) only
   const handleJourney2DMap = useCallback((journeyId: string) => {
-    setSelectedJourneyId(journeyId);
+    setJourney2DId(journeyId);
     setViewMode('2D');
   }, []);
 
-  const handleSongChange = useCallback((song: Song & { albumTitle: string }) => {
-    setCurrentSong(song);
-  }, []);
-
-  // Use correct property name from WebsiteLayoutPreferences
-  const showMusicBar = layoutPreferences?.showMusicPlayer ?? true;
-
-  // Derive map coordinates and name from selectedLocation
-  const mapCoordinates: [number, number] = selectedLocation?.coordinates ?? [51.505, -0.09];
-  const mapLocationName = selectedLocation?.name ?? 'London';
+  const showMusicPlayer = layoutPrefs?.showMusicPlayer ?? true;
 
   return (
     <TooltipProvider>
       <div className="relative w-full h-screen overflow-hidden bg-background">
-        {/* Main View */}
+        {/* ── Map / Globe ── */}
         <div className="absolute inset-0">
           {viewMode === '3D' ? (
             <InteractiveGlobe
@@ -548,223 +515,196 @@ export default function LocationMapExplorer() {
               showTerminator={showTerminator}
               showTwilight={showTwilight}
               rotationSpeed={rotationSpeed}
-              countryFontSize={countryFontSize}
-              activeOffsetIndex={activeOffsetIndex}
               showTimeZones={showTimeZones}
+              activeOffsetIndex={activeOffsetIndex}
+              countryFontSize={cityFontSize}
               flightAnimation={flightAnimation}
-              onFlightAnimationComplete={() => setFlightAnimation(null)}
+              onFlightAnimationComplete={handleFlightAnimationComplete}
             />
           ) : (
             <MapComponent
               coordinates={mapCoordinates}
               locationName={mapLocationName}
-              focusedTravelSpot={focusedTravelSpot}
-              onTravelSpotFocused={() => setFocusedTravelSpot(null)}
-              focusedBookmark={focusedBookmark}
-              onBookmarkFocused={() => setFocusedBookmark(null)}
-              journeyId={selectedJourneyId}
+              journeyId={journey2DId || undefined}
             />
           )}
         </div>
 
-        {/* Search Bar */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 w-[37.5%] max-w-xl min-w-[280px]">
-          <div className="flex gap-2 bg-background/90 backdrop-blur-sm rounded-full border border-border shadow-lg px-3 py-2">
+        {/* ── Search Bar (top center) ── */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex gap-2" style={{ width: '37.5%' }}>
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <Input
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Search location..."
-              className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 h-8 text-sm"
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSearch()}
+              placeholder="Search location…"
+              className="pl-9 bg-background/90 backdrop-blur border-border shadow-lg"
             />
-            <Button
-              size="sm"
-              onClick={handleSearch}
-              disabled={isPending}
-              className="rounded-full h-8 w-8 p-0 shrink-0"
+          </div>
+          <Button onClick={handleSearch} disabled={isSearching} size="icon" className="shrink-0 shadow-lg">
+            {isSearching ? (
+              <span className="w-4 h-4 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
+            ) : (
+              <Search className="w-4 h-4" />
+            )}
+          </Button>
+        </div>
+
+        {/* ── Upper-Left Controls: World Travel, Time Zone, Global Control + 3D/2D toggles ── */}
+        <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+          {/* World Travel button */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-background/90 backdrop-blur shadow-lg border-border gap-2 justify-start"
+              >
+                <Earth className="w-4 h-4 text-primary" />
+                <span className="text-xs font-medium">World Travel</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              side="right"
+              align="start"
+              className="w-[420px] max-h-[85vh] overflow-y-auto p-4"
+              sideOffset={8}
             >
-              {isPending ? (
-                <div className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-              ) : (
-                <Search className="w-3.5 h-3.5" />
-              )}
-            </Button>
+              <div className="mb-4">
+                <h3 className="text-base font-semibold">World Travel</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Your journeys and travelogues</p>
+              </div>
+              <TraveloguePanel
+                onFlightAnimation={handleFlightAnimation}
+                onJourney2DMap={handleJourney2DMap}
+              />
+            </PopoverContent>
+          </Popover>
+
+          {/* Time Zone button */}
+          <Popover open={timezonePopoverOpen} onOpenChange={setTimezonePopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-background/90 backdrop-blur shadow-lg border-border gap-2 justify-start"
+              >
+                <Clock className="w-4 h-4 text-primary" />
+                <span className="text-xs font-medium">Time Zone</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              side="right"
+              align="start"
+              className="w-[380px] max-h-[85vh] overflow-y-auto p-4"
+              sideOffset={8}
+            >
+              <div className="mb-4">
+                <h3 className="text-base font-semibold">Time Zone</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">World clock & timezone overlay</p>
+              </div>
+              <TimeZonePopoverContent
+                activeOffsetIndex={activeOffsetIndex}
+                onOffsetChange={setActiveOffsetIndex}
+                showTimeZones={showTimeZones}
+                onToggleTimeZones={setShowTimeZones}
+                currentTime={currentTime}
+              />
+            </PopoverContent>
+          </Popover>
+
+          {/* Global Control button */}
+          <Popover open={globalControlPopoverOpen} onOpenChange={setGlobalControlPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-background/90 backdrop-blur shadow-lg border-border gap-2 justify-start"
+              >
+                <Settings2 className="w-4 h-4 text-primary" />
+                <span className="text-xs font-medium">Global Control</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              side="right"
+              align="start"
+              className="w-[340px] max-h-[85vh] overflow-y-auto p-4"
+              sideOffset={8}
+            >
+              <div className="mb-4">
+                <h3 className="text-base font-semibold">Global Control</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Globe display & layer settings</p>
+              </div>
+              <GlobalControlPopoverContent
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                showCapitals={showCapitals}
+                onToggleCapitals={setShowCapitals}
+                showGlobalCities={showGlobalCities}
+                onToggleGlobalCities={setShowGlobalCities}
+                showMajorCities={showMajorCities}
+                onToggleMajorCities={setShowMajorCities}
+                showTerminator={showTerminator}
+                onToggleTerminator={setShowTerminator}
+                showTwilight={showTwilight}
+                onToggleTwilight={setShowTwilight}
+                rotationSpeed={rotationSpeed}
+                onRotationSpeedChange={setRotationSpeed}
+                cityFontSize={cityFontSize}
+                onFontSizeChange={setCityFontSize}
+              />
+            </PopoverContent>
+          </Popover>
+
+          {/* 3D / 2D Toggle Buttons */}
+          <div className="flex gap-1 mt-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={viewMode === '3D' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('3D')}
+                  className={`flex-1 gap-1 shadow-lg ${viewMode === '3D' ? '' : 'bg-background/90 backdrop-blur border-border'}`}
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  <span className="text-xs font-semibold">3D</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Switch to 3D Globe</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={viewMode === '2D' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('2D')}
+                  className={`flex-1 gap-1 shadow-lg ${viewMode === '2D' ? '' : 'bg-background/90 backdrop-blur border-border'}`}
+                >
+                  <Map className="w-3.5 h-3.5" />
+                  <span className="text-xs font-semibold">2D</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Switch to 2D Map</TooltipContent>
+            </Tooltip>
           </div>
         </div>
 
-        {/* Right Panel Buttons */}
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex flex-col gap-2">
-
-          {/* World Travel Button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <TraveloguePanel
-                  onFlightAnimation={handleFlightAnimation}
-                  onJourney2DMap={handleJourney2DMap}
-                />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="left">World Travel</TooltipContent>
-          </Tooltip>
-
-          {/* Time Zone Button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <Popover open={timezonePopoverOpen} onOpenChange={setTimezonePopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="w-10 h-10 rounded-full bg-background/90 backdrop-blur-sm border-border shadow-md hover:bg-accent/20"
-                    >
-                      <Clock className="w-4 h-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    side="left"
-                    align="center"
-                    sideOffset={12}
-                    className="w-80 p-4 max-h-[85vh] overflow-y-auto"
-                  >
-                    <div className="mb-4">
-                      <h3 className="text-sm font-semibold">Time Zone</h3>
-                      <p className="text-xs text-muted-foreground">Select and visualize timezones</p>
-                    </div>
-                    <TimeZonePopoverContent
-                      activeOffsetIndex={activeOffsetIndex}
-                      onOffsetChange={setActiveOffsetIndex}
-                      showTimeZones={showTimeZones}
-                      onToggleTimeZones={setShowTimeZones}
-                      currentTime={currentTime}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="left">Time Zone</TooltipContent>
-          </Tooltip>
-
-          {/* Global Control Button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <Popover open={globalControlPopoverOpen} onOpenChange={setGlobalControlPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="w-10 h-10 rounded-full bg-background/90 backdrop-blur-sm border-border shadow-md hover:bg-accent/20"
-                    >
-                      <Earth className="w-4 h-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    side="left"
-                    align="center"
-                    sideOffset={12}
-                    className="w-80 p-4 max-h-[85vh] overflow-y-auto"
-                  >
-                    <div className="mb-4">
-                      <h3 className="text-sm font-semibold">Global Control</h3>
-                      <p className="text-xs text-muted-foreground">Configure globe display settings</p>
-                    </div>
-                    <GlobalControlPopoverContent
-                      viewMode={viewMode}
-                      onViewModeChange={(v) => {
-                        setViewMode(v);
-                        setGlobalControlPopoverOpen(false);
-                      }}
-                      showCapitals={showCapitals}
-                      onToggleCapitals={setShowCapitals}
-                      showGlobalCities={showGlobalCities}
-                      onToggleGlobalCities={setShowGlobalCities}
-                      showMajorCities={showMajorCities}
-                      onToggleMajorCities={setShowMajorCities}
-                      showTerminator={showTerminator}
-                      onToggleTerminator={setShowTerminator}
-                      showTwilight={showTwilight}
-                      onToggleTwilight={setShowTwilight}
-                      rotationSpeed={rotationSpeed}
-                      onRotationSpeedChange={setRotationSpeed}
-                      cityFontSize={countryFontSize}
-                      onFontSizeChange={setCountryFontSize}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="left">Global Control</TooltipContent>
-          </Tooltip>
-
-          {/* Vibes Panel */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <VibesPanel
-                  onTravelSpotFocus={handleTravelSpotFocus}
-                  onBookmarkFocus={handleBookmarkFocus}
-                />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="left">Vibes</TooltipContent>
-          </Tooltip>
-
-          {/* Music Panel */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <MusicPanel onSongSelect={handleSongChange} />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="left">Music</TooltipContent>
-          </Tooltip>
-
-          {/* Website Layout Panel */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <WebsiteLayoutPanel />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="left">Layout Settings</TooltipContent>
-          </Tooltip>
-
-          {/* Admin Panel */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <AdminPanel />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="left">Admin</TooltipContent>
-          </Tooltip>
-
-          {/* Login Panel */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <LoginPanel />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="left">Login</TooltipContent>
-          </Tooltip>
+        {/* ── Right-side panel buttons ── */}
+        <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+          <VibesPanel />
+          <MusicPanel onSongSelect={setCurrentSong} />
+          <WebsiteLayoutPanel />
+          <AdminPanel />
+          <LoginPanel />
         </div>
 
-        {/* Clock Display */}
-        <div className="absolute bottom-4 left-4 z-10">
-          <div className="bg-background/80 backdrop-blur-sm rounded-lg border border-border px-3 py-1.5 shadow-sm">
-            <div className="text-xs font-mono text-foreground">{formatLocalTime()}</div>
-          </div>
-        </div>
-
-        {/* Music Player Bar */}
-        {showMusicBar && (
+        {/* ── Music Player Bar (bottom) ── */}
+        {showMusicPlayer && (
           <div className="absolute bottom-0 left-0 right-0 z-10">
             <MusicPlayerBar
               currentSong={currentSong}
-              onSongChange={handleSongChange}
+              onSongChange={setCurrentSong}
             />
           </div>
         )}

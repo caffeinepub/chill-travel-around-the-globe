@@ -1,91 +1,92 @@
 {
   "kind": "build_request",
-  "title": "Fix Time Zone & Global Control popups: reposition left, restore local time and font size controls",
+  "title": "UI fixes: reposition buttons/popups, restore 3D/2D toggles, remove bottom-left time",
   "projectName": "Country Map Explorer",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Reposition the Time Zone button popup so it opens to the left-hand side, anchored close to the Time Zone button, instead of its current position.",
+      "text": "Move the 'World Travel', 'Time Zone', and 'Global Control' buttons back to the upper-left area of the map/globe explorer UI (LocationMapExplorer.tsx), restoring their original positioning from version 1164.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-4"
         ],
         "quotes": [
-          "Place the pop up box of the Time Zone button and Global Control button to the left hand side, close to the button."
+          "moved the buttons World Travel, Time Zone, and Global Control back to the upper left"
         ]
       },
       "acceptanceCriteria": [
-        "The Time Zone popup renders to the left of (or left-aligned near) the Time Zone button.",
-        "The popup does not overlap unrelated UI elements or extend off-screen.",
-        "No other popups or UI elements are repositioned."
+        "The World Travel, Time Zone, and Global Control buttons are visually positioned in the upper-left corner of the explorer page.",
+        "No other UI elements are repositioned or removed as a side effect."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Reposition the Global Control button popup so it opens to the left-hand side, anchored close to the Global Control button, instead of its current position.",
+      "text": "When clicking the 'World Travel', 'Time Zone', or 'Global Control' buttons, the popup/panel that appears must open on the right side of the screen instead of the left side.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-4"
         ],
         "quotes": [
-          "Place the pop up box of the Time Zone button and Global Control button to the left hand side, close to the button."
+          "when clicking the buttons World Travel, Time Zone, and Global Control, the pop up box appear at the right (now the pop up box is at the left)"
         ]
       },
       "acceptanceCriteria": [
-        "The Global Control popup renders to the left of (or left-aligned near) the Global Control button.",
-        "The popup does not overlap unrelated UI elements or extend off-screen.",
-        "No other popups or UI elements are repositioned."
+        "Clicking 'World Travel' opens its popup anchored to the right side of the viewport.",
+        "Clicking 'Time Zone' opens its popup anchored to the right side of the viewport.",
+        "Clicking 'Global Control' opens its popup anchored to the right side of the viewport.",
+        "Popups do not overlap the upper-left button group."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Restore the Local Time display inside the Time Zone button's popup box. It should show the local time (with UTC offset) as it previously appeared before it was removed.",
+      "text": "Restore the 3D and 2D toggle buttons in LocationMapExplorer.tsx that were present in version 1164 but are currently missing. Re-add them in their original location and with their original functionality for switching between 3D globe and 2D map views.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-4"
         ],
         "quotes": [
-          "Put the Local time display back into the Pop up box of the Time Zone Button"
+          "the 3d and 2d button is gone, retrieve them back"
         ]
       },
       "acceptanceCriteria": [
-        "The Time Zone popup contains a visible local time display with the current time and UTC offset.",
-        "The local time updates correctly based on the selected or detected timezone.",
-        "No other content in the Time Zone popup is removed or rearranged."
+        "A 3D toggle button and a 2D toggle button are visible in the UI.",
+        "Clicking '3D' switches the view to the 3D interactive globe.",
+        "Clicking '2D' switches the view to the 2D map.",
+        "The active view mode is visually indicated on the toggle buttons."
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Re-add the Font Size control (slider or input) to the Global Control popup, placed directly below the Globe Rotation control.",
+      "text": "Remove the local time display that is currently shown in the bottom-left area of the explorer UI (LocationMapExplorer.tsx).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-4"
         ],
         "quotes": [
-          "Font Size control has been removed? please add back to Global Control right below Globe Rotation"
+          "do not need the time displayed at the bottom left, remove it"
         ]
       },
       "acceptanceCriteria": [
-        "The Global Control popup contains a Font Size control rendered immediately below the Globe Rotation control.",
-        "Adjusting the Font Size control changes the relevant font size in the UI as it did previously.",
-        "Globe Rotation control remains functional and is unaffected by this change."
+        "No time or clock element is rendered in the bottom-left corner of the explorer page.",
+        "The removal does not affect any other UI elements or layout."
       ]
     }
   ],
   "constraints": [
-    "Changes must be scoped only to the Time Zone popup, Global Control popup, and their parent button components in LocationMapExplorer.tsx.",
-    "Do not modify any other popups, panels, or UI elements.",
-    "Do not modify any files listed under frontend.immutablePaths."
+    "Do not alter the overall UI layout, visual theme, or any components outside the four targeted areas.",
+    "All changes must be limited to LocationMapExplorer.tsx and any directly related panel/popup positioning styles.",
+    "Do not modify backend files."
   ],
   "nonGoals": [
-    "Redesigning the World Travel popup.",
-    "Adding new features to any popup beyond those explicitly listed.",
-    "Changing backend logic or data models."
+    "Adding new features or panels.",
+    "Changing the visual design, color scheme, or typography.",
+    "Modifying the InteractiveGlobe, MapComponent, or any panel component's internal logic.",
+    "Any backend schema or data changes."
   ],
   "imageRequirements": {
     "required": [],

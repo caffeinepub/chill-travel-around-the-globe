@@ -1,7 +1,7 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-03-02T06:25:35.724Z",
+  "generatedAt": "2026-03-03T04:13:49.912Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
@@ -12,7 +12,7 @@
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Reposition the Time Zone button popup so it opens to the left-hand side, anchored close to the Time Zone button, instead of its current position.",
+        "summary": "Move the 'World Travel', 'Time Zone', and 'Global Control' buttons back to the upper-left area of the map/globe explorer UI (LocationMapExplorer.tsx), restoring their original positioning from version 1164.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/pages/LocationMapExplorer.tsx"
@@ -23,7 +23,7 @@
       },
       {
         "id": "REQ-2",
-        "summary": "Reposition the Global Control button popup so it opens to the left-hand side, anchored close to the Global Control button, instead of its current position.",
+        "summary": "When clicking the 'World Travel', 'Time Zone', or 'Global Control' buttons, the popup/panel that appears must open on the right side of the screen instead of the left side.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/pages/LocationMapExplorer.tsx"
@@ -34,7 +34,7 @@
       },
       {
         "id": "REQ-3",
-        "summary": "Restore the Local Time display inside the Time Zone button's popup box. It should show the local time (with UTC offset) as it previously appeared before it was removed.",
+        "summary": "Restore the 3D and 2D toggle buttons in LocationMapExplorer.tsx that were present in version 1164 but are currently missing. Re-add them in their original location and with their original functionality for switching between 3D globe and 2D map views.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/pages/LocationMapExplorer.tsx"
@@ -45,7 +45,7 @@
       },
       {
         "id": "REQ-4",
-        "summary": "Re-add the Font Size control (slider or input) to the Global Control popup, placed directly below the Globe Rotation control.",
+        "summary": "Remove the local time display that is currently shown in the bottom-left area of the explorer UI (LocationMapExplorer.tsx).",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/pages/LocationMapExplorer.tsx"

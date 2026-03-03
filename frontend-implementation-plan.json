@@ -1,69 +1,69 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix Time Zone & Global Control popups: reposition left, restore local time and font size controls",
+  "title": "UI fixes: reposition buttons/popups, restore 3D/2D toggles, remove bottom-left time",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Reposition the Time Zone button popup to open on the left-hand side, anchored close to the Time Zone button",
+      "summary": "Move the 'World Travel', 'Time Zone', and 'Global Control' buttons back to the upper-left area of the map/globe explorer UI",
       "acceptanceCriteria": [
-        "The Time Zone popup renders to the left of (or left-aligned near) the Time Zone button.",
-        "The popup does not overlap unrelated UI elements or extend off-screen.",
-        "No other popups or UI elements are repositioned."
+        "The World Travel, Time Zone, and Global Control buttons are visually positioned in the upper-left corner of the explorer page.",
+        "No other UI elements are repositioned or removed as a side effect."
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/LocationMapExplorer.tsx",
           "operation": "modify",
-          "description": "Modify the Time Zone button's Popover component positioning. Update the PopoverContent to use left-side alignment (e.g., 'align=\"end\"' and 'side=\"left\"' or similar shadcn/ui Popover props) so the popup appears anchored to the left of the Time Zone button instead of its current position. Ensure the popup remains within viewport bounds."
+          "description": "Modify the button group container (containing World Travel, Time Zone, and Global Control buttons) to use absolute positioning with top-left anchoring (e.g., top-4 left-4). Remove any right-side positioning classes currently applied to this button group."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Reposition the Global Control button popup to open on the left-hand side, anchored close to the Global Control button",
+      "summary": "Open World Travel, Time Zone, and Global Control popups on the right side of the screen instead of the left",
       "acceptanceCriteria": [
-        "The Global Control popup renders to the left of (or left-aligned near) the Global Control button.",
-        "The popup does not overlap unrelated UI elements or extend off-screen.",
-        "No other popups or UI elements are repositioned."
+        "Clicking 'World Travel' opens its popup anchored to the right side of the viewport.",
+        "Clicking 'Time Zone' opens its popup anchored to the right side of the viewport.",
+        "Clicking 'Global Control' opens its popup anchored to the right side of the viewport.",
+        "Popups do not overlap the upper-left button group."
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/LocationMapExplorer.tsx",
           "operation": "modify",
-          "description": "Modify the Global Control button's Popover component positioning. Update the PopoverContent to use left-side alignment (e.g., 'align=\"end\"' and 'side=\"left\"' or similar shadcn/ui Popover props) so the popup appears anchored to the left of the Global Control button instead of its current position. Ensure the popup remains within viewport bounds."
+          "description": "Update the Dialog or Sheet components for TraveloguePanel, the timezone overlay controls panel, and WebsiteLayoutPanel to position their content containers on the right side of the viewport. Use classes like 'right-0' or 'inset-y-0 right-0' with appropriate width constraints (e.g., 'w-96' or 'max-w-md') to anchor popups to the right edge."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Restore the Local Time display inside the Time Zone button's popup box with UTC offset",
+      "summary": "Restore the 3D and 2D toggle buttons for switching between 3D globe and 2D map views",
       "acceptanceCriteria": [
-        "The Time Zone popup contains a visible local time display with the current time and UTC offset.",
-        "The local time updates correctly based on the selected or detected timezone.",
-        "No other content in the Time Zone popup is removed or rearranged."
+        "A 3D toggle button and a 2D toggle button are visible in the UI.",
+        "Clicking '3D' switches the view to the 3D interactive globe.",
+        "Clicking '2D' switches the view to the 2D map.",
+        "The active view mode is visually indicated on the toggle buttons."
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/LocationMapExplorer.tsx",
           "operation": "modify",
-          "description": "Add Local Time display back into the Time Zone popup content. Inside the Time Zone PopoverContent, add a section that displays the current local time with UTC offset (e.g., '14:32:15 (UTC+1)'). Use existing state variables (currentLocalTime, currentTimezoneOffset) or create new ones if needed. Ensure the time updates dynamically (using useEffect with setInterval or similar) and formats the UTC offset correctly (including fractional offsets like +5.75). Position this display prominently within the popup, above or below existing timezone controls."
+          "description": "Add a view mode state (e.g., viewMode: '3D' | '2D') and conditionally render InteractiveGlobe when viewMode is '3D' or MapComponent when viewMode is '2D'. Add two toggle buttons labeled '3D' and '2D' in a prominent location (e.g., near the upper-left button group or as a separate floating control). Apply visual styling to indicate the active mode (e.g., highlighted background, bold text, or border). Wire button onClick handlers to update the viewMode state."
         }
       ]
     },
     {
       "id": "REQ-4",
-      "summary": "Re-add the Font Size control to the Global Control popup, placed directly below the Globe Rotation control",
+      "summary": "Remove the local time display from the bottom-left area of the explorer UI",
       "acceptanceCriteria": [
-        "The Global Control popup contains a Font Size control rendered immediately below the Globe Rotation control.",
-        "Adjusting the Font Size control changes the relevant font size in the UI as it did previously.",
-        "Globe Rotation control remains functional and is unaffected by this change."
+        "No time or clock element is rendered in the bottom-left corner of the explorer page.",
+        "The removal does not affect any other UI elements or layout."
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/LocationMapExplorer.tsx",
           "operation": "modify",
-          "description": "Add Font Size control back into the Global Control popup content. Inside the Global Control PopoverContent, locate the Globe Rotation control section and add a Font Size slider or input immediately below it. Wire the control to the cityFontSize state variable and ensure it calls the appropriate update function (likely related to WebsiteLayoutSettings or a local state handler). Use a Slider component with appropriate min/max values (e.g., 8-24 for font size in pixels) and display the current value. Ensure the control updates the font size of city labels on the map or globe in real-time."
+          "description": "Locate and remove the time display element currently positioned in the bottom-left area (likely a div or span with absolute positioning classes like 'bottom-4 left-4' displaying local time or UTC offset). Delete the JSX element and any associated state or effect hooks that compute or format the time value."
         }
       ]
     }

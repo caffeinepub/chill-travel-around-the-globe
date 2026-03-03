@@ -1,11 +1,11 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-03-02T06:25:35.720Z",
-  "summary": "The diff modifies LocationMapExplorer.tsx to address all four requirements. The file summary explicitly confirms: Time Zone and Global Control buttons use left-side Popover components (REQ-1, REQ-2), local time display is included in the Time Zone popup (REQ-3), and Font Size control is added to the Global Control popup (REQ-4). The code snippet shows the TimeZonePopoverContent component with local time computation logic, UTC offset helpers, and the necessary imports including the Type icon for font size.",
+  "generatedAt": "2026-03-03T04:13:49.909Z",
+  "summary": "The diff modifies LocationMapExplorer.tsx with changes described in the file summary as implementing all four requirements: upper-left buttons (REQ-1), right-side popups (REQ-2), restored 3D/2D toggles (REQ-3), and removed bottom-left time display (REQ-4). The file summary explicitly confirms all four changes. However, the actual diff content is truncated, so full code-level verification is not possible. Based on the file summary description which directly references each requirement, all four appear to be implemented.",
   "missing_requirements": [],
   "hallucinated_features": [],
-  "confidence": 0.82,
+  "confidence": 0.72,
   "changed_files": [
     "frontend-file-summaries.txt",
     "frontend/src/pages/LocationMapExplorer.tsx",
